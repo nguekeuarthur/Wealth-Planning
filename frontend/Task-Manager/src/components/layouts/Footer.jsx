@@ -80,11 +80,11 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-light mb-4 tracking-wide">Nos Services</h3>
             <ul className="space-y-2 text-gray-300 font-light">
-              <li>Gestion de Tâches</li>
-              <li>Collaboration d'Équipe</li>
-              <li>Rapports et Analytics</li>
-              <li>Tableaux de Bord</li>
-              <li>Gestion des Utilisateurs</li>
+              <li>Création d'entreprise</li>
+              <li>Ouverture de compte Bancaire</li>
+              <li>Service de Domiciliation</li>
+              <li>Conseil en Structuration Patrimoniale</li>
+              <li>Optimisation Fiscale</li>
             </ul>
           </div>
 
@@ -94,23 +94,23 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
                 <FaEnvelope className="text-[#5a8f6f] mt-1 flex-shrink-0" />
-                <a href="mailto:contact@taskmanager.com" className="text-gray-300 hover:text-white transition-colors font-light">
-                  contact@taskmanager.com
+                <a href="mailto:contact@genevawealthpartners.ch" className="text-gray-300 hover:text-white transition-colors font-light">
+                  contact@genevawealthpartners.ch
                 </a>
               </li>
               <li className="flex items-start gap-3">
                 <FaPhone className="text-[#5a8f6f] mt-1 flex-shrink-0" />
-                <a href="tel:+33123456789" className="text-gray-300 hover:text-white transition-colors font-light">
-                  +33 1 23 45 67 89
+                <a href="tel:+41779863255" className="text-gray-300 hover:text-white transition-colors font-light">
+                  +41 77 98 63 255
                 </a>
               </li>
-              <li className="flex items-start gap-3">
+              {/* <li className="flex items-start gap-3">
                 <FaMapMarkerAlt className="text-[#5a8f6f] mt-1 flex-shrink-0" />
                 <span className="text-gray-300 font-light leading-relaxed">
                   123 Avenue des Champs-Élysées<br />
                   75008 Paris, France
                 </span>
-              </li>
+              </li> */}
             </ul>
           </div>
         </div>
@@ -118,7 +118,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="border-t border-gray-700 mt-8 pt-8 text-center">
           <p className="text-gray-300 font-light">
-            © {new Date().getFullYear()} Task Manager. Tous droits réservés.
+            © {new Date().getFullYear()} GENEVA WEALTH PARTNERS. Tous droits réservés.
           </p>
           <div className="mt-2 space-x-4">
             <a href="#" className="text-gray-300 hover:text-white text-sm transition-colors font-light">

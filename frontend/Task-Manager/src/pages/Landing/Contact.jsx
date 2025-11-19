@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { FaEnvelope, FaPhone, FaMapMarkerAlt, FaLinkedin, FaTwitter, FaFacebook } from "react-icons/fa";
 import toast from "react-hot-toast";
+import bgImage from "../../assets/images/contact.jpg";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -27,7 +28,17 @@ const Contact = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#1e4029] via-[#2d5f3f] to-[#1e4029]">
+      <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <img 
+            src={bgImage} 
+            alt="Geneva Landscape" 
+            className="w-full h-full object-cover"
+          />
+          {/* <div className="absolute inset-0 bg-gradient-to-br from-[#1e4029]/90 via-[#2d5f3f]/85 to-[#1e4029]/90"></div> */}
+        </div>
+        
         {/* Radial gradient overlays */}
         <div className="absolute inset-0">
           <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-white/10 rounded-full blur-3xl"></div>

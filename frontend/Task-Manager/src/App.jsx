@@ -21,12 +21,14 @@ import PublicLayout from "./components/layouts/PublicLayout";
 import PrivateRoute from "./routes/PrivateRoute";
 import UserProvider, { UserContext } from "./context/userContext";
 import { Toaster } from "react-hot-toast";
+import ScrollToTop from "./components/ScrollToTop";
 
 const App = () => {
   return (
     <UserProvider>
       <div>
         <Router>
+          <ScrollToTop />
           <Routes>
             {/* Public Routes avec Layout */}
             <Route element={<PublicLayout />}>
