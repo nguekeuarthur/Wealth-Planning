@@ -1,9 +1,11 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FaBars, FaTimes } from "react-icons/fa";
+import { FaBars, FaTimes, FaGlobe } from "react-icons/fa";
 
 const PublicNavbar = () => {
   const [isOpen, setIsOpen] = React.useState(false);
+  const [isLangOpen, setIsLangOpen] = React.useState(false);
+  const [currentLang, setCurrentLang] = React.useState("FR");
   const location = useLocation();
 
   const navLinks = [
@@ -22,15 +24,21 @@ const PublicNavbar = () => {
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
-          <Link to="/" className="flex flex-col">
-            <div className="flex items-center">
-              <span className="text-[#2d5f3f] text-lg font-light tracking-[0.15em] leading-tight">GENEVA</span>
+          <Link to="/" className="flex items-start gap-2">
+            {/* Texte principal */}
+            <div className="flex flex-col">
+              <span className="text-[#2d5f3f] text-sm font-light tracking-[0.15em] leading-tight">GENEVA</span>
+              <span className="text-[#2d5f3f] text-[13px] font-light tracking-[0.2em] leading-tight">WEALTH</span>
+              <span className="text-[#2d5f3f] text-[9px] font-light tracking-[0.3em] leading-tight">PARTNERS</span>
             </div>
-            <div className="flex items-center">
-              <span className="text-[#2d5f3f] text-[15px] font-light tracking-[0.2em] leading-tight mr-2">WEALTH</span>
-              <span className="text-[#2d5f3f] text-[10px] font-light tracking-[0.15em] border-l border-[#2d5f3f] pl-2 leading-tight">WEALTH<br/>PLANNING</span>
+            
+            {/* Barre verticale + Wealth Planning */}
+            <div className="flex items-end h-full relative" style={{ height: '45px' }}>
+              <div className="absolute left-0 top-0 bottom-0 w-[1px] bg-[#2d5f3f]"></div>
+              <span className="text-[#2d5f3f] text-[9px] font-light tracking-[0.15em] pl-2 leading-tight italic whitespace-nowrap">
+                WEALTH<br/>PLANNING
+              </span>
             </div>
-            <span className="text-[#2d5f3f] text-[10px] font-light tracking-[0.3em] leading-tight">PARTNERS</span>
           </Link>
 
           {/* Desktop Menu */}
@@ -48,6 +56,42 @@ const PublicNavbar = () => {
                 {link.name}
               </Link>
             ))}
+            
+            {/* Language Selector */}
+            <div className="relative">
+              <button
+                onClick={() => setIsLangOpen(!isLangOpen)}
+                className="flex items-center gap-1 text-sm font-light text-gray-700 hover:text-[#2d5f3f] transition-colors"
+              >
+                <FaGlobe className="text-base" />
+                <span>{currentLang}</span>
+              </button>
+              
+              {isLangOpen && (
+                <div className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  {["FR", "EN", "DE", "IT"].map((lang) => (
+                    <button
+                      key={lang}
+                      onClick={() => {
+                        setCurrentLang(lang);
+                        setIsLangOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm font-light transition-colors ${
+                        currentLang === lang
+                          ? "bg-[#2d5f3f] text-white"
+                          : "text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      {lang === "FR" && "Français"}
+                      {lang === "EN" && "English"}
+                      {lang === "DE" && "Deutsch"}
+                      {lang === "IT" && "Italiano"}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
             <Link
               to="/connexion"
               className="w-8 h-8 rounded-full border border-gray-400 flex items-center justify-center hover:border-[#2d5f3f] hover:text-[#2d5f3f] transition-colors"
@@ -84,6 +128,28 @@ const PublicNavbar = () => {
                 {link.name}
               </Link>
             ))}
+            {/* Language Selector Mobile */}
+            <div className="border-t border-gray-300 pt-4 mt-4">
+              <p className="text-xs text-gray-500 font-light mb-2">Langue</p>
+              <div className="grid grid-cols-4 gap-2">
+                {["FR", "EN", "DE", "IT"].map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => {
+                      setCurrentLang(lang);
+                    }}
+                    className={`px-3 py-2 rounded text-sm font-light transition-colors ${
+                      currentLang === lang
+                        ? "bg-[#2d5f3f] text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {lang}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
             <Link
               to="/connexion"
               onClick={() => setIsOpen(false)}

@@ -65,7 +65,7 @@ const Home = () => {
           
           <div className="grid md:grid-cols-3 gap-0">
             {/* Étape 1 */}
-            <div className="relative bg-[#5a8f6f] text-white p-10 md:p-12 group hover:bg-[#4a7f5f] transition-all duration-300">
+            <div className="relative bg-[#5a8f6f] text-white p-10 md:p-12 group hover:bg-[#4a7f5f] hover:-translate-y-2 hover:scale-105 hover:shadow-2xl hover:z-20 transition-all duration-500">
               <div className="absolute top-0 left-0 w-full h-1 bg-white/20"></div>
               <div className="mb-8">
                 <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-sm">
@@ -102,7 +102,7 @@ const Home = () => {
             </div>
 
             {/* Étape 2 */}
-            <div className="relative bg-[#2d5f3f] text-white p-10 md:p-12 group hover:bg-[#1e4029] transition-all duration-300 md:-mt-8 md:shadow-2xl z-10">
+            <div className="relative bg-[#2d5f3f] text-white p-10 md:p-12 group hover:bg-[#1e4029] hover:-translate-y-2 hover:scale-105 hover:shadow-2xl transition-all duration-500 md:-mt-8 md:shadow-2xl z-10">
               <div className="absolute top-0 left-0 w-full h-1 bg-white/30"></div>
               <div className="mb-8">
                 <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-sm">
@@ -135,7 +135,7 @@ const Home = () => {
             </div>
 
             {/* Étape 3 */}
-            <div className="relative bg-[#5a8f6f] text-white p-10 md:p-12 group hover:bg-[#4a7f5f] transition-all duration-300">
+            <div className="relative bg-[#5a8f6f] text-white p-10 md:p-12 group hover:bg-[#4a7f5f] hover:-translate-y-2 hover:scale-105 hover:shadow-2xl hover:z-20 transition-all duration-500">
               <div className="absolute top-0 left-0 w-full h-1 bg-white/20"></div>
               <div className="mb-8">
                 <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-sm">

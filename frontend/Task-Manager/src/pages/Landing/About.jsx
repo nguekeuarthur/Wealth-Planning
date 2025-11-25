@@ -47,9 +47,9 @@ const About = () => {
         
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid lg:grid-cols-2 gap-16">
-            <div className="relative group">
+            <div className="relative group h-full">
               <div className="absolute -inset-1 bg-gradient-to-r from-[#2d5f3f] via-[#5a8f6f] to-[#2d5f3f] rounded-3xl opacity-75 group-hover:opacity-100 blur-lg group-hover:blur-xl transition-all duration-700 animate-pulse"></div>
-              <div className="relative bg-gradient-to-br from-white to-[#f8faf9] p-14 rounded-3xl shadow-2xl border-2 border-[#2d5f3f]/20 transform group-hover:scale-[1.02] transition-all duration-500">
+              <div className="relative bg-gradient-to-br from-white to-[#f8faf9] p-14 rounded-3xl shadow-2xl border-2 border-[#2d5f3f]/20 transform group-hover:scale-[1.02] transition-all duration-500 h-full min-h-[480px] flex flex-col">
                 <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#2d5f3f] via-[#5a8f6f] to-[#2d5f3f] flex items-center justify-center mb-8 shadow-2xl transform group-hover:rotate-6 transition-transform duration-500">
                   <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -63,9 +63,9 @@ const About = () => {
               </div>
             </div>
 
-            <div className="relative group">
+            <div className="relative group h-full">
               <div className="absolute -inset-1 bg-gradient-to-l from-[#5a8f6f] via-[#2d5f3f] to-[#5a8f6f] rounded-3xl opacity-75 group-hover:opacity-100 blur-lg group-hover:blur-xl transition-all duration-700 animate-pulse"></div>
-              <div className="relative bg-gradient-to-bl from-white to-[#f8faf9] p-14 rounded-3xl shadow-2xl border-2 border-[#5a8f6f]/20 transform group-hover:scale-[1.02] transition-all duration-500">
+              <div className="relative bg-gradient-to-bl from-white to-[#f8faf9] p-14 rounded-3xl shadow-2xl border-2 border-[#5a8f6f]/20 transform group-hover:scale-[1.02] transition-all duration-500 h-full min-h-[480px] flex flex-col">
                 <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#5a8f6f] via-[#2d5f3f] to-[#5a8f6f] flex items-center justify-center mb-8 shadow-2xl transform group-hover:-rotate-6 transition-transform duration-500">
                   <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -93,11 +93,11 @@ const About = () => {
 
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid md:grid-cols-2 gap-12">
-            <div className="relative group">
+            <div className="relative group h-full">
               <div className="absolute -inset-2 bg-gradient-to-br from-[#2d5f3f] via-[#5a8f6f] to-[#1e4029] rounded-3xl blur-2xl opacity-40 group-hover:opacity-70 transition duration-700 animate-pulse"></div>
-              <div className="relative bg-gradient-to-br from-white via-[#f8fdf9] to-white rounded-3xl shadow-2xl overflow-hidden transform hover:-translate-y-4 hover:rotate-1 transition-all duration-700 border-t-4 border-[#2d5f3f]">
+              <div className="relative bg-gradient-to-br from-white via-[#f8fdf9] to-white rounded-3xl shadow-2xl overflow-hidden transform hover:-translate-y-4 hover:rotate-1 transition-all duration-700 border-t-4 border-[#2d5f3f] h-full min-h-[480px] flex flex-col">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#2d5f3f]/10 via-[#5a8f6f]/5 to-transparent rounded-full -mr-32 -mt-32"></div>
-                <div className="p-14 relative">
+                <div className="p-14 relative flex-1 flex flex-col">
                   <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#2d5f3f] via-[#5a8f6f] to-[#1e4029] flex items-center justify-center mb-10 shadow-2xl transform group-hover:scale-110 group-hover:rotate-12 transition-all duration-700">
                     <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -114,11 +114,11 @@ const About = () => {
               </div>
             </div>
 
-            <div className="relative group">
+            <div className="relative group h-full">
               <div className="absolute -inset-2 bg-gradient-to-bl from-[#5a8f6f] via-[#2d5f3f] to-[#1e4029] rounded-3xl blur-2xl opacity-40 group-hover:opacity-70 transition duration-700 animate-pulse"></div>
-              <div className="relative bg-gradient-to-bl from-white via-[#f8fdf9] to-white rounded-3xl shadow-2xl overflow-hidden transform hover:-translate-y-4 hover:-rotate-1 transition-all duration-700 border-t-4 border-[#5a8f6f]">
+              <div className="relative bg-gradient-to-bl from-white via-[#f8fdf9] to-white rounded-3xl shadow-2xl overflow-hidden transform hover:-translate-y-4 hover:-rotate-1 transition-all duration-700 border-t-4 border-[#5a8f6f] h-full min-h-[480px] flex flex-col">
                 <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-bl from-[#5a8f6f]/10 via-[#2d5f3f]/5 to-transparent rounded-full -ml-32 -mt-32"></div>
-                <div className="p-14 relative">
+                <div className="p-14 relative flex-1 flex flex-col">
                   <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#5a8f6f] via-[#2d5f3f] to-[#1e4029] flex items-center justify-center mb-10 shadow-2xl transform group-hover:scale-110 group-hover:-rotate-12 transition-all duration-700">
                     <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />

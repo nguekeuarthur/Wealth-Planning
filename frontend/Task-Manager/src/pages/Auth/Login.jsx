@@ -62,47 +62,67 @@ const Login = () => {
 
   return (
     <AuthLayout>
-      <div className="lg:w-[70%] h-3/4 md:h-full flex flex-col justify-center">
-        <div className="mb-4">
-          <Link to="/" className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-2">
-            ← Retour au site
-          </Link>
+      <div className="max-w-md flex-1 flex flex-col justify-center">
+        <div className="mb-12">
+          <h3 className="text-4xl font-light text-[#1e4029] mb-4 tracking-tight">
+            Bienvenue
+          </h3>
+          <p className="text-lg text-gray-600 font-light">
+            Connectez-vous pour accéder à votre espace de gestion
+          </p>
         </div>
-        
-        <h3 className="text-xl font-semibold text-black">Bienvenue</h3>
-        <p className="text-xs text-slate-700 mt-[5px] mb-6">
-          Connectez-vous pour accéder à votre espace de gestion
-        </p>
 
-        <form onSubmit={handleLogin}>
-          <Input
-            value={email}
-            onChange={({ target }) => setEmail(target.value)}
-            label="Adresse Email"
-            placeholder="john@example.com"
-            type="text"
-          />
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div>
+            <label className="block text-gray-700 font-light mb-2 text-base">
+              Adresse Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={({ target }) => setEmail(target.value)}
+              placeholder="john@example.com"
+              className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#2d5f3f] transition-colors font-light text-base"
+            />
+          </div>
 
-          <Input
-            value={password}
-            onChange={({ target }) => setPassword(target.value)}
-            label="Mot de passe"
-            placeholder="Min 8 caractères"
-            type="password"
-          />
+          <div>
+            <label className="block text-gray-700 font-light mb-2 text-base">
+              Mot de passe
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={({ target }) => setPassword(target.value)}
+              placeholder="Min 8 caractères"
+              className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#2d5f3f] transition-colors font-light text-base"
+            />
+          </div>
 
-          {error && <p className="text-red-500 text-xs pb-2.5">{error}</p>}
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+              <p className="text-red-700 text-sm font-light">{error}</p>
+            </div>
+          )}
 
-          <button type="submit" className="btn-primary">
+          <button 
+            type="submit" 
+            className="w-full bg-gradient-to-r from-[#2d5f3f] via-[#5a8f6f] to-[#2d5f3f] text-white py-4 rounded-xl font-light text-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02]"
+          >
             SE CONNECTER
           </button>
 
-          <p className="text-[13px] text-slate-800 mt-3">
-            Pas encore de compte ?{" "}
-            <Link className="font-medium text-primary underline" to="/signup">
-              S'inscrire
-            </Link>
-          </p>
+          <div className="text-center pt-4">
+            <p className="text-base text-gray-600 font-light">
+              Pas encore de compte ?{" "}
+              <Link 
+                className="text-[#2d5f3f] hover:text-[#5a8f6f] font-normal underline transition-colors" 
+                to="/signup"
+              >
+                S'inscrire
+              </Link>
+            </p>
+          </div>
         </form>
       </div>
     </AuthLayout>

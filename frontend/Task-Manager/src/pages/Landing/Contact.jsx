@@ -113,18 +113,24 @@ const Contact = () => {
 
                   <div>
                     <label htmlFor="subject" className="block text-gray-700 font-light mb-3 text-lg">
-                      Sujet *
+                      Service *
                     </label>
-                    <input
-                      type="text"
+                    <select
                       id="subject"
                       name="subject"
                       value={formData.subject}
                       onChange={handleChange}
                       required
-                      className="w-full px-6 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#2d5f3f] transition-colors font-light text-lg"
-                      placeholder="Objet de votre message"
-                    />
+                      className="w-full px-6 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#2d5f3f] transition-colors font-light text-lg bg-white"
+                    >
+                      <option value="">Sélectionnez un service</option>
+                      <option value="Création d'entreprise">Création d'entreprise</option>
+                      <option value="Ouverture de compte bancaire">Ouverture de compte bancaire</option>
+                      <option value="Service de Domiciliation">Service de Domiciliation</option>
+                      <option value="Conseil en Structuration Patrimoniale">Conseil en Structuration Patrimoniale</option>
+                      <option value="Optimisation Fiscale">Optimisation Fiscale</option>
+                      <option value="Autre">Autre</option>
+                    </select>
                   </div>
 
                   <div>
@@ -193,7 +199,7 @@ const Contact = () => {
                 </div>
 
                 {/* Address */}
-                <div className="flex items-start gap-6 group">
+                {/* <div className="flex items-start gap-6 group">
                   <div className="bg-gradient-to-br from-[#2d5f3f] via-[#5a8f6f] to-[#1e4029] w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-500">
                     <FaMapMarkerAlt className="text-white text-2xl" />
                   </div>
@@ -204,7 +210,7 @@ const Contact = () => {
                       1204 Genève, Suisse
                     </p>
                   </div>
-                </div>
+                </div> */}
               </div>
 
               {/* Social Media */}

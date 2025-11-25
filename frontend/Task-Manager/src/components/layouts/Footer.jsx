@@ -10,13 +10,21 @@ const Footer = () => {
           {/* Company Info */}
           <div>
             <div className="mb-4">
-              <div className="flex flex-col">
-                <span className="text-white text-sm font-light tracking-[0.15em] leading-tight">GENEVA</span>
-                <div className="flex items-center">
-                  <span className="text-white text-[13px] font-light tracking-[0.2em] leading-tight mr-2">WEALTH</span>
-                  <span className="text-white text-[9px] font-light tracking-[0.15em] border-l border-white pl-2 leading-tight">WEALTH<br/>PLANNING</span>
+              <div className="flex items-start gap-3">
+                {/* Texte principal */}
+                <div className="flex flex-col">
+                  <span className="text-white text-sm font-light tracking-[0.15em] leading-tight">GENEVA</span>
+                  <span className="text-white text-[13px] font-light tracking-[0.2em] leading-tight">WEALTH</span>
+                  <span className="text-white text-[9px] font-light tracking-[0.3em] leading-tight">PARTNERS</span>
                 </div>
-                <span className="text-white text-[9px] font-light tracking-[0.3em] leading-tight">PARTNERS</span>
+                
+                {/* Barre verticale + Wealth Planning */}
+                <div className="flex items-end h-full relative" style={{ height: '45px' }}>
+                  <div className="absolute left-0 top-0 bottom-0 w-[1px] bg-white"></div>
+                  <span className="text-white text-[9px] font-light tracking-[0.15em] pl-2 leading-tight italic whitespace-nowrap">
+                    WEALTH<br/>PLANNING
+                  </span>
+                </div>
               </div>
             </div>
             <p className="text-gray-300 mb-4 font-light leading-relaxed text-sm">
