@@ -1,8 +1,31 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import lacLemanImage from "../../assets/images/lac-leman-alpes.jpg";
+import { useLanguage } from "../../context/languageContext";
+
+const translations = {
+  FR: {
+    title: "Votre patrimoine,\nnotre expertise",
+    subtitle: "Conseil en structuration patrimoniale et fiscale pour entrepreneurs et investisseurs",
+  },
+  EN: {
+    title: "Your wealth,\nour expertise",
+    subtitle: "Wealth and tax structuring advisory for entrepreneurs and investors",
+  },
+  DE: {
+    title: "Ihr Vermögen,\nunsere Expertise",
+    subtitle: "Vermögens- und Steuerstrukturierungsberatung für Unternehmer und Investoren",
+  },
+  IT: {
+    title: "Il tuo patrimonio,\nla nostra expertise",
+    subtitle: "Consulenza sulla strutturazione patrimoniale e fiscale per imprenditori e investitori",
+  },
+};
 
 const AuthLayout = ({ children }) => {
+  const { lang } = useLanguage();
+  const copy = translations[lang] ?? translations.FR;
+
   return <div className="flex min-h-screen">
       {/* Left Panel - Form */}
       <div className="w-screen h-screen md:w-[55vw] px-8 md:px-16 pt-8 pb-12 flex flex-col bg-white">
@@ -27,12 +50,12 @@ const AuthLayout = ({ children }) => {
         {/* Overlay Content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center text-white px-12">
           <div className="max-w-md text-center">
-            <h3 className="text-4xl font-light mb-6 tracking-wide">
-              Votre patrimoine,<br/>notre expertise
+            <h3 className="text-4xl font-light mb-6 tracking-wide" style={{ whiteSpace: 'pre-line' }}>
+              {copy.title}
             </h3>
             <div className="w-24 h-0.5 bg-white/40 mx-auto mb-6"></div>
             <p className="text-lg font-light leading-relaxed opacity-90">
-              Conseil en structuration patrimoniale et fiscale pour entrepreneurs et investisseurs
+              {copy.subtitle}
             </p>
           </div>
           
