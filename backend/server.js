@@ -8,6 +8,14 @@ const authRoutes = require("./routes/authRoutes")
 const userRoutes = require("./routes/userRoutes")
 const taskRoutes = require("./routes/taskRoutes")
 const reportRoutes = require("./routes/reportRoutes")
+const projectRoutes = require("./routes/projectRoutes")
+const documentRoutes = require("./routes/documentRoutes")
+const invoiceRoutes = require("./routes/invoiceRoutes")
+const messageRoutes = require("./routes/messageRoutes")
+const appointmentRoutes = require("./routes/appointmentRoutes")
+const weeklyUpdateRoutes = require("./routes/weeklyUpdateRoutes")
+const formRoutes = require("./routes/formRoutes")
+const dashboardRoutes = require("./routes/dashboardRoutes")
 
 const app = express();
 
@@ -31,6 +39,14 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/projects", projectRoutes);
+app.use("/api/documents", documentRoutes);
+app.use("/api/invoices", invoiceRoutes);
+app.use("/api/messages", messageRoutes);
+app.use("/api/appointments", appointmentRoutes);
+app.use("/api/weekly-updates", weeklyUpdateRoutes);
+app.use("/api/forms", formRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // Serve uploads folder
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
