@@ -20,7 +20,23 @@ const Navbar = ({ activeMenu }) => {
         )}
       </button>
 
-      <h2 className="text-lg font-medium text-black">Task Manager</h2>
+      {/* Logo Geneva Wealth Planning */}
+      <div className="flex items-start gap-2">
+        {/* Texte principal */}
+        <div className="flex flex-col">
+          <span className="text-[#2d5f3f] text-sm font-light tracking-[0.15em] leading-tight">GENEVA</span>
+          <span className="text-[#2d5f3f] text-[13px] font-light tracking-[0.2em] leading-tight">WEALTH</span>
+          <span className="text-[#2d5f3f] text-[9px] font-light tracking-[0.3em] leading-tight">PARTNERS</span>
+        </div>
+        
+        {/* Barre verticale + Wealth Planning */}
+        <div className="flex items-end h-full relative" style={{ height: '45px' }}>
+          <div className="absolute left-0 top-0 bottom-0 w-[1px] bg-[#2d5f3f]"></div>
+          <span className="text-[#2d5f3f] text-[9px] font-light tracking-[0.15em] pl-2 leading-tight italic whitespace-nowrap">
+            WEALTH<br/>PLANNING
+          </span>
+        </div>
+      </div>
 
       {openSideMenu && (
         <div className="fixed top-[61px] -ml-4 bg-white">
