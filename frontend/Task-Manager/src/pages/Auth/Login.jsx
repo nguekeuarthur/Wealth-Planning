@@ -21,6 +21,8 @@ const translations = {
     account_locked: "Compte verrouillé. Réessayez dans {{minutes}} minute(s).",
     signUpLink: "S'inscrire",
     forgotPassword: "Mot de passe oublié ?",
+    invalid_credentials: "Email ou mot de passe invalide.",
+    email_not_verified: "Veuillez confirmer votre adresse email avant de vous connecter.",
     errors: {
       invalidEmail: "Veuillez entrer une adresse email valide.",
       missingPassword: "Veuillez entrer le mot de passe",
@@ -39,6 +41,8 @@ const translations = {
     account_locked: "Account locked. Try again in {{minutes}} minute(s).",
     signUpLink: "Sign up",
     forgotPassword: "Forgot password?",
+    invalid_credentials: "Invalid email or password.",
+    email_not_verified: "Please confirm your email address before logging in.",
     errors: {
       invalidEmail: "Please enter a valid email address.",
       missingPassword: "Please enter the password",
@@ -57,6 +61,8 @@ const translations = {
     account_locked: "Konto gesperrt. Versuchen Sie es in {{minutes}} Minute(n) erneut.",
     signUpLink: "Registrieren",
     forgotPassword: "Passwort vergessen?",
+    invalid_credentials: "Ungültige E-Mail oder Passwort.",
+    email_not_verified: "Bitte bestätigen Sie Ihre E-Mail-Adresse, bevor Sie sich anmelden.",
     errors: {
       invalidEmail: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
       missingPassword: "Bitte geben Sie das Passwort ein",
@@ -75,6 +81,8 @@ const translations = {
     account_locked: "Account bloccato. Riprova tra {{minutes}} minuto/i.",
     signUpLink: "Registrati",
     forgotPassword: "Password dimenticata?",
+    invalid_credentials: "Email o password non validi.",
+    email_not_verified: "Per favore, conferma il tuo indirizzo email prima di accedere.",
     errors: {
       invalidEmail: "Inserisci un indirizzo email valido.",
       missingPassword: "Inserisci la password",

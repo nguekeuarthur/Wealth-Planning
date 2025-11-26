@@ -24,6 +24,7 @@ const translations = {
     successMessage:
       "Compte créé ! Vérifiez vos emails (et vos spams) pour valider votre adresse.",
     hasAccount: "Déjà un compte ?",
+    user_exists: "Un utilisateur avec cet email existe déjà.",
     signInLink: "Se connecter",
     errors: {
       missingName: "Veuillez entrer le nom complet.",
@@ -47,6 +48,7 @@ const translations = {
     successMessage:
       "Account created! Please check your inbox (and spam) to verify your email.",
     hasAccount: "Already have an account?",
+    user_exists: "A user with this email already exists.",
     signInLink: "Sign in",
     errors: {
       missingName: "Please enter full name.",
@@ -70,6 +72,7 @@ const translations = {
     successMessage:
       "Konto erstellt! Prüfen Sie bitte Inbox und Spam zur Verifizierung.",
     hasAccount: "Bereits ein Konto?",
+    user_exists: "Ein Benutzer mit dieser E-Mail existiert bereits.",
     signInLink: "Anmelden",
     errors: {
       missingName: "Bitte geben Sie den vollständigen Namen ein.",
@@ -93,6 +96,7 @@ const translations = {
     successMessage:
       "Account creato! Controlla posta e spam per verificare l'email.",
     hasAccount: "Hai già un account?",
+    user_exists: "Un utente con questa email esiste già.",
     signInLink: "Accedi",
     errors: {
       missingName: "Inserisci il nome completo.",
@@ -101,6 +105,21 @@ const translations = {
       somethingWrong: "Qualcosa è andato storto. Riprova.",
     },
   },
+};
+
+const getErrorMessage = (error, copy) => {
+  const errorData = error.response?.data;
+  if (errorData) {
+    if (errorData.i18nKey) {
+      let message = copy[errorData.i18nKey] || errorData.i18nKey;
+      if (errorData.params) {
+        message = message.replace("{{minutes}}", errorData.params.minutes);
+      }
+      return message;
+    }
+    return errorData.message || copy.errors.somethingWrong;
+  }
+  return copy.errors.somethingWrong;
 };
 
 const SignUp = () => {
@@ -167,11 +186,7 @@ const SignUp = () => {
       setPassword("");
       setProfilePic(null);
     } catch (error){
-      if (error.response && error.response.data.message) {
-        setError(error.response.data.message);
-      } else {
-        setError(copy.errors.somethingWrong);
-      }
+      setError(getErrorMessage(error, copy));
     }
   };
 
