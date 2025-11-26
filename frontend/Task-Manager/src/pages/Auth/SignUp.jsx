@@ -1,12 +1,10 @@
-import React, { useContext, useState } from "react";
+import React, { useState } from "react";
 import AuthLayout from "../../components/layouts/AuthLayout";
 import { validateEmail } from "../../utils/helper";
 import ProfilePhotoSelector from "../../components/Inputs/ProfilePhotoSelector";
-import Input from "../../components/Inputs/Input";
 import { Link, useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
-import { UserContext } from "../../context/userContext";
 import uploadImage from "../../utils/uploadImage";
 import { useLanguage } from "../../context/languageContext";
 
@@ -22,9 +20,9 @@ const translations = {
     emailPlaceholder: "john@example.com",
     passwordLabel: "Mot de passe *",
     passwordPlaceholder: "Min 8 caractères",
-    adminTokenLabel: "Code Invitation Admin *",
-    adminTokenPlaceholder: "Code à 6 chiffres",
     submitButton: "S'INSCRIRE",
+    successMessage:
+      "Compte créé ! Vérifiez vos emails (et vos spams) pour valider votre adresse.",
     hasAccount: "Déjà un compte ?",
     signInLink: "Se connecter",
     errors: {
@@ -45,9 +43,9 @@ const translations = {
     emailPlaceholder: "john@example.com",
     passwordLabel: "Password *",
     passwordPlaceholder: "Min 8 characters",
-    adminTokenLabel: "Admin Invite Code *",
-    adminTokenPlaceholder: "6-digit code",
     submitButton: "SIGN UP",
+    successMessage:
+      "Account created! Please check your inbox (and spam) to verify your email.",
     hasAccount: "Already have an account?",
     signInLink: "Sign in",
     errors: {
@@ -68,9 +66,9 @@ const translations = {
     emailPlaceholder: "max@beispiel.com",
     passwordLabel: "Passwort *",
     passwordPlaceholder: "Min. 8 Zeichen",
-    adminTokenLabel: "Admin-Einladungscode *",
-    adminTokenPlaceholder: "6-stelliger Code",
     submitButton: "REGISTRIEREN",
+    successMessage:
+      "Konto erstellt! Prüfen Sie bitte Inbox und Spam zur Verifizierung.",
     hasAccount: "Bereits ein Konto?",
     signInLink: "Anmelden",
     errors: {
@@ -91,9 +89,9 @@ const translations = {
     emailPlaceholder: "mario@esempio.com",
     passwordLabel: "Password *",
     passwordPlaceholder: "Min 8 caratteri",
-    adminTokenLabel: "Codice Invito Admin *",
-    adminTokenPlaceholder: "Codice a 6 cifre",
     submitButton: "REGISTRATI",
+    successMessage:
+      "Account creato! Controlla posta e spam per verificare l'email.",
     hasAccount: "Hai già un account?",
     signInLink: "Accedi",
     errors: {
@@ -111,14 +109,12 @@ const SignUp = () => {
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [adminInviteToken, setAdminInviteToken] = useState("");
 
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState("");
 
   const { lang } = useLanguage();
   const copy = translations[lang] ?? translations.FR;
-
-  const {updateUser} = useContext(UserContext)
   const navigate = useNavigate();
 
   // Handle SignUp Form Submit
@@ -127,7 +123,7 @@ const SignUp = () => {
 
     let profileImageUrl = ''
 
-    if (!fullName) {
+    if (!fullName || !firstName) {
       setError(copy.errors.missingName);
       return;
     }
@@ -143,6 +139,7 @@ const SignUp = () => {
     }
 
     setError("");
+    setSuccess("");
 
     //SignUp API Call
     try {
@@ -153,27 +150,22 @@ const SignUp = () => {
         profileImageUrl = imgUploadRes.imageUrl || "";
       }
 
-      const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, {
-        name: fullName,
+      const combinedName = `${firstName} ${fullName}`.trim();
+
+      await axiosInstance.post(API_PATHS.AUTH.REGISTER, {
+        name: combinedName,
         email,
         password,
         profileImageUrl,
-        adminInviteToken
+        language: lang,
       });
 
-      const { token, role } = response.data;
-
-      if (token) {
-        localStorage.setItem("token", token);
-        updateUser(response.data);
-
-        //Redirect based on role
-        if (role === "admin") {
-          navigate("/admin/dashboard");
-        } else {
-          navigate("/user/dashboard");
-        }
-      }
+      setSuccess(copy.successMessage);
+      setFullName("");
+      setFirstName("");
+      setEmail("");
+      setPassword("");
+      setProfilePic(null);
     } catch (error){
       if (error.response && error.response.data.message) {
         setError(error.response.data.message);
@@ -262,20 +254,6 @@ const SignUp = () => {
               />
             </div>
 
-            {/* Admin Token */}
-            <div>
-              <label className="block text-gray-700 font-light mb-2 text-base">
-                {copy.adminTokenLabel}
-              </label>
-              <input
-                type="text"
-                value={adminInviteToken}
-                onChange={({ target }) => setAdminInviteToken(target.value)}
-                placeholder={copy.adminTokenPlaceholder}
-                required
-                className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#2d5f3f] transition-colors font-light text-base"
-              />
-            </div>
           </div>
 
           {error && (
@@ -284,8 +262,21 @@ const SignUp = () => {
             </div>
           )}
 
-          <button 
-            type="submit" 
+          {success && (
+            <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+              <p className="text-green-700 text-sm font-light">{success}</p>
+              <button
+                type="button"
+                onClick={() => navigate("/login")}
+                className="mt-3 underline text-[#2d5f3f] font-normal"
+              >
+                {copy.signInLink}
+              </button>
+            </div>
+          )}
+
+          <button
+            type="submit"
             className="w-full bg-gradient-to-r from-[#2d5f3f] via-[#5a8f6f] to-[#2d5f3f] text-white py-4 rounded-xl font-light text-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02]"
           >
             {copy.submitButton}

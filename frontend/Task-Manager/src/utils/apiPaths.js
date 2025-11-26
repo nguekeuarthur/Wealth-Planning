@@ -6,6 +6,13 @@ export const API_PATHS = {
     REGISTER: "/api/auth/register", // Register a new user (Admin or Member)
     LOGIN: "/api/auth/login", // Authenticate user & return JWT token
     GET_PROFILE: "/api/auth/profile", // Get logged-in user details
+    UPDATE_PROFILE: "/api/auth/profile",
+    FORGOT_PASSWORD: "/api/auth/forgot-password",
+    RESET_PASSWORD: "/api/auth/reset-password",
+    VERIFY_EMAIL: "/api/auth/verify-email",
+    RESEND_VERIFICATION: "/api/auth/resend-verification",
+    REFRESH_TOKEN: "/api/auth/refresh-token",
+    LOGOUT: "/api/auth/logout",
   },
 
   USERS: {
@@ -35,6 +42,6 @@ export const API_PATHS = {
   },
 
   IMAGE: {
-    UPLOAD_IMAGE: "api/auth/upload-image",
+    UPLOAD_IMAGE: "/api/auth/upload-image",
   },
 };

@@ -18,7 +18,9 @@ const translations = {
     passwordPlaceholder: "Min 8 caractères",
     submitButton: "SE CONNECTER",
     noAccount: "Pas encore de compte ?",
+    account_locked: "Compte verrouillé. Réessayez dans {{minutes}} minute(s).",
     signUpLink: "S'inscrire",
+    forgotPassword: "Mot de passe oublié ?",
     errors: {
       invalidEmail: "Veuillez entrer une adresse email valide.",
       missingPassword: "Veuillez entrer le mot de passe",
@@ -34,7 +36,9 @@ const translations = {
     passwordPlaceholder: "Min 8 characters",
     submitButton: "SIGN IN",
     noAccount: "Don't have an account?",
+    account_locked: "Account locked. Try again in {{minutes}} minute(s).",
     signUpLink: "Sign up",
+    forgotPassword: "Forgot password?",
     errors: {
       invalidEmail: "Please enter a valid email address.",
       missingPassword: "Please enter the password",
@@ -50,7 +54,9 @@ const translations = {
     passwordPlaceholder: "Min. 8 Zeichen",
     submitButton: "ANMELDEN",
     noAccount: "Noch kein Konto?",
+    account_locked: "Konto gesperrt. Versuchen Sie es in {{minutes}} Minute(n) erneut.",
     signUpLink: "Registrieren",
+    forgotPassword: "Passwort vergessen?",
     errors: {
       invalidEmail: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
       missingPassword: "Bitte geben Sie das Passwort ein",
@@ -66,7 +72,9 @@ const translations = {
     passwordPlaceholder: "Min 8 caratteri",
     submitButton: "ACCEDI",
     noAccount: "Non hai ancora un account?",
+    account_locked: "Account bloccato. Riprova tra {{minutes}} minuto/i.",
     signUpLink: "Registrati",
+    forgotPassword: "Password dimenticata?",
     errors: {
       invalidEmail: "Inserisci un indirizzo email valido.",
       missingPassword: "Inserisci la password",
@@ -79,11 +87,12 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const { lang } = useLanguage();
   const copy = translations[lang] ?? translations.FR;
 
-  const {updateUser} = useContext(UserContext)
+  const { updateUser } = useContext(UserContext);
   const navigate = useNavigate();
 
   // Handle Login Form Submit
@@ -101,6 +110,7 @@ const Login = () => {
     }
 
     setError("");
+    setLoading(true);
 
     //Login API Call
     try {
@@ -109,25 +119,39 @@ const Login = () => {
         password,
       });
 
-      const { token, role } = response.data;
+      const { token, refreshToken, user } = response.data;
 
-      if (token) {
-        localStorage.setItem("token", token);
-        updateUser(response.data)
+      if (token && refreshToken && user) {
+        updateUser(response.data);
 
         //Redirect based on role
-        if (role === "admin") {
+        if (user.role === "admin") {
           navigate("/admin/dashboard");
         } else {
           navigate("/user/dashboard");
         }
-      }
-    } catch (error){
-      if (error.response && error.response.data.message) {
-        setError(error.response.data.message);
       } else {
         setError(copy.errors.somethingWrong);
       }
+    } catch (error){
+      const errorData = error.response?.data;
+      if (errorData) {
+        // Gère les erreurs avec clé de traduction (i18n)
+        if (errorData.i18nKey) {
+          let message = copy[errorData.i18nKey] || errorData.i18nKey;
+          if (errorData.params) {
+            message = message.replace("{{minutes}}", errorData.params.minutes);
+          }
+          setError(message);
+        } else {
+          setError(errorData.message || copy.errors.somethingWrong);
+        }
+      } else {
+        setError(copy.errors.somethingWrong);
+      }
+      setPassword(""); // Vider le mot de passe pour la sécurité
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -176,11 +200,21 @@ const Login = () => {
             </div>
           )}
 
-          <button 
-            type="submit" 
-            className="w-full bg-gradient-to-r from-[#2d5f3f] via-[#5a8f6f] to-[#2d5f3f] text-white py-4 rounded-xl font-light text-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02]"
+          <div className="flex items-center justify-between text-sm">
+            <Link
+              className="text-[#2d5f3f] hover:text-[#5a8f6f] font-normal underline transition-colors"
+              to="/forgot-password"
+            >
+              {copy.forgotPassword}
+            </Link>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-[#2d5f3f] via-[#5a8f6f] to-[#2d5f3f] text-white py-4 rounded-xl font-light text-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {copy.submitButton}
+            {loading ? "..." : copy.submitButton}
           </button>
 
           <div className="text-center pt-4">
