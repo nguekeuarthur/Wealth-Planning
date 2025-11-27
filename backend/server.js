@@ -34,12 +34,6 @@ connectDB();
 // Middleware
 app.use(express.json());
 
-// Request logging middleware (pour debug)
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
-  next();
-});
-
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -57,35 +51,6 @@ app.use("/api/dashboard", dashboardRoutes);
 // Serve uploads folder
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ 
-    message: "Route non trouvée",
-    path: req.path 
-  });
-});
-
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error("[ERROR]", {
-    message: err.message,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
-    path: req.path,
-    method: req.method,
-    body: req.body
-  });
-
-  res.status(err.status || 500).json({
-    message: err.message || "Une erreur s'est produite",
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
-  });
-});
-
 // Start Server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Frontend URL: ${process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:5173'}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
