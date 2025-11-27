@@ -197,7 +197,7 @@ const registerUser = async (req, res) => {
     const normalizedEmail = normalizeEmail(email);
     const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists) {
-      return res.status(400).json({ message: "Un utilisateur existe déjà." });
+      return res.status(400).json({ i18nKey: "user_exists" });
     }
 
     let role = "member";
@@ -211,6 +211,8 @@ const registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    console.log("[registerUser] Creating user with email:", normalizedEmail);
+    
     const user = await User.create({
       name,
       email: normalizedEmail,
@@ -221,13 +223,34 @@ const registerUser = async (req, res) => {
       isEmailVerified: false,
     });
 
-    await logAuthEvent({
-      user: user._id,
-      email: user.email,
-      event: "register",
-    });
+    console.log("[registerUser] User created successfully:", user._id, user.email);
 
-    await sendVerificationEmail(user, user.language);
+    // Vérifier que l'utilisateur existe bien en base
+    const verifyUser = await User.findById(user._id);
+    if (!verifyUser) {
+      console.error("[registerUser] ERROR: User not found after creation!");
+      return res.status(500).json({ 
+        message: "Erreur lors de la création du compte. Veuillez réessayer." 
+      });
+    }
+
+    try {
+      await logAuthEvent({
+        user: user._id,
+        email: user.email,
+        event: "register",
+      });
+    } catch (logError) {
+      console.error("[registerUser] Error logging auth event:", logError);
+      // Ne pas bloquer la création si le log échoue
+    }
+
+    try {
+      await sendVerificationEmail(user, user.language);
+    } catch (emailError) {
+      console.error("[registerUser] Error sending verification email:", emailError);
+      // Ne pas bloquer la création si l'email échoue
+    }
 
     res.status(201).json({
       message:
@@ -235,7 +258,18 @@ const registerUser = async (req, res) => {
       requiresEmailVerification: true,
     });
   } catch (error) {
-    res.status(500).json({ message: "Erreur serveur", error: error.message });
+    console.error("[registerUser] Error:", error);
+    // Si c'est une erreur de duplication MongoDB
+    if (error.code === 11000) {
+      return res.status(400).json({ 
+        message: "Un utilisateur avec cet email existe déjà." 
+      });
+    }
+    res.status(500).json({ 
+      message: "Erreur serveur", 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 
@@ -251,15 +285,19 @@ const loginUser = async (req, res) => {
         .json({ message: "Email et mot de passe sont requis." });
     }
     const normalizedEmail = normalizeEmail(email);
+    console.log("[loginUser] Attempting login with email:", normalizedEmail);
+    
     const user = await User.findOne({ email: normalizedEmail });
+    console.log("[loginUser] User found:", user ? `${user._id} - ${user.email}` : "NOT FOUND");
 
     if (!user) {
+      console.log("[loginUser] User not found for email:", normalizedEmail);
       await logAuthEvent({
         email: normalizedEmail,
         event: "login_failure",
         metadata: { reason: "user_not_found" },
       });
-      return res.status(401).json({ message: "Email ou mot de passe invalide" });
+      return res.status(401).json({ i18nKey: "invalid_credentials" });
     }
 
     if (user.lockUntil && user.lockUntil > new Date()) {
@@ -290,14 +328,11 @@ const loginUser = async (req, res) => {
         event: "login_failure",
         metadata: { reason: "invalid_password" },
       });
-      return res.status(401).json({ message: "Email ou mot de passe invalide" });
+      return res.status(401).json({ i18nKey: "invalid_credentials" });
     }
 
     if (user.isEmailVerified === false) {
-      return res.status(403).json({
-        message:
-          "Veuillez confirmer votre adresse email avant de vous connecter.",
-      });
+      return res.status(403).json({ i18nKey: "email_not_verified" });
     }
 
     user.loginAttempts = 0;

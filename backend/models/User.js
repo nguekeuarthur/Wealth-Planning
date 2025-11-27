@@ -12,7 +12,7 @@ const UserSchema = new mongoose.Schema(
       default: "FR",
       enum: ["FR", "EN", "DE", "IT"],
     },
-    isEmailVerified: { type: Boolean, default: true },
+    isEmailVerified: { type: Boolean, default: false },
     emailVerifiedAt: { type: Date, default: null },
     emailVerificationToken: { type: String, default: null },
     emailVerificationExpires: { type: Date, default: null },
