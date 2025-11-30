@@ -17,6 +17,7 @@ exports.getAllProjects = async (req, res) => {
 
     const projects = await Project.find(filter)
       .populate('client', 'fullName email')
+      .populate('projectLead', 'fullName email')
       .populate('assignedUsers', 'fullName email')
       .populate('tasks')
       .sort({ createdAt: -1 });
@@ -31,7 +32,8 @@ exports.getAllProjects = async (req, res) => {
 exports.getProjectById = async (req, res) => {
   try {
     const project = await Project.findById(req.params.id)
-      .populate('client', 'fullName email profilePic')
+      .populate('client', 'fullName email profilePic phoneNumber')
+      .populate('projectLead', 'fullName email')
       .populate('assignedUsers', 'fullName email')
       .populate('tasks')
       .populate('documents')

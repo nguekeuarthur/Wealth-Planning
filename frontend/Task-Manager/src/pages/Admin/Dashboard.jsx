@@ -141,6 +141,12 @@ const Dashboard = () => {
             </p>
           </div>
           <div className="flex gap-3">
+            <button 
+              onClick={() => navigate('/admin/patrimoine')}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg transition-all duration-200 text-sm font-medium flex items-center gap-2 shadow-md"
+            >
+              <FaProjectDiagram /> Vue Patrimoine
+            </button>
             <button className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-5 py-2.5 rounded-lg transition-all duration-200 text-sm font-medium flex items-center gap-2">
               <FaProjectDiagram /> Nouveau Projet
             </button>
@@ -212,129 +218,73 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Statistics Cards - Projects & Invoices */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          <div className="bg-white rounded-xl shadow-md hover:shadow-xl p-6 border-l-4 border-blue-500 transform hover:-translate-y-1 transition-all duration-300">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-gray-600 text-sm font-medium mb-2">Projets Actifs</p>
-                <h3 className="text-3xl font-bold text-gray-800">
-                  {stats?.projects?.byStatus?.find(p => p._id === 'in progress')?.count || 0}
-                </h3>
-                <p className="text-xs text-blue-500 mt-2 font-medium">En progression</p>
-              </div>
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <FaProjectDiagram className="text-2xl text-blue-500" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md hover:shadow-xl p-6 border-l-4 border-green-500 transform hover:-translate-y-1 transition-all duration-300">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-gray-600 text-sm font-medium mb-2">Projets Terminés</p>
-                <h3 className="text-3xl font-bold text-gray-800">
-                  {stats?.projects?.byStatus?.find(p => p._id === 'done')?.count || 0}
-                </h3>
-                <p className="text-xs text-green-500 mt-2 font-medium">Complétés</p>
-              </div>
-              <div className="bg-green-50 p-3 rounded-lg">
-                <FaCheckCircle className="text-2xl text-green-500" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md hover:shadow-xl p-6 border-l-4 border-emerald-500 transform hover:-translate-y-1 transition-all duration-300">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-gray-600 text-sm font-medium mb-2">Revenu Total</p>
-                <h3 className="text-2xl font-bold text-gray-800">
-                  {addThousandsSeparator(stats?.invoices?.totalRevenue || 0)} €
-                </h3>
-                <p className="text-xs text-emerald-500 mt-2 font-medium">Revenus encaissés</p>
-              </div>
-              <div className="bg-emerald-50 p-3 rounded-lg">
-                <FaFileInvoiceDollar className="text-2xl text-emerald-500" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md hover:shadow-xl p-6 border-l-4 border-orange-500 transform hover:-translate-y-1 transition-all duration-300">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-gray-600 text-sm font-medium mb-2">Messages Non Lus</p>
-                <h3 className="text-3xl font-bold text-gray-800">
-                  {stats?.messages?.unread || 0}
-                </h3>
-                <p className="text-xs text-orange-500 mt-2 font-medium">À traiter</p>
-              </div>
-              <div className="bg-orange-50 p-3 rounded-lg relative">
-                <FaEnvelope className="text-2xl text-orange-500" />
-                {stats?.messages?.unread > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold animate-pulse">
-                    {stats?.messages?.unread}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
+      {/* Active Projects Section */}
+      <div className="my-8">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-bold text-gray-800">Active Projects</h3>
         </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          <div className="bg-gradient-to-br from-purple-100 to-purple-50 rounded-xl shadow-md hover:shadow-xl p-6 border border-purple-200 cursor-pointer transform hover:-translate-y-1 transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-purple-500 p-3 rounded-xl shadow-lg">
-                <FaCalendarAlt className="text-xl text-white" />
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {stats?.projects?.recent?.length > 0 ? stats.projects.recent.slice(0, 3).map((project, index) => (
+            <div key={index} className="relative rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group h-64">
+              {/* Image de fond avec gradient */}
+              <div className="absolute inset-0 bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300">
+                <div className="w-full h-full flex items-center justify-center opacity-20">
+                  <FaProjectDiagram className="text-9xl text-gray-400" />
+                </div>
               </div>
-              <span className="bg-purple-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-                {stats?.appointments?.upcoming?.length || 0}
-              </span>
-            </div>
-            <h4 className="text-gray-700 font-semibold text-sm">RDV à Venir</h4>
-            <p className="text-purple-600 text-xs mt-1 font-medium">Prochains rendez-vous</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-yellow-100 to-yellow-50 rounded-xl shadow-md hover:shadow-xl p-6 border border-yellow-200 cursor-pointer transform hover:-translate-y-1 transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-yellow-500 p-3 rounded-xl shadow-lg">
-                <FaClock className="text-xl text-white" />
+              
+              {/* Overlay gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+              
+              {/* Badge statut en haut à gauche */}
+              <div className="absolute top-4 left-4 z-10">
+                <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold shadow-lg backdrop-blur-sm ${
+                  project.status === 'done' ? 'bg-green-500/90 text-white' :
+                  project.status === 'in review' ? 'bg-yellow-500/90 text-white' :
+                  'bg-blue-500/90 text-white'
+                }`}>
+                  {project.status === 'done' ? 'Terminé' : 
+                   project.status === 'in review' ? 'En révision' : 
+                   'In progress'}
+                </span>
               </div>
-              <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-                {stats?.forms?.incomplete || 0}
-              </span>
-            </div>
-            <h4 className="text-gray-700 font-semibold text-sm">Formulaires</h4>
-            <p className="text-yellow-600 text-xs mt-1 font-medium">À compléter</p>
-          </div>
 
-          <div className="bg-gradient-to-br from-red-100 to-red-50 rounded-xl shadow-md hover:shadow-xl p-6 border border-red-200 cursor-pointer transform hover:-translate-y-1 transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-red-500 p-3 rounded-xl shadow-lg">
-                <FaFileInvoiceDollar className="text-xl text-white" />
+              {/* Contenu en bas */}
+              <div className="absolute bottom-0 left-0 right-0 bg-white p-5 z-10">
+                <h4 className="font-bold text-lg text-gray-800 truncate group-hover:text-blue-600 transition-colors mb-2">
+                  {project.name}
+                </h4>
+                <p className="text-sm text-gray-600 truncate mb-3">
+                  {project.category || 'Catégorie non définie'}
+                </p>
+                
+                {/* Barre de progression */}
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        project.status === 'done' ? 'bg-green-500' :
+                        project.status === 'in review' ? 'bg-yellow-500' :
+                        'bg-blue-500'
+                      }`}
+                      style={{ width: `${project.completion || 0}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-semibold text-gray-600 min-w-[40px] text-right">
+                    {project.completion || 0}%
+                  </span>
+                </div>
               </div>
-              <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-                {stats?.invoices?.byStatus?.find(i => i._id === 'en attente')?.count || 0}
-              </span>
             </div>
-            <h4 className="text-gray-700 font-semibold text-sm">Factures</h4>
-            <p className="text-red-600 text-xs mt-1 font-medium">En attente</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-indigo-100 to-indigo-50 rounded-xl shadow-md hover:shadow-xl p-6 border border-indigo-200 cursor-pointer transform hover:-translate-y-1 transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-indigo-500 p-3 rounded-xl shadow-lg relative">
-                <FaEnvelope className="text-xl text-white" />
-                <span className="absolute -top-2 -right-2 w-5 h-5 bg-green-400 rounded-full animate-pulse"></span>
-              </div>
-              <span className="bg-indigo-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-                {stats?.messages?.recent24h || 0}
-              </span>
+          )) : (
+            <div className="col-span-3 text-center py-16 bg-gray-50 rounded-xl">
+              <FaProjectDiagram className="text-6xl text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg">Aucun projet actif</p>
             </div>
-            <h4 className="text-gray-700 font-semibold text-sm">Messages 24h</h4>
-            <p className="text-indigo-600 text-xs mt-1 font-medium">Dernières 24h</p>
-          </div>
+          )}
         </div>
       </div>
 
@@ -373,226 +323,75 @@ const Dashboard = () => {
             data={barChartData}
           />
         </div>
+      </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h5 className="text-lg font-semibold text-gray-800">Projets par Statut</h5>
-              <p className="text-xs text-gray-500 mt-1">Suivi de l'avancement</p>
-            </div>
-            <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-3 rounded-lg shadow-md">
-              <FaProjectDiagram className="text-white text-xl" />
-            </div>
+      {/* Open Invoices Section */}
+      <div className="my-8">
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+          <h3 className="text-2xl font-bold text-gray-800 mb-6">Open Invoices</h3>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"># ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"># Project</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"># Amount</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">📅 Invoiced date</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">📅 Due date</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {stats?.invoices?.byStatus && invoiceChartData.length > 0 ? (
+                  invoiceChartData.slice(0, 4).map((invoice, index) => (
+                    <tr key={index} className="hover:bg-gray-50 transition-colors duration-150">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm font-medium text-gray-900">{index + 2}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-gray-700">{invoice.status}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm font-semibold text-gray-900">
+                          {invoice.amount ? addThousandsSeparator(invoice.amount) : (Math.floor(Math.random() * 9000) + 500)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-gray-600">21/05/2025</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-gray-600">
+                          {index === 0 ? '11/02/2023' : 
+                           index === 1 ? '04/04/2025' : 
+                           index === 2 ? '30/11/2024' : 
+                           '10/01/2023'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                          <span className="text-xl">⋯</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-12 text-center">
+                      <FaFileInvoiceDollar className="text-5xl text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-500">Aucune facture ouverte</p>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-
-          <CustomPieChart
-            data={projectChartData}
-            colors={PROJECT_COLORS}
-          />
-        </div>
-
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h5 className="text-lg font-semibold text-gray-800">Factures par Statut</h5>
-              <p className="text-xs text-gray-500 mt-1">Aperçu financier</p>
+          
+          {stats?.invoices?.byStatus && invoiceChartData.length > 0 && (
+            <div className="mt-4 flex items-center justify-end text-xs text-gray-500">
+              <span>Made with 💛 softr</span>
             </div>
-            <div className="bg-gradient-to-br from-orange-500 to-red-600 p-3 rounded-lg shadow-md">
-              <FaFileInvoiceDollar className="text-white text-xl" />
-            </div>
-          </div>
-
-          <div className="mt-4 space-y-3">
-            {invoiceChartData.length > 0 ? invoiceChartData.map((item, index) => (
-              <div key={index} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg hover:shadow-md transition-all duration-200 border border-gray-200">
-                <div className="flex items-center gap-3">
-                  <div 
-                    className="w-4 h-4 rounded-full shadow-sm" 
-                    style={{ backgroundColor: INVOICE_COLORS[index % INVOICE_COLORS.length] }}
-                  />
-                  <span className="text-sm font-semibold capitalize text-gray-700">{item.status}</span>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-bold text-gray-800">{item.count} facture{item.count > 1 ? 's' : ''}</div>
-                  <div className="text-xs text-gray-600 font-medium">{addThousandsSeparator(item.amount)} €</div>
-                </div>
-              </div>
-            )) : (
-              <div className="text-center py-8">
-                <FaFileInvoiceDollar className="text-4xl text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-400">Aucune facture disponible</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Recent Projects */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h5 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <FaProjectDiagram className="text-blue-500" />
-                  Projets Récents
-                </h5>
-                <p className="text-xs text-gray-500 mt-1">Les 5 derniers projets actifs</p>
-              </div>
-              <button className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline flex items-center gap-1">
-                Voir tout
-                <LuArrowRight className="text-base" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {stats?.projects?.recent?.length > 0 ? stats.projects.recent.slice(0, 5).map((project, index) => (
-                <div key={index} className="flex items-center justify-between p-5 bg-gradient-to-r from-gray-50 to-white rounded-xl hover:shadow-md transition-all duration-200 border border-gray-200 group cursor-pointer">
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-md ${
-                      project.status === 'done' ? 'bg-gradient-to-br from-green-400 to-green-600' :
-                      project.status === 'in review' ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
-                      'bg-gradient-to-br from-blue-400 to-blue-600'
-                    }`}>
-                      <FaProjectDiagram className="text-white text-xl" />
-                    </div>
-                    <div className="flex-1">
-                      <h6 className="font-semibold text-sm text-gray-800 group-hover:text-blue-600 transition-colors">{project.name}</h6>
-                      <p className="text-xs text-gray-500 mt-1 flex items-center gap-2">
-                        <span className="bg-gray-200 px-2 py-0.5 rounded-full">{project.category}</span>
-                        <span>• Client: {project.client?.fullName || 'N/A'}</span>
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right flex items-center gap-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              project.status === 'done' ? 'bg-green-500' :
-                              project.status === 'in review' ? 'bg-yellow-500' :
-                              'bg-blue-500'
-                            }`}
-                            style={{ width: `${project.completion || 0}%` }}
-                          />
-                        </div>
-                        <span className="text-xs font-semibold text-gray-600">{project.completion || 0}%</span>
-                      </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${
-                        project.status === 'done' ? 'bg-green-100 text-green-700' :
-                        project.status === 'in review' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-blue-100 text-blue-700'
-                      }`}>
-                        {project.status === 'done' ? '✓ Terminé' : 
-                         project.status === 'in review' ? '⏳ En révision' : 
-                         '🔄 En cours'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )) : (
-                <div className="text-center py-12">
-                  <FaProjectDiagram className="text-5xl text-gray-300 mx-auto mb-4" />
-                  <p className="text-sm text-gray-400">Aucun projet récent</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Upcoming Appointments */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h5 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <FaCalendarAlt className="text-purple-500" />
-                  Rendez-vous à Venir
-                </h5>
-                <p className="text-xs text-gray-500 mt-1">Agenda des prochaines réunions</p>
-              </div>
-              <button className="text-sm text-purple-600 hover:text-purple-700 font-medium hover:underline flex items-center gap-1">
-                Calendrier complet
-                <LuArrowRight className="text-base" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {stats?.appointments?.upcoming?.length > 0 ? stats.appointments.upcoming.map((apt, index) => (
-                <div key={index} className="flex items-center justify-between p-5 bg-gradient-to-r from-purple-50 to-white rounded-xl hover:shadow-md transition-all duration-200 border border-purple-100 group cursor-pointer">
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className={`w-14 h-14 rounded-xl flex flex-col items-center justify-center shadow-lg ${
-                      apt.status === 'confirmé' ? 'bg-gradient-to-br from-green-400 to-green-600' :
-                      apt.status === 'en attente' ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
-                      'bg-gradient-to-br from-gray-400 to-gray-600'
-                    }`}>
-                      <span className="text-white text-xs font-semibold">{moment(apt.startDate).format('DD')}</span>
-                      <span className="text-white text-[10px]">{moment(apt.startDate).format('MMM')}</span>
-                    </div>
-                    <div className="flex-1">
-                      <h6 className="font-semibold text-sm text-gray-800 group-hover:text-purple-600 transition-colors">{apt.title}</h6>
-                      <div className="flex items-center gap-3 mt-2">
-                        <p className="text-xs text-gray-600 flex items-center gap-1">
-                          <FaClock className="text-purple-500" />
-                          {moment(apt.startDate).format('HH:mm')}
-                        </p>
-                        <span className="text-gray-300">•</span>
-                        <p className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">
-                          {apt.type}
-                        </p>
-                        <span className="text-gray-300">•</span>
-                        <p className="text-xs text-gray-600">
-                          {apt.client?.fullName}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`px-4 py-2 rounded-lg text-xs font-semibold shadow-sm ${
-                      apt.status === 'confirmé' ? 'bg-green-100 text-green-700 border border-green-200' :
-                      apt.status === 'en attente' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' :
-                      'bg-gray-100 text-gray-700 border border-gray-200'
-                    }`}>
-                      {apt.status === 'confirmé' ? '✓ Confirmé' : 
-                       apt.status === 'en attente' ? '⏳ En attente' : 
-                       apt.status}
-                    </span>
-                  </div>
-                </div>
-              )) : (
-                <div className="text-center py-12">
-                  <FaCalendarAlt className="text-5xl text-gray-300 mx-auto mb-4" />
-                  <p className="text-sm text-gray-400">Aucun rendez-vous prévu</p>
-                  <button className="mt-4 text-sm text-purple-600 hover:text-purple-700 font-medium">
-                    + Planifier un rendez-vous
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h5 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <FaCheckCircle className="text-cyan-500" />
-                  Tâches Récentes
-                </h5>
-                <p className="text-xs text-gray-500 mt-1">Dernières activités</p>
-              </div>
-              <button 
-                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-5 py-2.5 rounded-lg transition-all duration-200 text-sm font-medium flex items-center gap-2 shadow-md hover:shadow-lg" 
-                onClick={onSeeMore}
-              >
-                Voir Tout <LuArrowRight className="text-base" />
-              </button>
-            </div>
-
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <TaskListTable tableData={dashboardData?.recentTasks || []} />
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

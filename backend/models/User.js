@@ -6,6 +6,29 @@ const UserSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     profileImageUrl: { type: String, default: null },
+    phoneNumber: { type: String, default: null },
+    company: { type: String, default: null },
+    address: { type: String, default: null },
+    website: { type: String, default: null },
+    logoUrl: { type: String, default: null },
+    companySize: { type: String, default: null },
+    industry: { 
+      type: String, 
+      enum: [
+        "REAL ESTATE", 
+        "LEGAL", 
+        "AUTOMOTIVE", 
+        "FINANCE", 
+        "TECHNOLOGY", 
+        "HEALTHCARE", 
+        "RETAIL", 
+        "MANUFACTURING", 
+        "CONSULTING", 
+        "OTHER",
+        null
+      ],
+      default: null 
+    },
     role: { type: String, enum: ["admin", "member"], default: "member" }, // Role-based access
     language: {
       type: String,

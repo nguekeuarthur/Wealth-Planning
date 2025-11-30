@@ -184,6 +184,9 @@ const sendVerificationEmail = async (user, lang = 'FR') => {
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = async (req, res) => {
+  console.log("[AUTH][REGISTER] Incoming request body:", {
+    rawBody: req.body,
+  });
   try {
     const { name, email, password, profileImageUrl, adminInviteToken, language } =
       req.body;
@@ -261,12 +264,12 @@ const registerUser = async (req, res) => {
     console.error("[registerUser] Error:", error);
     // Si c'est une erreur de duplication MongoDB
     if (error.code === 11000) {
-      return res.status(400).json({ 
-        message: "Un utilisateur avec cet email existe déjà." 
+      return res.status(400).json({
+        message: "Un utilisateur avec cet email existe déjà."
       });
     }
-    res.status(500).json({ 
-      message: "Erreur serveur", 
+    res.status(500).json({
+      message: "Erreur serveur",
       error: error.message,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
@@ -277,6 +280,9 @@ const registerUser = async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = async (req, res) => {
+  console.log("[AUTH][LOGIN] Incoming request body:", {
+    rawBody: req.body,
+  });
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -360,6 +366,7 @@ const loginUser = async (req, res) => {
       refreshTokenExpiresAt: expiresAt,
     });
   } catch (error) {
+    console.error("[AUTH][LOGIN] Error:", error);
     res.status(500).json({ message: "Erreur serveur", error: error.message });
   }
 };

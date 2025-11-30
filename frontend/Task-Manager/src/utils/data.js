@@ -4,6 +4,8 @@ import {
     LuClipboardCheck,
     LuSquarePlus,
     LuLogOut,
+    LuUserCheck,
+    LuFileText,
   
   } from "react-icons/lu";
   
@@ -17,24 +19,42 @@ import {
     },
     {
       id: "02",
-      label: "Manage Tasks",
+      label: "Projects",
       icon: LuClipboardCheck,
-      path: "/admin/tasks",
+      path: "/admin/projects",
     },
     {
       id: "03",
+      label: "Clients",
+      icon: LuUserCheck,
+      path: "/admin/clients",
+    },
+    {
+      id: "04",
+      label: "Team",
+      icon: LuUsers,
+      path: "/admin/team",
+    },
+    {
+      id: "05",
+      label: "Invoices",
+      icon: LuFileText,
+      path: "/admin/invoices",
+    },
+    {
+      id: "06",
+      label: "Contracts",
+      icon: LuFileText,
+      path: "/admin/contracts",
+    },
+    {
+      id: "07",
       label: "Create Task",
       icon: LuSquarePlus,
       path: "/admin/create-task",
     },
     {
-      id: "04",
-      label: "Team Members",
-      icon: LuUsers,
-      path: "/admin/users",
-    },
-    {
-      id: "05",
+      id: "08",
       label: "Logout",
       icon: LuLogOut,
       path: "logout",

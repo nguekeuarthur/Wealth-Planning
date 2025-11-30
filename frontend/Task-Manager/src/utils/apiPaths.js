@@ -23,6 +23,14 @@ export const API_PATHS = {
     DELETE_USER: (userId) => `/api/users/${userId}`, // Delete a user
   },
 
+  CLIENTS: {
+    GET_ALL_CLIENTS: "/api/clients", // Get all clients (Admin only)
+    GET_CLIENT_BY_ID: (clientId) => `/api/clients/${clientId}`, // Get client by ID
+    CREATE_CLIENT: "/api/clients", // Create a new client (Admin only)
+    UPDATE_CLIENT: (clientId) => `/api/clients/${clientId}`, // Update client details
+    DELETE_CLIENT: (clientId) => `/api/clients/${clientId}`, // Delete a client
+  },
+
   TASKS: {
     GET_DASHBOARD_DATA: "/api/tasks/dashboard-data", // Get Dashboard Data
     GET_USER_DASHBOARD_DATA: "/api/tasks/user-dashboard-data", // Get User Dashboard Data
@@ -43,5 +51,40 @@ export const API_PATHS = {
 
   IMAGE: {
     UPLOAD_IMAGE: "/api/auth/upload-image",
+  },
+
+  DASHBOARD: {
+    PATRIMOINE_OVERVIEW: "/api/dashboard/patrimoine-overview",
+    PENDING_TASKS: "/api/dashboard/pending-tasks",
+    RECENT_DISCUSSIONS: "/api/dashboard/recent-discussions-documents",
+    STATS: "/api/dashboard/stats",
+    ADMIN_STATS: "/api/dashboard/admin/stats",
+  },
+
+  PROJECTS: {
+    GET_ALL_PROJECTS: "/api/projects",
+    GET_PROJECT_BY_ID: (projectId) => `/api/projects/${projectId}`,
+    GET_PROJECT_DETAILS: "/api/projects/:id",
+    CREATE_PROJECT: "/api/projects",
+    UPDATE_PROJECT: (projectId) => `/api/projects/${projectId}`,
+    DELETE_PROJECT: (projectId) => `/api/projects/${projectId}`,
+    GET_STATS: "/api/projects/stats",
+  },
+
+  INVOICES: {
+    GET_ALL_INVOICES: "/api/invoices",
+    GET_INVOICE_BY_ID: (invoiceId) => `/api/invoices/${invoiceId}`,
+    CREATE_INVOICE: "/api/invoices",
+    UPDATE_INVOICE: (invoiceId) => `/api/invoices/${invoiceId}`,
+    DELETE_INVOICE: (invoiceId) => `/api/invoices/${invoiceId}`,
+    GET_STATS: "/api/invoices/stats",
+  },
+
+  DOCUMENTS: {
+    GET_ALL_DOCUMENTS: "/api/documents",
+    GET_DOCUMENT_BY_ID: (documentId) => `/api/documents/${documentId}`,
+    UPLOAD_DOCUMENT: "/api/documents",
+    UPDATE_DOCUMENT: (documentId) => `/api/documents/${documentId}`,
+    DELETE_DOCUMENT: (documentId) => `/api/documents/${documentId}`,
   },
 };

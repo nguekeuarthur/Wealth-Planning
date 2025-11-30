@@ -38,6 +38,10 @@ const projectSchema = new mongoose.Schema({
     ref: 'User', 
     required: true 
   },
+  projectLead: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User'
+  },
   assignedUsers: [{ 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User' 
@@ -48,6 +52,7 @@ const projectSchema = new mongoose.Schema({
   },
   endDate: Date,
   description: String,
+  imageUrl: String,
   tasks: [{ 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Task' 

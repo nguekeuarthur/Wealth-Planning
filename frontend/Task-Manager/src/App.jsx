@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Outlet, Navigate } from "react-router-dom";
 import Dashboard from "./pages/Admin/Dashboard";
+import PatrimoineOverview from "./pages/Admin/PatrimoineOverview";
 import Login from "./pages/Auth/Login";
 import SignUp from "./pages/Auth/SignUp";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
@@ -9,6 +10,14 @@ import VerifyEmail from "./pages/Auth/VerifyEmail";
 import ManageTasks from "./pages/Admin/ManageTasks";
 import CreateTask from "./pages/Admin/CreateTask";
 import ManageUsers from "./pages/Admin/ManageUsers";
+import AllProjects from "./pages/Admin/AllProjects";
+import ProjectDetails from "./pages/Admin/ProjectDetails";
+import AllClients from "./pages/Admin/AllClients";
+import ClientDetails from "./pages/Admin/ClientDetails";
+import AllTeamMembers from "./pages/Admin/AllTeamMembers";
+import TeamMemberDetails from "./pages/Admin/TeamMemberDetails";
+import AllInvoices from "./pages/Admin/AllInvoices";
+import AllContracts from "./pages/Admin/AllContracts";
 
 import UserDashboard from "./pages/User/UserDashboard";
 import MyTasks from "./pages/User/MyTasks";
@@ -52,6 +61,15 @@ const App = () => {
             {/* Admin Routes */}
             <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
               <Route path="/admin/dashboard" element={<Dashboard />} />
+              <Route path="/admin/patrimoine" element={<PatrimoineOverview />} />
+              <Route path="/admin/projects" element={<AllProjects />} />
+              <Route path="/admin/project/:id" element={<ProjectDetails />} />
+              <Route path="/admin/clients" element={<AllClients />} />
+              <Route path="/admin/client/:id" element={<ClientDetails />} />
+              <Route path="/admin/team" element={<AllTeamMembers />} />
+              <Route path="/admin/team/:id" element={<TeamMemberDetails />} />
+              <Route path="/admin/invoices" element={<AllInvoices />} />
+              <Route path="/admin/contracts" element={<AllContracts />} />
               <Route path="/admin/tasks" element={<ManageTasks />} />
               <Route path="/admin/create-task" element={<CreateTask />} />
               <Route path="/admin/users" element={<ManageUsers />} />
