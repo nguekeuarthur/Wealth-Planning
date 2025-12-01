@@ -3,6 +3,7 @@ import Progress from "../Progress";
 import AvatarGroup from "../AvatarGroup";
 import { LuPaperclip } from "react-icons/lu";
 import moment from "moment";
+import "moment/locale/fr";
 
 const TaskCard = ({
   title,
