@@ -6,20 +6,21 @@ import {
     LuLogOut,
     LuUserCheck,
     LuFileText,
-  
+    LuBell,
+
   } from "react-icons/lu";
   
   
   export const SIDE_MENU_DATA = [
     {
       id: "01",
-      label: "Dashboard",
+      label: "Tableau de bord",
       icon: LuLayoutDashboard,
       path: "/admin/dashboard",
     },
     {
       id: "02",
-      label: "Projects",
+      label: "Projets",
       icon: LuClipboardCheck,
       path: "/admin/projects",
     },
@@ -31,31 +32,37 @@ import {
     },
     {
       id: "04",
-      label: "Team",
+      label: "Équipe",
       icon: LuUsers,
       path: "/admin/team",
     },
     {
       id: "05",
-      label: "Invoices",
+      label: "Factures",
       icon: LuFileText,
       path: "/admin/invoices",
     },
     {
       id: "06",
-      label: "Contracts",
+      label: "Contrats",
       icon: LuFileText,
       path: "/admin/contracts",
     },
     {
       id: "07",
-      label: "Create Task",
+      label: "Créer une tâche",
       icon: LuSquarePlus,
       path: "/admin/create-task",
     },
     {
       id: "08",
-      label: "Logout",
+      label: "Notifications",
+      icon: LuBell,
+      path: "/admin/notifications",
+    },
+    {
+      id: "09",
+      label: "Déconnexion",
       icon: LuLogOut,
       path: "logout",
     },
@@ -64,19 +71,19 @@ import {
   export const SIDE_MENU_USER_DATA = [
     {
       id: "01",
-      label: "Dashboard",
+      label: "Tableau de bord",
       icon: LuLayoutDashboard,
       path: "/user/dashboard",
     },
     {
       id: "02",
-      label: "My Tasks",
+      label: "Mes tâches",
       icon: LuClipboardCheck,
       path: "/user/tasks",
     },
     {
       id: "05",
-      label: "Logout",
+      label: "Déconnexion",
       icon: LuLogOut,
       path: "logout",
     },

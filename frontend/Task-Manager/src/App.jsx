@@ -18,6 +18,7 @@ import AllTeamMembers from "./pages/Admin/AllTeamMembers";
 import TeamMemberDetails from "./pages/Admin/TeamMemberDetails";
 import AllInvoices from "./pages/Admin/AllInvoices";
 import AllContracts from "./pages/Admin/AllContracts";
+import AllNotifications from "./pages/Admin/AllNotifications";
 
 import UserDashboard from "./pages/User/UserDashboard";
 import MyTasks from "./pages/User/MyTasks";
@@ -70,6 +71,7 @@ const App = () => {
               <Route path="/admin/team/:id" element={<TeamMemberDetails />} />
               <Route path="/admin/invoices" element={<AllInvoices />} />
               <Route path="/admin/contracts" element={<AllContracts />} />
+              <Route path="/admin/notifications" element={<AllNotifications />} />
               <Route path="/admin/tasks" element={<ManageTasks />} />
               <Route path="/admin/create-task" element={<CreateTask />} />
               <Route path="/admin/users" element={<ManageUsers />} />

@@ -14,6 +14,15 @@ import AddAttachmentsInput from "../../components/Inputs/AddAttachmentsInput";
 import DeleteAlert from "../../components/DeleteAlert";
 import Modal from "../../components/Modal";
 
+const brandPalette = {
+  primary: "#1e4029",
+  secondary: "#2d5f3f",
+  accent: "#5a8f6f",
+  soft: "#f4f7f4",
+  border: "#dfe8e1",
+  muted: "#7a8b7f",
+};
+
 const CreateTask = () => {
   const location = useLocation();
   const { taskId } = location.state || {};
@@ -69,7 +78,7 @@ const CreateTask = () => {
         todoChecklist: todolist,
       });
 
-      toast.success("Task Created Successfully");
+      toast.success("Tâche créée avec succès");
 
       clearData();
     } catch (error) {
@@ -104,7 +113,7 @@ const CreateTask = () => {
         }
       );
 
-      toast.success("Task Updated Successfully");
+      toast.success("Tâche mise à jour avec succès");
     } catch (error) {
       console.error("Error creating task:", error);
       setLoading(false);
@@ -118,25 +127,25 @@ const CreateTask = () => {
 
     // Input validation
     if (!taskData.title.trim()) {
-      setError("Title is required.");
+      setError("Le titre est requis.");
       return;
     }
     if (!taskData.description.trim()) {
-      setError("Description is required.");
+      setError("La description est requise.");
       return;
     }
     if (!taskData.dueDate) {
-      setError("Due date is required.");
+      setError("La date d'échéance est requise.");
       return;
     }
 
     if (taskData.assignedTo?.length === 0) {
-      setError("Task not assigned to any member");
+      setError("La tâche doit être assignée à au moins un membre");
       return;
     }
 
     if (taskData.todoChecklist?.length === 0) {
-      setError("Add atleast one todo task");
+      setError("Ajoutez au moins une tâche dans la checklist");
       return;
     }
 
@@ -183,7 +192,7 @@ const CreateTask = () => {
       await axiosInstance.delete(API_PATHS.TASKS.DELETE_TASK(taskId));
 
       setOpenDeleteAlert(false);
-      toast.success("Task details deleted successfully");
+      toast.success("Détails de la tâche supprimés avec succès");
       navigate('/admin/tasks')
     } catch (error) {
       console.error(
@@ -203,32 +212,58 @@ const CreateTask = () => {
 
   return (
     <DashboardLayout activeMenu="Create Task">
-      <div className="mt-5">
-        <div className="grid grid-cols-1 md:grid-cols-4 mt-4">
-          <div className="form-card col-span-3">
+      {/* Header Section with Enhanced Design */}
+      <div className="relative bg-gradient-to-br from-[#1e4029] via-[#2d5f3f] to-[#1e4029] rounded-2xl shadow-xl p-8 my-6 overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+        </div>
+
+        <div className="relative flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          {/* Title Section */}
+          <div className="flex-1">
+            <p className="text-white/70 text-sm font-medium uppercase tracking-wider">
+              Gestion des tâches
+            </p>
+            <h1 className="text-3xl lg:text-4xl font-bold text-white leading-tight">
+              {taskId ? "Modifier la tâche" : "Créer une tâche"}
+            </h1>
+            <p className="text-white/80 mt-2">
+              {taskId
+                ? "Modifiez les détails de votre tâche existante"
+                : "Créez une nouvelle tâche et assignez-la à votre équipe"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-4">
+          <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 col-span-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl md:text-xl font-medium">
-                {taskId ? "Update Task" : "Create Task"}
+              <h2 className="text-xl md:text-xl font-medium text-[#1e4029]">
+                {taskId ? "Modifier la tâche" : "Créer une tâche"}
               </h2>
 
               {taskId && (
                 <button
-                  className="flex items-center gap-1.5 text-[13px] font-medium text-rose-500 bg-rose-50 rounded px-2 py-1 border border-rose-100 hover:border-rose-300 cursor-pointer"
+                  className="flex items-center gap-1.5 text-[13px] font-medium text-red-600 bg-red-50 rounded px-2 py-1 border border-red-200 hover:border-red-300 cursor-pointer"
                   onClick={() => setOpenDeleteAlert(true)}
                 >
-                  <LuTrash2 className="text-base" /> Delete
+                  <LuTrash2 className="text-base" /> Supprimer
                 </button>
               )}
             </div>
 
             <div className="mt-4">
-              <label className="text-xs font-medium text-slate-600">
-                Task Title
+              <label className="text-xs font-medium text-[#7a8b7f]">
+                Titre de la tâche
               </label>
 
               <input
-                placeholder="Create App UI"
-                className="form-input"
+                placeholder="Créer l'interface utilisateur de l'app"
+                className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors text-[#1e4029]"
                 value={taskData.title}
                 onChange={({ target }) =>
                   handleValueChange("title", target.value)
@@ -237,13 +272,13 @@ const CreateTask = () => {
             </div>
 
             <div className="mt-3">
-              <label className="text-xs font-medium text-slate-600">
+              <label className="text-xs font-medium text-[#7a8b7f]">
                 Description
               </label>
 
               <textarea
-                placeholder="Describe task"
-                className="form-input"
+                placeholder="Décrire la tâche"
+                className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors text-[#1e4029] resize-none"
                 rows={4}
                 value={taskData.description}
                 onChange={({ target }) =>
@@ -254,26 +289,25 @@ const CreateTask = () => {
 
             <div className="grid grid-cols-12 gap-4 mt-2">
               <div className="col-span-6 md:col-span-4">
-                <label className="text-xs font-medium text-slate-600">
-                  Priority
+                <label className="text-xs font-medium text-[#7a8b7f]">
+                  Priorité
                 </label>
 
                 <SelectDropdown
                   options={PRIORITY_DATA}
                   value={taskData.priority}
                   onChange={(value) => handleValueChange("priority", value)}
-                  placeholder="Select Priority"
+                  placeholder="Sélectionner la priorité"
                 />
               </div>
 
               <div className="col-span-6 md:col-span-4">
-                <label className="text-xs font-medium text-slate-600">
-                  Due Date
+                <label className="text-xs font-medium text-[#7a8b7f]">
+                  Date d'échéance
                 </label>
 
                 <input
-                  placeholder="Create App UI"
-                  className="form-input"
+                  className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors text-[#1e4029]"
                   value={taskData.dueDate}
                   onChange={({ target }) =>
                     handleValueChange("dueDate", target.value)
@@ -283,8 +317,8 @@ const CreateTask = () => {
               </div>
 
               <div className="col-span-12 md:col-span-3">
-                <label className="text-xs font-medium text-slate-600">
-                  Assign To
+                <label className="text-xs font-medium text-[#7a8b7f]">
+                  Assigner à
                 </label>
 
                 <SelectUsers
@@ -297,8 +331,8 @@ const CreateTask = () => {
             </div>
 
             <div className="mt-3">
-              <label className="text-xs font-medium text-slate-600">
-                TODO Checklist
+              <label className="text-xs font-medium text-[#7a8b7f]">
+                Liste de tâches
               </label>
 
               <TodoListInput
@@ -310,8 +344,8 @@ const CreateTask = () => {
             </div>
 
             <div className="mt-3">
-              <label className="text-xs font-medium text-slate-600">
-                Add Attachments
+              <label className="text-xs font-medium text-[#7a8b7f]">
+                Ajouter des pièces jointes
               </label>
 
               <AddAttachmentsInput
@@ -328,11 +362,11 @@ const CreateTask = () => {
 
             <div className="flex justify-end mt-7">
               <button
-                className="add-btn"
+                className="bg-[#2d5f3f] text-white px-8 py-3 rounded-xl hover:bg-[#1e4029] transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
                 onClick={handleSubmit}
                 disabled={loading}
               >
-                {taskId ? "UPDATE TASK" : "CREATE TASK"}
+                {taskId ? "METTRE À JOUR LA TÂCHE" : "CRÉER LA TÂCHE"}
               </button>
             </div>
           </div>
@@ -342,10 +376,10 @@ const CreateTask = () => {
       <Modal
         isOpen={openDeleteAlert}
         onClose={() => setOpenDeleteAlert(false)}
-        title="Delete Task"
+        title="Supprimer la tâche"
       >
         <DeleteAlert
-          content="Are you sure you want to delete this task?"
+          content="Êtes-vous sûr de vouloir supprimer cette tâche ?"
           onDelete={() => deleteTask()}
         />
       </Modal>

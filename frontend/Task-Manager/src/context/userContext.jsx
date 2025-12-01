@@ -26,9 +26,9 @@ const UserProvider = ({ children }) => {
     const bootstrap = async () => {
       const { token } = getSession();
       if (!token) {
-        setLoading(false);
-        return;
-      }
+      setLoading(false);
+      return;
+    }
 
       try {
         const response = await axiosInstance.get(API_PATHS.AUTH.GET_PROFILE);

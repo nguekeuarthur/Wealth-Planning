@@ -3,10 +3,19 @@ import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
-import { FiSearch, FiMail, FiPhone, FiUser, FiPlus, FiEdit2, FiTrash2, FiGlobe } from "react-icons/fi";
+import { FiSearch, FiMail, FiPhone, FiUser, FiPlus, FiEdit2, FiTrash2, FiGlobe, FiUsers } from "react-icons/fi";
 import { LuBuilding2 } from "react-icons/lu";
 import toast from "react-hot-toast";
 import CreateClientModal from "../../components/CreateClientModal";
+
+const brandPalette = {
+  primary: "#1e4029",
+  secondary: "#2d5f3f",
+  accent: "#5a8f6f",
+  soft: "#f4f7f4",
+  border: "#dfe8e1",
+  muted: "#7a8b7f",
+};
 
 const AllClients = () => {
   const navigate = useNavigate();
@@ -92,17 +101,18 @@ const AllClients = () => {
   }, {});
 
   const getIndustryColor = (industry) => {
+    // Utilise des variations de la palette verte pour différencier les industries
     const colors = {
-      "REAL ESTATE": "bg-blue-100 text-blue-700 border-blue-200",
-      "LEGAL": "bg-purple-100 text-purple-700 border-purple-200",
-      "AUTOMOTIVE": "bg-red-100 text-red-700 border-red-200",
-      "FINANCE": "bg-green-100 text-green-700 border-green-200",
-      "TECHNOLOGY": "bg-indigo-100 text-indigo-700 border-indigo-200",
-      "HEALTHCARE": "bg-pink-100 text-pink-700 border-pink-200",
-      "RETAIL": "bg-orange-100 text-orange-700 border-orange-200",
-      "MANUFACTURING": "bg-gray-100 text-gray-700 border-gray-200",
-      "CONSULTING": "bg-yellow-100 text-yellow-700 border-yellow-200",
-      "OTHER": "bg-slate-100 text-slate-700 border-slate-200"
+      "REAL ESTATE": "bg-[#f4f7f4] text-[#1e4029] border-[#dfe8e1]",
+      "LEGAL": "bg-[#e6f0ea] text-[#2d5f3f] border-[#dfe8e1]",
+      "AUTOMOTIVE": "bg-[#f4f7f4] text-[#1e4029] border-[#dfe8e1]",
+      "FINANCE": "bg-[#dff5e7] text-[#1e4029] border-[#dfe8e1]",
+      "TECHNOLOGY": "bg-[#e6f0ea] text-[#2d5f3f] border-[#dfe8e1]",
+      "HEALTHCARE": "bg-[#f4f7f4] text-[#1e4029] border-[#dfe8e1]",
+      "RETAIL": "bg-[#e6f0ea] text-[#2d5f3f] border-[#dfe8e1]",
+      "MANUFACTURING": "bg-[#f4f7f4] text-[#1e4029] border-[#dfe8e1]",
+      "CONSULTING": "bg-[#dff5e7] text-[#1e4029] border-[#dfe8e1]",
+      "OTHER": "bg-[#f4f7f4] text-[#7a8b7f] border-[#dfe8e1]"
     };
     return colors[industry] || colors["OTHER"];
   };
@@ -150,34 +160,60 @@ const AllClients = () => {
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">All Clients</h1>
-            <p className="text-sm text-gray-500 mt-1">{allClients.length} clients</p>
-          </div>
-          <button
-            onClick={handleAddClient}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
-          >
-            <FiPlus className="w-5 h-5" />
-            Add client
-          </button>
+    <DashboardLayout activeMenu="Clients">
+      {/* Header Section with Enhanced Design */}
+      <div className="relative bg-gradient-to-br from-[#1e4029] via-[#2d5f3f] to-[#1e4029] rounded-2xl shadow-xl p-8 my-6 overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
         </div>
+
+        <div className="relative flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          {/* Title Section */}
+          <div className="flex-1">
+            <p className="text-white/70 text-sm font-medium uppercase tracking-wider">
+              Gestion des clients
+            </p>
+            <h1 className="text-3xl lg:text-4xl font-bold text-white leading-tight">
+              Tous les clients
+            </h1>
+            <p className="text-white/80 mt-2">
+              Gérez votre portefeuille client et suivez vos relations commerciales
+            </p>
+            <p className="text-white/60 mt-1 text-sm">
+              {allClients.length} client{allClients.length !== 1 ? 's' : ''} au total
+            </p>
+          </div>
+
+          {/* Action Button */}
+          <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
+            <button
+              onClick={handleAddClient}
+              className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
+            >
+              <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+                <FiPlus className="text-lg" />
+              </div>
+              Nouveau client
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-6">
 
         {/* Search and Filter */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
             <div className="relative">
-              <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#7a8b7f]" />
               <input
                 type="text"
-                placeholder="Search by name, company, website, email or industry..."
+                placeholder="Rechercher par nom, entreprise, site web, email ou secteur..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-11 pr-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors"
               />
             </div>
           </div>
@@ -185,9 +221,9 @@ const AllClients = () => {
             <select
               value={selectedIndustry}
               onChange={(e) => setSelectedIndustry(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] cursor-pointer transition-colors"
             >
-              <option value="all">All Industries</option>
+              <option value="all">Tous les secteurs</option>
               {industries.slice(1).map((industry) => (
                 <option key={industry} value={industry}>
                   {industry}
@@ -204,11 +240,11 @@ const AllClients = () => {
               <div key={industry}>
                 {/* Industry Header */}
                 <div className="flex items-center gap-3 mb-4">
-                  <h2 className="text-xl font-semibold text-gray-800">
+                  <h2 className="text-xl font-semibold text-[#1e4029]">
                     {industry}
                   </h2>
-                  <span className="text-sm text-gray-500">
-                    ({clients.length})
+                  <span className="text-sm text-[#7a8b7f]">
+                    ({clients.length} client{clients.length !== 1 ? 's' : ''})
                   </span>
                 </div>
 
@@ -218,10 +254,10 @@ const AllClients = () => {
                     <div
                       key={client._id}
                       onClick={() => navigate(`/admin/client/${client._id}`)}
-                      className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-all border border-gray-200 overflow-hidden cursor-pointer group"
+                      className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 border border-[#dfe8e1] overflow-hidden cursor-pointer group hover:border-[#5a8f6f]/30"
                     >
                       {/* Logo/Image Section */}
-                      <div className="h-32 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 group-hover:from-blue-50 group-hover:to-purple-50 transition-colors">
+                      <div className="h-32 bg-gradient-to-br from-[#f4f7f4] to-[#e8f0e8] flex items-center justify-center p-4 group-hover:from-[#e6f0ea] group-hover:to-[#e6f0ea] transition-colors">
                         {client.logoUrl && client.logoUrl.trim() !== "" ? (
                           <>
                             <img
@@ -235,12 +271,12 @@ const AllClients = () => {
                                 if (fallback) fallback.style.display = 'flex';
                               }}
                             />
-                            <div className="fallback-avatar w-20 h-20 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 items-center justify-center shadow-md" style={{ display: 'none' }}>
+                            <div className="fallback-avatar w-20 h-20 rounded-xl bg-gradient-to-br from-[#5a8f6f] to-[#2d5f3f] items-center justify-center shadow-md" style={{ display: 'none' }}>
                               <LuBuilding2 className="w-10 h-10 text-white" />
                             </div>
                           </>
                         ) : (
-                          <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-md">
+                          <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-[#5a8f6f] to-[#2d5f3f] flex items-center justify-center shadow-md">
                             <LuBuilding2 className="w-10 h-10 text-white" />
                           </div>
                         )}
@@ -250,13 +286,13 @@ const AllClients = () => {
                       <div className="p-5">
                         {/* Client Name/Company */}
                         <div className="mb-3">
-                          <h3 className="font-bold text-gray-900 text-lg mb-1 line-clamp-2 min-h-[3.5rem] group-hover:text-blue-600 transition-colors">
-                            {client.companyName || "No Name"}
+                          <h3 className="font-bold text-[#1e4029] text-lg mb-1 line-clamp-2 min-h-[3.5rem] group-hover:text-[#2d5f3f] transition-colors">
+                            {client.companyName || "Sans nom"}
                           </h3>
-                          
+
                           {/* Industry Badge */}
                           {client.industry && (
-                            <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${getIndustryColor(client.industry.toUpperCase())}`}>
+                            <span className={`inline-block px-2 py-1 rounded-lg text-xs font-semibold border ${getIndustryColor(client.industry.toUpperCase())}`}>
                               {client.industry}
                             </span>
                           )}
@@ -269,7 +305,7 @@ const AllClients = () => {
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium mb-3 hover:underline"
+                            className="inline-flex items-center gap-1.5 text-sm text-[#2d5f3f] hover:text-[#1e4029] font-medium mb-3 hover:underline transition-colors"
                           >
                             <FiGlobe className="w-4 h-4" />
                             <span className="truncate">{client.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
@@ -277,22 +313,22 @@ const AllClients = () => {
                         )}
 
                         {/* Contact Details */}
-                        <div className="space-y-2 pt-3 border-t border-gray-100">
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <FiMail className="text-gray-400 flex-shrink-0" size={14} />
+                        <div className="space-y-2 pt-3 border-t border-[#dfe8e1]">
+                          <div className="flex items-center gap-2 text-sm text-[#7a8b7f]">
+                            <FiMail className="text-[#7a8b7f] flex-shrink-0" size={14} />
                             <span className="truncate">{client.email}</span>
                           </div>
-                          
+
                           {client.phoneNumber && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <FiPhone className="text-gray-400 flex-shrink-0" size={14} />
+                            <div className="flex items-center gap-2 text-sm text-[#7a8b7f]">
+                              <FiPhone className="text-[#7a8b7f] flex-shrink-0" size={14} />
                               <span>{client.phoneNumber}</span>
                             </div>
                           )}
 
                           {client.contactName && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <FiUser className="text-gray-400 flex-shrink-0" size={14} />
+                            <div className="flex items-center gap-2 text-sm text-[#7a8b7f]">
+                              <FiUser className="text-[#7a8b7f] flex-shrink-0" size={14} />
                               <span className="truncate">{client.contactName}</span>
                             </div>
                           )}
@@ -300,10 +336,10 @@ const AllClients = () => {
 
                         {/* Projects Count */}
                         {client.projects && client.projects.length > 0 && (
-                          <div className="mt-3 pt-3 border-t border-gray-100">
-                            <div className="flex items-center justify-between text-xs text-gray-500">
-                              <span>Projects</span>
-                              <span className="font-semibold text-blue-600">
+                          <div className="mt-3 pt-3 border-t border-[#dfe8e1]">
+                            <div className="flex items-center justify-between text-xs text-[#7a8b7f]">
+                              <span>Projets</span>
+                              <span className="font-semibold text-[#2d5f3f]">
                                 {client.projects.length}
                               </span>
                             </div>
@@ -311,17 +347,17 @@ const AllClients = () => {
                         )}
 
                         {/* Actions */}
-                        <div className="mt-4 pt-3 border-t border-gray-100">
+                        <div className="mt-4 pt-3 border-t border-[#dfe8e1]">
                           <div className="flex items-center gap-2">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleEditClient(client);
                               }}
-                              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors text-sm font-medium"
+                              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-[#e6f0ea] text-[#2d5f3f] rounded-lg hover:bg-[#e6f0ea]/80 transition-colors text-sm font-medium"
                             >
                               <FiEdit2 size={14} />
-                              Edit
+                              Modifier
                             </button>
                             <button
                               onClick={(e) => {
@@ -329,10 +365,10 @@ const AllClients = () => {
                                 handleDeleteClient(client._id);
                               }}
                               disabled={deletingClient === client._id}
-                              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <FiTrash2 size={14} />
-                              {deletingClient === client._id ? "..." : "Delete"}
+                              {deletingClient === client._id ? "..." : "Supprimer"}
                             </button>
                           </div>
                         </div>
@@ -345,23 +381,25 @@ const AllClients = () => {
           </div>
         ) : (
           // Empty State
-          <div className="text-center py-16 bg-white rounded-lg shadow-sm">
-            <LuBuilding2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-medium text-gray-700 mb-2">
-              {searchQuery || selectedIndustry !== "all" ? "No clients found" : "No clients yet"}
+          <div className="text-center py-16 bg-white border border-[#dfe8e1] rounded-2xl">
+            <div className="p-6 bg-[#f4f7f4] rounded-2xl mb-6 w-fit mx-auto">
+              <FiUsers className="text-[#5a8f6f] text-6xl" />
+            </div>
+            <h3 className="text-xl font-medium text-[#1e4029] mb-2">
+              {searchQuery || selectedIndustry !== "all" ? "Aucun client trouvé" : "Aucun client pour le moment"}
             </h3>
-            <p className="text-gray-500 mb-6">
+            <p className="text-[#7a8b7f] mb-6">
               {searchQuery || selectedIndustry !== "all"
-                ? "Try adjusting your search or filter"
-                : "Start by adding your first client"}
+                ? "Essayez d'ajuster votre recherche ou votre filtre"
+                : "Commencez par ajouter votre premier client"}
             </p>
             {!searchQuery && selectedIndustry === "all" && (
               <button
                 onClick={handleAddClient}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#2d5f3f] text-white rounded-xl hover:bg-[#1e4029] transition-colors font-medium"
               >
                 <FiPlus className="w-5 h-5" />
-                Add your first client
+                Ajouter votre premier client
               </button>
             )}
           </div>

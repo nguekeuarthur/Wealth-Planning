@@ -3,9 +3,21 @@ import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
-import { FiSearch, FiMail, FiPhone, FiUser, FiPlus, FiEdit2, FiTrash2 } from "react-icons/fi";
+import {
+  FiSearch, FiMail, FiPhone, FiUser, FiPlus,
+  FiEdit3, FiTrash2, FiExternalLink
+} from "react-icons/fi";
 import toast from "react-hot-toast";
 import CreateTeamMemberModal from "../../components/CreateTeamMemberModal";
+
+const brandPalette = {
+  primary: "#1e4029",
+  secondary: "#2d5f3f",
+  accent: "#5a8f6f",
+  soft: "#f4f7f4",
+  border: "#dfe8e1",
+  muted: "#7a8b7f",
+};
 
 const AllClients = () => {
   const navigate = useNavigate();
@@ -18,36 +30,21 @@ const AllClients = () => {
   const [editingClient, setEditingClient] = useState(null);
   const [deletingClient, setDeletingClient] = useState(null);
 
-  // Industries/Sectors available
   const industries = [
-    "All Industries",
-    "REAL ESTATE",
-    "LEGAL",
-    "AUTOMOTIVE",
-    "FINANCE",
-    "TECHNOLOGY",
-    "HEALTHCARE",
-    "RETAIL",
-    "MANUFACTURING",
-    "CONSULTING",
-    "OTHER"
+    "All Industries", "REAL ESTATE", "LEGAL", "AUTOMOTIVE", "FINANCE", 
+    "TECHNOLOGY", "HEALTHCARE", "RETAIL", "MANUFACTURING", "CONSULTING", "OTHER"
   ];
 
   const getAllClients = async () => {
     try {
       setLoading(true);
       const response = await axiosInstance.get(API_PATHS.USERS.GET_ALL_USERS);
-      console.log("API Response:", response.data);
-      
-      // Backend returns users with role 'member' only
       const users = response.data?.users || [];
-      
-      console.log(`Loaded ${users.length} clients`);
       setAllClients(users);
       setFilteredClients(users);
     } catch (error) {
-      console.error("Error fetching clients:", error);
-      toast.error("Failed to load clients");
+      console.error("Erreur lors de la récupération des clients :", error);
+      toast.error("Échec du chargement des clients");
     } finally {
       setLoading(false);
     }
@@ -60,18 +57,17 @@ const AllClients = () => {
   useEffect(() => {
     let filtered = allClients;
 
-    // Filter by search query
     if (searchQuery.trim() !== "") {
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter((client) =>
-        client.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        client.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        client.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        client.website?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        client.industry?.toLowerCase().includes(searchQuery.toLowerCase())
+        client.name?.toLowerCase().includes(query) ||
+        client.email?.toLowerCase().includes(query) ||
+        client.company?.toLowerCase().includes(query) ||
+        client.website?.toLowerCase().includes(query) ||
+        client.industry?.toLowerCase().includes(query)
       );
     }
 
-    // Filter by industry
     if (selectedIndustry !== "all" && selectedIndustry !== "All Industries") {
       filtered = filtered.filter(
         (client) => client.industry?.toUpperCase() === selectedIndustry.toUpperCase()
@@ -81,28 +77,27 @@ const AllClients = () => {
     setFilteredClients(filtered);
   }, [searchQuery, selectedIndustry, allClients]);
 
-  // Group clients by industry
   const groupedClients = filteredClients.reduce((acc, client) => {
     const industry = client.industry?.toUpperCase() || "OTHER";
-    if (!acc[industry]) {
-      acc[industry] = [];
-    }
+    if (!acc[industry]) acc[industry] = [];
     acc[industry].push(client);
     return acc;
   }, {});
 
+  // Palette de couleurs harmonisée avec le thème vert du site
   const getIndustryColor = (industry) => {
+    // Utilise des variations de la palette verte pour différencier les industries
     const colors = {
-      "REAL ESTATE": "bg-blue-100 text-blue-700 border-blue-200",
-      "LEGAL": "bg-purple-100 text-purple-700 border-purple-200",
-      "AUTOMOTIVE": "bg-red-100 text-red-700 border-red-200",
-      "FINANCE": "bg-green-100 text-green-700 border-green-200",
-      "TECHNOLOGY": "bg-indigo-100 text-indigo-700 border-indigo-200",
-      "HEALTHCARE": "bg-pink-100 text-pink-700 border-pink-200",
-      "RETAIL": "bg-orange-100 text-orange-700 border-orange-200",
-      "MANUFACTURING": "bg-gray-100 text-gray-700 border-gray-200",
-      "CONSULTING": "bg-teal-100 text-teal-700 border-teal-200",
-      "OTHER": "bg-gray-100 text-gray-600 border-gray-200"
+      "REAL ESTATE": "bg-[#f4f7f4] text-[#1e4029] border-[#dfe8e1]",
+      "LEGAL": "bg-[#e6f0ea] text-[#2d5f3f] border-[#dfe8e1]",
+      "AUTOMOTIVE": "bg-[#f4f7f4] text-[#1e4029] border-[#dfe8e1]",
+      "FINANCE": "bg-[#dff5e7] text-[#1e4029] border-[#dfe8e1]",
+      "TECHNOLOGY": "bg-[#e6f0ea] text-[#2d5f3f] border-[#dfe8e1]",
+      "HEALTHCARE": "bg-[#f4f7f4] text-[#1e4029] border-[#dfe8e1]",
+      "RETAIL": "bg-[#e6f0ea] text-[#2d5f3f] border-[#dfe8e1]",
+      "MANUFACTURING": "bg-[#f4f7f4] text-[#1e4029] border-[#dfe8e1]",
+      "CONSULTING": "bg-[#dff5e7] text-[#1e4029] border-[#dfe8e1]",
+      "OTHER": "bg-[#f4f7f4] text-[#7a8b7f] border-[#dfe8e1]"
     };
     return colors[industry] || colors["OTHER"];
   };
@@ -119,32 +114,24 @@ const AllClients = () => {
 
   const handleClientCreated = (newClient) => {
     if (editingClient) {
-      // Update existing client
       setAllClients(allClients.map(c => c._id === newClient._id ? newClient : c));
       setFilteredClients(filteredClients.map(c => c._id === newClient._id ? newClient : c));
     } else {
-      // Add new client
       setAllClients([newClient, ...allClients]);
       setFilteredClients([newClient, ...filteredClients]);
     }
   };
 
   const handleDeleteClient = async (clientId) => {
-    if (!window.confirm("Are you sure you want to delete this client? This action cannot be undone.")) {
-      return;
-    }
-
+    if (!window.confirm("Êtes-vous sûr ? Cette action ne peut pas être annulée.")) return;
     try {
       setDeletingClient(clientId);
       await axiosInstance.delete(API_PATHS.USERS.DELETE_USER(clientId));
-      
       setAllClients(allClients.filter(c => c._id !== clientId));
       setFilteredClients(filteredClients.filter(c => c._id !== clientId));
-      
-      toast.success("Client deleted successfully");
+      toast.success("Client supprimé avec succès");
     } catch (error) {
-      console.error("Error deleting client:", error);
-      toast.error(error.response?.data?.message || "Failed to delete client");
+      toast.error(error.response?.data?.message || "Échec de la suppression");
     } finally {
       setDeletingClient(null);
     }
@@ -152,213 +139,200 @@ const AllClients = () => {
 
   if (loading) {
     return (
-      <DashboardLayout activeMenu="Clients">
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading clients...</p>
-          </div>
+      <DashboardLayout activeMenu="Team">
+        <div className="flex flex-col items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5a8f6f]"></div>
+          <p className="mt-4 text-[#2d5f3f] font-medium">Chargement de l'équipe...</p>
         </div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout activeMenu="Clients">
-      <div className="my-5">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-semibold">All Clients</h1>
-            <div className="text-sm text-gray-600 mt-1">
-              {filteredClients.length} {filteredClients.length === 1 ? "client" : "clients"}
-            </div>
-          </div>
-          <button
-            onClick={handleAddClient}
-            className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
-          >
-            <FiPlus className="text-lg" />
-            Add client
-          </button>
+    <DashboardLayout activeMenu="Team">
+      {/* Header Section with Enhanced Design */}
+      <div className="relative bg-gradient-to-br from-[#1e4029] via-[#2d5f3f] to-[#1e4029] rounded-2xl shadow-xl p-8 my-6 overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
         </div>
 
-        {/* Filters Section */}
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Search Bar */}
-          <div className="relative">
-            <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl" />
-            <input
-              type="text"
-              placeholder="Search by name, company, website, email or industry..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
-            />
+        <div className="relative flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          {/* Title Section */}
+          <div className="flex-1">
+            <p className="text-white/70 text-sm font-medium uppercase tracking-wider">
+              Gestion de l'équipe
+            </p>
+            <h1 className="text-3xl lg:text-4xl font-bold text-white leading-tight">
+              Membres de l'équipe
+            </h1>
+            <p className="text-white/80 mt-2">
+              Gérez et suivez tous les membres de votre équipe
+            </p>
+            <p className="text-white/60 mt-1 text-sm">
+              {filteredClients.length} membre{filteredClients.length !== 1 ? 's' : ''} dans l'équipe
+            </p>
           </div>
 
-          {/* Industry Filter */}
+          {/* Action Button */}
+          <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
+            <button
+              onClick={handleAddClient}
+              className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
+            >
+              <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+                <FiPlus className="text-lg" />
+              </div>
+              Nouveau membre
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+
+        {/* Search and Filter */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-2">
+            <div className="relative">
+              <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#7a8b7f]" />
+              <input
+                type="text"
+                placeholder="Rechercher par nom, entreprise ou email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-11 pr-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors"
+              />
+            </div>
+          </div>
           <div>
             <select
               value={selectedIndustry}
               onChange={(e) => setSelectedIndustry(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300 cursor-pointer"
+              className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] cursor-pointer transition-colors"
             >
-              <option value="all">All Industries</option>
+              <option value="all">Tous les secteurs</option>
               {industries.slice(1).map((industry) => (
-                <option key={industry} value={industry}>
-                  {industry}
-                </option>
+                <option key={industry} value={industry}>{industry}</option>
               ))}
             </select>
           </div>
         </div>
 
-        {/* Clients Display by Industry */}
+        {/* Clients Grid */}
         {Object.keys(groupedClients).length > 0 ? (
-          <div className="space-y-8">
+          <div className="space-y-10">
             {Object.entries(groupedClients).map(([industry, clients]) => (
-              <div key={industry}>
-                {/* Industry Header */}
-                <div className="flex items-center gap-3 mb-4">
-                  <h2 className="text-xl font-semibold text-gray-800">
-                    {industry}
+              <div key={industry} className="animate-fadeIn">
+                <div className="flex items-center gap-3 mb-5 border-b border-[#dfe8e1] pb-2">
+                  <h2 className="text-lg font-bold text-[#1e4029] tracking-wide uppercase">
+                    {industry === 'OTHER' ? 'AUTRES' : industry}
                   </h2>
-                  <span className="text-sm text-gray-500">
-                    ({clients.length})
+                  <span className="bg-[#f4f7f4] text-[#7a8b7f] text-xs px-2.5 py-0.5 rounded-full font-medium">
+                    {clients.length}
                   </span>
                 </div>
 
-                {/* Clients Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
                   {clients.map((client) => (
                     <div
                       key={client._id}
                       onClick={() => navigate(`/admin/team/${client._id}`)}
-                      className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-all border border-gray-200 overflow-hidden cursor-pointer group"
+                      className="group bg-white rounded-2xl border border-[#dfe8e1] hover:border-[#5a8f6f] hover:shadow-xl hover:shadow-[#5a8f6f]/5 transition-all duration-300 cursor-pointer overflow-hidden relative h-64"
                     >
-                      {/* Logo/Image Section */}
-                      <div className="h-32 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 group-hover:from-blue-50 group-hover:to-purple-50 transition-colors">
-                        {client.logoUrl && client.logoUrl.trim() !== "" ? (
-                          <>
-                            <img
-                              src={client.logoUrl}
-                              alt={client.company || client.name}
-                              className="max-h-20 max-w-full object-contain"
-                              style={{ display: 'block' }}
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                                const fallback = e.target.parentElement.querySelector('.fallback-avatar');
-                                if (fallback) fallback.style.display = 'flex';
-                              }}
-                            />
-                            <div className="fallback-avatar w-20 h-20 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 items-center justify-center shadow-md" style={{ display: 'none' }}>
-                              <span className="text-white text-3xl font-bold">
+                      {/* Decorative Top Gradient */}
+                      <div className="h-16 bg-gradient-to-br from-[#f4f7f4] via-[#e8f0e8] to-white opacity-80 group-hover:opacity-100 transition-opacity"></div>
+                      
+                      {/* Avatar/Logo - Floating Effect */}
+                      <div className="absolute top-2 left-1/2 transform -translate-x-1/2">
+                        <div className="w-14 h-14 rounded-xl bg-white p-1 shadow-md border border-gray-100 group-hover:scale-105 transition-transform duration-300">
+                           {client.logoUrl && client.logoUrl.trim() !== "" ? (
+                              <img
+                                src={client.logoUrl}
+                                alt={client.company}
+                                className="w-full h-full object-contain rounded-lg"
+                                onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                              />
+                           ) : null}
+                           <div className={`w-full h-full rounded-lg bg-gradient-to-br from-[#5a8f6f] to-[#2d5f3f] flex items-center justify-center ${client.logoUrl ? 'hidden' : 'flex'}`}>
+                              <span className="text-white text-xl font-bold shadow-sm">
                                 {(client.company || client.name)?.charAt(0).toUpperCase() || "C"}
                               </span>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-md">
-                            <span className="text-white text-3xl font-bold">
-                              {(client.company || client.name)?.charAt(0).toUpperCase() || "C"}
-                            </span>
-                          </div>
-                        )}
+                           </div>
+                        </div>
                       </div>
 
-                      {/* Client Info Section */}
-                      <div className="p-5">
-                        {/* Client Name/Company */}
-                        <div className="mb-3">
-                          <h3 className="font-bold text-gray-900 text-lg mb-1 line-clamp-2 min-h-[3.5rem] group-hover:text-blue-600 transition-colors">
-                            {client.company || client.name || "No Name"}
-                          </h3>
-                          
-                          {/* Industry Badge */}
-                          {client.industry && (
-                            <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${getIndustryColor(client.industry.toUpperCase())}`}>
-                              {client.industry}
-                            </span>
-                          )}
+                      {/* Content */}
+                      <div className="absolute bottom-0 left-0 right-0 pt-2 px-4 pb-4 h-48 overflow-hidden">
+                        <div className="mt-8 mb-3">
+                          <div className="flex justify-between items-start">
+                             <h3 className="font-bold text-[#1e4029] text-base leading-tight group-hover:text-[#2d5f3f] transition-colors line-clamp-1">
+                               {client.company || client.name || "Membre sans nom"}
+                             </h3>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                             {client.industry && (
+                               <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold border ${getIndustryColor(client.industry.toUpperCase())}`}>
+                                 {client.industry}
+                               </span>
+                             )}
+                          </div>
                         </div>
 
-                        {/* Website Link */}
-                        {client.website && (
-                          <a
-                            href={client.website.startsWith('http') ? client.website : `https://${client.website}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium mb-3 hover:underline"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                            </svg>
-                            <span className="truncate">{client.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
-                          </a>
-                        )}
-
-                        {/* Contact Details */}
-                        <div className="space-y-2 pt-3 border-t border-gray-100">
+                        {/* Details */}
+                        <div className="space-y-2 text-sm text-[#7a8b7f] mb-4 flex-grow">
+                          {client.website && (
+                            <div className="flex items-center gap-2 group/link">
+                              <FiExternalLink className="text-[#7a8b7f] group-hover/link:text-[#2d5f3f]" />
+                              <a
+                                href={client.website.startsWith('http') ? client.website : `https://${client.website}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="hover:text-[#2d5f3f] truncate hover:underline decoration-[#5a8f6f] underline-offset-2 transition-colors"
+                              >
+                                {client.website.replace(/^https?:\/\//, '')}
+                              </a>
+                            </div>
+                          )}
                           {client.email && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <FiMail className="text-gray-400 flex-shrink-0" size={14} />
+                            <div className="flex items-center gap-2">
+                              <FiMail className="text-[#7a8b7f] flex-shrink-0" />
                               <span className="truncate">{client.email}</span>
                             </div>
                           )}
-                          
                           {client.phoneNumber && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <FiPhone className="text-gray-400 flex-shrink-0" size={14} />
-                              <span>{client.phoneNumber}</span>
-                            </div>
-                          )}
-
-                          {client.name && client.company && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <FiUser className="text-gray-400 flex-shrink-0" size={14} />
-                              <span className="truncate">{client.name}</span>
+                            <div className="flex items-center gap-2">
+                              <FiPhone className="text-[#7a8b7f] flex-shrink-0" />
+                              <span className="truncate">{client.phoneNumber}</span>
                             </div>
                           )}
                         </div>
 
-                        {/* Actions & Member Since */}
-                        <div className="mt-4 pt-3 border-t border-gray-100 space-y-3">
-                          {/* Action Buttons */}
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditClient(client);
-                              }}
-                              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors text-sm font-medium"
-                            >
-                              <FiEdit2 size={14} />
-                              Edit
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteClient(client._id);
-                              }}
-                              disabled={deletingClient === client._id}
-                              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <FiTrash2 size={14} />
-                              {deletingClient === client._id ? "..." : "Delete"}
-                            </button>
-                          </div>
-                          
-                          {/* Member Since */}
-                          <div className="flex items-center justify-between text-xs text-gray-500">
-                            <span>Member since</span>
-                            <span className="font-medium text-gray-700">
-                              {new Date(client.createdAt).toLocaleDateString('en-US', { 
-                                month: 'short', 
-                                year: 'numeric' 
-                              })}
+                        {/* Action Footer */}
+                        <div className="pt-3 border-t border-gray-50 flex items-center justify-between opacity-80 group-hover:opacity-100 transition-opacity">
+                            <span className="text-xs text-gray-400 font-medium">
+                                Membre depuis {new Date(client.createdAt).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric'})}
                             </span>
-                          </div>
+                            
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleEditClient(client); }}
+                                    className="p-2 rounded-lg text-[#2d5f3f] bg-[#e6f0ea] hover:bg-[#e6f0ea]/80 transition-colors"
+                                    title="Modifier"
+                                >
+                                    <FiEdit3 size={16} />
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteClient(client._id); }}
+                                    disabled={deletingClient === client._id}
+                                    className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                    title="Supprimer"
+                                >
+                                    <FiTrash2 size={16} />
+                                </button>
+                            </div>
                         </div>
                       </div>
                     </div>
@@ -368,22 +342,32 @@ const AllClients = () => {
             ))}
           </div>
         ) : (
-          // Empty State
-          <div className="text-center py-16">
-            <div className="text-gray-400 text-6xl mb-4">👥</div>
-            <h3 className="text-xl font-medium text-gray-700 mb-2">
-              {searchQuery || selectedIndustry !== "all" ? "No clients found" : "No clients yet"}
+          /* Empty State */
+          <div className="text-center py-16 bg-white border border-[#dfe8e1] rounded-2xl">
+            <div className="p-6 bg-[#f4f7f4] rounded-2xl mb-6 w-fit mx-auto">
+              <FiUser className="text-[#5a8f6f] text-6xl" />
+            </div>
+            <h3 className="text-xl font-medium text-[#1e4029] mb-2">
+              {searchQuery ? "Aucun membre trouvé" : "Aucun membre dans l'équipe"}
             </h3>
-            <p className="text-gray-500 mb-6">
-              {searchQuery || selectedIndustry !== "all"
-                ? "Try adjusting your search or filter"
-                : "Clients will appear here once added to the system"}
+            <p className="text-[#7a8b7f] mb-6">
+              {searchQuery
+                ? "Essayez d'ajuster votre recherche"
+                : "Commencez par ajouter votre premier membre d'équipe"}
             </p>
+            {!searchQuery && (
+              <button
+                onClick={handleAddClient}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#2d5f3f] text-white rounded-xl hover:bg-[#1e4029] transition-colors font-medium"
+              >
+                <FiPlus className="w-5 h-5" />
+                Ajouter un membre
+              </button>
+            )}
           </div>
         )}
       </div>
 
-      {/* Create/Edit Client Modal */}
       <CreateTeamMemberModal
         isOpen={isModalOpen}
         onClose={() => {

@@ -3,8 +3,17 @@ import DashboardLayout from "../../components/layouts/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
-import { FiSearch, FiPlus } from "react-icons/fi";
+import { FiSearch, FiPlus, FiFolder } from "react-icons/fi";
 import CreateProjectModal from "../../components/CreateProjectModal";
+
+const brandPalette = {
+  primary: "#1e4029",
+  secondary: "#2d5f3f",
+  accent: "#5a8f6f",
+  soft: "#f4f7f4",
+  border: "#dfe8e1",
+  muted: "#7a8b7f",
+};
 
 const AllProjects = () => {
   const [allProjects, setAllProjects] = useState([]);
@@ -55,13 +64,13 @@ const AllProjects = () => {
   const getStatusBadgeClass = (status) => {
     switch (status) {
       case "in progress":
-        return "bg-orange-100 text-orange-600";
+        return "bg-[#e6f0ea] text-[#2d5f3f]";
       case "in review":
-        return "bg-blue-100 text-blue-600";
+        return "bg-[#fff7d6] text-[#7b6a25]";
       case "done":
-        return "bg-green-100 text-green-600";
+        return "bg-[#dff5e7] text-[#1e4029]";
       default:
-        return "bg-gray-100 text-gray-600";
+        return "bg-[#f4f7f4] text-[#7a8b7f]";
     }
   };
 
@@ -80,28 +89,54 @@ const AllProjects = () => {
 
   return (
     <DashboardLayout activeMenu="Projects">
-      <div className="my-5">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-semibold">All Projects</h1>
-          <button
-            onClick={handleAddProject}
-            className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
-          >
-            <FiPlus className="text-lg" />
-            Add project
-          </button>
+      {/* Header Section with Enhanced Design */}
+      <div className="relative bg-gradient-to-br from-[#1e4029] via-[#2d5f3f] to-[#1e4029] rounded-2xl shadow-xl p-8 my-6 overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
         </div>
 
+        <div className="relative flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          {/* Title Section */}
+          <div className="flex-1">
+            <p className="text-white/70 text-sm font-medium uppercase tracking-wider">
+              Gestion des projets
+            </p>
+            <h1 className="text-3xl lg:text-4xl font-bold text-white leading-tight">
+              Tous les projets
+            </h1>
+            <p className="text-white/80 mt-2">
+              Gérez et suivez tous vos projets en cours
+            </p>
+          </div>
+
+          {/* Action Button */}
+          <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
+            <button
+              onClick={handleAddProject}
+              className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
+            >
+              <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+                <FiPlus className="text-lg" />
+              </div>
+              Nouveau projet
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+
         {/* Search Bar */}
-        <div className="relative mb-6">
-          <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl" />
+        <div className="relative">
+          <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#7a8b7f] text-xl" />
           <input
             type="text"
-            placeholder="Search"
+            placeholder="Rechercher un projet..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300"
+            className="w-full pl-12 pr-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors"
           />
         </div>
 
@@ -111,10 +146,10 @@ const AllProjects = () => {
             <div
               key={project._id}
               onClick={() => handleProjectClick(project._id)}
-              className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-gray-200"
+              className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer border border-[#dfe8e1] hover:border-[#5a8f6f]/30"
             >
               {/* Project Image */}
-              <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200">
+              <div className="relative h-48 bg-gradient-to-br from-[#f4f7f4] to-[#e8f0e8]">
                 {project.imageUrl ? (
                   <img
                     src={project.imageUrl}
@@ -123,12 +158,12 @@ const AllProjects = () => {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <div className="text-6xl font-bold text-gray-300">
+                    <div className="text-6xl font-bold text-[#7a8b7f]">
                       {project.name.charAt(0).toUpperCase()}
                     </div>
                   </div>
                 )}
-                
+
                 {/* Status Badge */}
                 <div className="absolute top-3 left-3">
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(project.status)}`}>
@@ -138,29 +173,29 @@ const AllProjects = () => {
               </div>
 
               {/* Project Info */}
-              <div className="p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 truncate">
+              <div className="p-5">
+                <h3 className="text-lg font-semibold text-[#1e4029] mb-2 truncate">
                   {project.name}
                 </h3>
-                
+
                 {project.category && (
-                  <p className="text-sm text-gray-500 mb-3 truncate">
+                  <p className="text-sm text-[#7a8b7f] mb-3 truncate">
                     {project.category}
                   </p>
                 )}
 
                 {/* Progress Bar */}
                 {project.completion !== undefined && (
-                  <div className="mt-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-gray-500">Progress</span>
-                      <span className="text-xs font-medium text-gray-700">
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-[#7a8b7f]">Progression</span>
+                      <span className="text-xs font-medium text-[#2d5f3f]">
                         {project.completion}%
                       </span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-[#f4f7f4] rounded-full h-2">
                       <div
-                        className="bg-blue-600 h-2 rounded-full transition-all"
+                        className="bg-[#5a8f6f] h-2 rounded-full transition-all"
                         style={{ width: `${project.completion}%` }}
                       ></div>
                     </div>
@@ -169,11 +204,11 @@ const AllProjects = () => {
 
                 {/* Client Info */}
                 {project.client && (
-                  <div className="mt-3 flex items-center gap-2">
-                    <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs font-medium text-gray-600">
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className="w-6 h-6 bg-[#f4f7f4] rounded-full flex items-center justify-center text-xs font-medium text-[#7a8b7f]">
                       {project.client.fullName?.charAt(0).toUpperCase() || "C"}
                     </div>
-                    <span className="text-xs text-gray-600 truncate">
+                    <span className="text-xs text-[#7a8b7f] truncate">
                       {project.client.fullName || "Client"}
                     </span>
                   </div>
@@ -185,23 +220,25 @@ const AllProjects = () => {
 
         {/* Empty State */}
         {filteredProjects.length === 0 && (
-          <div className="text-center py-16">
-            <div className="text-gray-400 text-5xl mb-4">📁</div>
-            <h3 className="text-xl font-medium text-gray-700 mb-2">
-              {searchQuery ? "No projects found" : "No projects yet"}
+          <div className="text-center py-16 bg-white border border-[#dfe8e1] rounded-2xl">
+            <div className="p-6 bg-[#f4f7f4] rounded-2xl mb-6 w-fit mx-auto">
+              <FiFolder className="text-[#5a8f6f] text-6xl" />
+            </div>
+            <h3 className="text-xl font-medium text-[#1e4029] mb-2">
+              {searchQuery ? "Aucun projet trouvé" : "Aucun projet pour le moment"}
             </h3>
-            <p className="text-gray-500 mb-6">
+            <p className="text-[#7a8b7f] mb-6">
               {searchQuery
-                ? "Try adjusting your search"
-                : "Get started by creating your first project"}
+                ? "Essayez d'ajuster votre recherche"
+                : "Commencez par créer votre premier projet"}
             </p>
             {!searchQuery && (
               <button
                 onClick={handleAddProject}
-                className="inline-flex items-center gap-2 bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors"
+                className="inline-flex items-center gap-2 bg-[#2d5f3f] text-white px-6 py-3 rounded-xl hover:bg-[#1e4029] transition-colors font-medium"
               >
                 <FiPlus className="text-lg" />
-                Add project
+                Nouveau projet
               </button>
             )}
           </div>
