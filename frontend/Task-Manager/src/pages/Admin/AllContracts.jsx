@@ -186,7 +186,7 @@ const AllContracts = () => {
 
   if (loading) {
     return (
-      <DashboardLayout activeMenu="Contracts">
+      <DashboardLayout activeMenu="Contrats">
         <div className="flex flex-col items-center justify-center h-96">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5a8f6f]"></div>
           <p className="mt-4 text-[#2d5f3f] font-medium">Chargement des contrats...</p>

@@ -81,7 +81,7 @@ const ProjectDetails = () => {
 
   if (loading) {
     return (
-      <DashboardLayout activeMenu="Projects">
+      <DashboardLayout activeMenu="Projets">
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
@@ -94,7 +94,7 @@ const ProjectDetails = () => {
 
   if (!project) {
     return (
-      <DashboardLayout activeMenu="Projects">
+      <DashboardLayout activeMenu="Projets">
         <div className="flex flex-col items-center justify-center h-96">
           <div className="text-6xl mb-4">📁</div>
           <h3 className="text-xl font-semibold text-gray-700 mb-2">
@@ -112,7 +112,7 @@ const ProjectDetails = () => {
   }
 
   return (
-    <DashboardLayout activeMenu="Projects">
+    <DashboardLayout activeMenu="Projets">
       <div className="my-5">
         {/* Header */}
         <div className="mb-6">
