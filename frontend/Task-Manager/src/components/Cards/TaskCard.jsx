@@ -93,14 +93,14 @@ const TaskCard = ({
           <div>
             <label className="text-xs text-gray-500">Start Date</label>
             <p className="text-[13px] font-medium text-gray-900">
-              {moment(createdAt).format("Do MMM YYYY")}
+              {moment(createdAt).locale('fr').format("D MMM YYYY")}
             </p>
           </div>
 
           <div>
             <label className="text-xs text-gray-500">Due Date</label>
             <p className="text-[13px] font-medium text-gray-900">
-              {moment(dueDate).format("Do MMM YYYY")}
+              {moment(dueDate).locale('fr').format("D MMM YYYY")}
             </p>
           </div>
         </div>

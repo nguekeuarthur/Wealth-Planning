@@ -112,7 +112,7 @@ const ViewTaskDetails = () => {
                     label="Due Date"
                     value={
                       task?.dueDate
-                        ? moment(task?.dueDate).format("Do MMM YYYY")
+                        ? moment(task?.dueDate).locale('fr').format("D MMM YYYY")
                         : "N/A"
                     }
                   />

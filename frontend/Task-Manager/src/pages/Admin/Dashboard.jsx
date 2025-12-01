@@ -213,7 +213,7 @@ const Dashboard = () => {
               </span>
               <span className="text-white/60">•</span>
               <span className="text-sm font-medium">
-                {moment().format("dddd Do MMMM YYYY")}
+                {moment().locale('fr').format("dddd D MMMM YYYY")}
               </span>
             </div>
           </div>
@@ -371,7 +371,7 @@ const Dashboard = () => {
                     <FaCalendarAlt className="text-[#2d5f3f]" />
                     <span>
                       {project.startDate
-                        ? moment(project.startDate).format("DD MMM YYYY")
+                        ? moment(project.startDate).locale('fr').format("DD MMM YYYY")
                         : "Date à définir"}
                     </span>
                   </div>

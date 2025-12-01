@@ -41,7 +41,7 @@ const TaskListTable = ({tableData}) => {
               <td className="py-4 px-4">
                 <span className={`px-2 py-1 text-xs rounded inline-block ${getPriorityBadgeColor(task.priority)}`}>{task.priority}</span>
               </td>
-              <td className="py-4 px-4 text-gray-700 text-[13px] text-nowrap hidden md:table-cell">{task.createdAt ? moment(task.createdAt).format('Do MMM YYYY') : 'N/A'}</td>
+              <td className="py-4 px-4 text-gray-700 text-[13px] text-nowrap hidden md:table-cell">{task.createdAt ? moment(task.createdAt).locale('fr').format('D MMM YYYY') : 'N/A'}</td>
             </tr>
           ))}
         </tbody>
