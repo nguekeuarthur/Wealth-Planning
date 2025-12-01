@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
 import moment from "moment";
+import "moment/locale/fr";
 import { addThousandsSeparator } from "../../utils/helper";
 import InfoCard from "../../components/Cards/InfoCard";
 import { LuArrowRight } from "react-icons/lu";
@@ -82,7 +83,7 @@ const UserDashboard = () => {
           <div className="col-span-3">
             <h2 className="text-xl md:text-2xl">Good Morning! {user?.name}</h2>
             <p className="text-xs md:text-[13px] text-gray-400 mt-1.5">
-              {moment().format("dddd Do MMM YYYY")}
+              {moment().locale('fr').format("dddd D MMM YYYY")}
             </p>
           </div>
         </div>
