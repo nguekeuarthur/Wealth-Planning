@@ -8,6 +8,9 @@ import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
 import moment from "moment";
 import "moment/locale/fr";
+
+// Définir la locale française globalement
+moment.locale('fr');
 import { addThousandsSeparator } from "../../utils/helper";
 import { LuArrowRight } from "react-icons/lu";
 import {
@@ -214,7 +217,10 @@ const Dashboard = () => {
               </span>
               <span className="text-white/60">•</span>
               <span className="text-sm font-medium">
-                {moment().locale('fr').format("dddd D MMMM YYYY")}
+                {(() => {
+                  console.log('Moment test:', moment().format("dddd DD MMMM YYYY"));
+                  return moment().format("dddd DD MMMM YYYY");
+                })()}
               </span>
             </div>
           </div>
