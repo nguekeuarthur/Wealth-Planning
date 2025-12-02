@@ -1,6 +1,5 @@
 import React, { useContext } from "react";
 import { UserContext } from "../../context/userContext";
-import Navbar from "./Navbar";
 import SideMenu from "./SideMenu";
 
 const DashboardLayout = ({ children, activeMenu }) => {
@@ -8,13 +7,12 @@ const DashboardLayout = ({ children, activeMenu }) => {
 
   return (
     <div className="">
-      <Navbar activeMenu={activeMenu} />
       <SideMenu activeMenu={activeMenu} />
 
-      <div className="pt-20 pl-64">
+      <div className="pl-64 pt-0">
 
       {user && (
-        <div className="grow mx-8 mt-6">{children}</div>
+        <div className="grow mx-8">{children}</div>
       )}
     </div>
     </div>
