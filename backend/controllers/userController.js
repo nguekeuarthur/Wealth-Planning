@@ -7,7 +7,9 @@ const bcrypt = require("bcryptjs");
 // @access  Private (Admin)
 const getUsers = async (req, res) => {
   try {
-    const users = await User.find({ role: "member" }).select("-password");
+    const users = await User.find({ role: "member" })
+      .select("-password")
+      .populate('teams', 'name color department');
     
     console.log(`Found ${users.length} members in database`);
 
