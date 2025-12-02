@@ -9,17 +9,12 @@ const DashboardLayout = ({ children, activeMenu }) => {
   return (
     <div className="">
       <Navbar activeMenu={activeMenu} />
+      <SideMenu activeMenu={activeMenu} />
 
-      <div className="pt-20">
+      <div className="pt-20 pl-64">
 
       {user && (
-        <div className="flex">
-          <div className="max-[1080px]:hidden">
-            <SideMenu activeMenu={activeMenu} />
-          </div>
-
-          <div className="grow mx-8 mt-6">{children}</div>
-        </div>
+        <div className="grow mx-8 mt-6">{children}</div>
       )}
     </div>
     </div>
