@@ -22,6 +22,7 @@ const DashboardLayout = ({ children, activeMenu }) => {
         </div>
       )}
     </div>
+    </div>
   );
 };
 
