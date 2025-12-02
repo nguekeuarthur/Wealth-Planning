@@ -10,15 +10,6 @@ import {
 import toast from "react-hot-toast";
 import CreateTeamMemberModal from "../../components/CreateTeamMemberModal";
 
-const brandPalette = {
-  primary: "#1e4029",
-  secondary: "#2d5f3f",
-  accent: "#5a8f6f",
-  soft: "#f4f7f4",
-  border: "#dfe8e1",
-  muted: "#7a8b7f",
-};
-
 const AllClients = () => {
   const navigate = useNavigate();
   const [allClients, setAllClients] = useState([]);
