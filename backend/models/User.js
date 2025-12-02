@@ -7,6 +7,13 @@ const UserSchema = new mongoose.Schema(
     password: { type: String, required: true },
     profileImageUrl: { type: String, default: null },
     phoneNumber: { type: String, default: null },
+    birthDate: { type: Date, required: false, default: null },
+    nationality: { type: String, required: false, trim: true, default: null },
+    profileCompleted: { type: Boolean, default: false },
+    teams: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Team'
+    }],
     company: { type: String, default: null },
     address: { type: String, default: null },
     website: { type: String, default: null },
@@ -25,6 +32,7 @@ const UserSchema = new mongoose.Schema(
         "MANUFACTURING", 
         "CONSULTING", 
         "OTHER",
+        "AUTRES", // French value kept for backward compatibility
         null
       ],
       default: null 

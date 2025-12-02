@@ -8,15 +8,6 @@ import { LuBuilding2 } from "react-icons/lu";
 import toast from "react-hot-toast";
 import CreateClientModal from "../../components/CreateClientModal";
 
-const brandPalette = {
-  primary: "#1e4029",
-  secondary: "#2d5f3f",
-  accent: "#5a8f6f",
-  soft: "#f4f7f4",
-  border: "#dfe8e1",
-  muted: "#7a8b7f",
-};
-
 const AllClients = () => {
   const navigate = useNavigate();
   const [allClients, setAllClients] = useState([]);
@@ -188,15 +179,15 @@ const AllClients = () => {
 
           {/* Action Button */}
           <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
-            <button
-              onClick={handleAddClient}
+          <button
+            onClick={handleAddClient}
               className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
             >
               <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
                 <FiPlus className="text-lg" />
               </div>
               Nouveau client
-            </button>
+          </button>
           </div>
         </div>
       </div>
@@ -289,7 +280,7 @@ const AllClients = () => {
                           <h3 className="font-bold text-[#1e4029] text-lg mb-1 line-clamp-2 min-h-[3.5rem] group-hover:text-[#2d5f3f] transition-colors">
                             {client.companyName || "Sans nom"}
                           </h3>
-
+                          
                           {/* Industry Badge */}
                           {client.industry && (
                             <span className={`inline-block px-2 py-1 rounded-lg text-xs font-semibold border ${getIndustryColor(client.industry.toUpperCase())}`}>
@@ -318,7 +309,7 @@ const AllClients = () => {
                             <FiMail className="text-[#7a8b7f] flex-shrink-0" size={14} />
                             <span className="truncate">{client.email}</span>
                           </div>
-
+                          
                           {client.phoneNumber && (
                             <div className="flex items-center gap-2 text-sm text-[#7a8b7f]">
                               <FiPhone className="text-[#7a8b7f] flex-shrink-0" size={14} />

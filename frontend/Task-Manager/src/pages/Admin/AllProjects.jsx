@@ -113,15 +113,15 @@ const AllProjects = () => {
 
           {/* Action Button */}
           <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
-            <button
-              onClick={handleAddProject}
+          <button
+            onClick={handleAddProject}
               className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
-            >
+          >
               <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-                <FiPlus className="text-lg" />
+            <FiPlus className="text-lg" />
               </div>
               Nouveau projet
-            </button>
+          </button>
           </div>
         </div>
       </div>
@@ -163,7 +163,7 @@ const AllProjects = () => {
                     </div>
                   </div>
                 )}
-
+                
                 {/* Status Badge */}
                 <div className="absolute top-3 left-3">
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(project.status)}`}>
@@ -177,7 +177,7 @@ const AllProjects = () => {
                 <h3 className="text-lg font-semibold text-[#1e4029] mb-2 truncate">
                   {project.name}
                 </h3>
-
+                
                 {project.category && (
                   <p className="text-sm text-[#7a8b7f] mb-3 truncate">
                     {project.category}
@@ -256,3 +256,4 @@ const AllProjects = () => {
 };
 
 export default AllProjects;
+

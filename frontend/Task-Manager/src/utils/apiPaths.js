@@ -61,6 +61,16 @@ export const API_PATHS = {
     ADMIN_STATS: "/api/dashboard/admin/stats",
   },
 
+  TEAMS: {
+    GET_ALL_TEAMS: "/api/teams",
+    GET_TEAM_BY_ID: (teamId) => `/api/teams/${teamId}`,
+    CREATE_TEAM: "/api/teams",
+    UPDATE_TEAM: (teamId) => `/api/teams/${teamId}`,
+    DELETE_TEAM: (teamId) => `/api/teams/${teamId}`,
+    ADD_MEMBER: (teamId) => `/api/teams/${teamId}/members`,
+    REMOVE_MEMBER: (teamId, userId) => `/api/teams/${teamId}/members/${userId}`,
+  },
+
   PROJECTS: {
     GET_ALL_PROJECTS: "/api/projects",
     GET_PROJECT_BY_ID: (projectId) => `/api/projects/${projectId}`,

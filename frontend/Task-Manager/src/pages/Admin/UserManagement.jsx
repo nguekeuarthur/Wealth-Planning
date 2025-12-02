@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
-import { 
-  FiSearch, FiMail, FiPhone, FiUser, FiPlus, 
-  FiEdit3, FiTrash2, FiExternalLink, FiFlag, FiCalendar
+import {
+  FiSearch, FiMail, FiPhone, FiUser, FiPlus,
+  FiEdit3, FiTrash2, FiExternalLink, FiFlag, FiCalendar, FiUsers, FiX, FiBriefcase
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import CreateTeamMemberModal from "../../components/CreateTeamMemberModal";
@@ -15,12 +15,13 @@ const UserManagement = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRole, setSelectedRole] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [deletingUser, setDeletingUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   const roles = [
     { value: "all", label: "Tous les rôles" },
@@ -67,11 +68,6 @@ const UserManagement = () => {
       );
     }
 
-    // Filtre par rôle
-    if (selectedRole !== "all") {
-      filtered = filtered.filter((user) => user.role === selectedRole);
-    }
-
     // Filtre par statut (actif/inactif basé sur la dernière connexion)
     if (selectedStatus !== "all") {
       const thirtyDaysAgo = new Date();
@@ -89,14 +85,7 @@ const UserManagement = () => {
     }
 
     setFilteredUsers(filtered);
-  }, [searchQuery, selectedRole, selectedStatus, allUsers]);
-
-  const groupedClients = filteredClients.reduce((acc, client) => {
-    const industry = client.industry?.toUpperCase() || "OTHER";
-    if (!acc[industry]) acc[industry] = [];
-    acc[industry].push(client);
-    return acc;
-  }, {});
+  }, [searchQuery, selectedStatus, allUsers]);
 
   // Statistiques des utilisateurs
   const userStats = {
@@ -105,6 +94,11 @@ const UserManagement = () => {
     members: allUsers.filter(u => u.role === 'member').length,
     active: allUsers.filter(u => u.lastLoginAt && new Date(u.lastLoginAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length,
     inactive: allUsers.filter(u => !u.lastLoginAt || new Date(u.lastLoginAt) <= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length
+  };
+
+  const handleUserClick = (user) => {
+    setSelectedUser(user);
+    setIsDetailsModalOpen(true);
   };
 
   const handleAddUser = () => {
@@ -144,7 +138,7 @@ const UserManagement = () => {
 
   if (loading) {
     return (
-      <DashboardLayout activeMenu="Équipe">
+      <DashboardLayout activeMenu="Team">
         <div className="flex flex-col items-center justify-center h-96">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5a8f6f]"></div>
           <p className="mt-4 text-[#2d5f3f] font-medium">Chargement de l'équipe...</p>
@@ -159,8 +153,8 @@ const UserManagement = () => {
       <div className="relative bg-gradient-to-br from-[#1e4029] via-[#2d5f3f] to-[#1e4029] rounded-2xl shadow-xl p-8 my-6 overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-64 translate-x-32"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-8 -translate-x-24"></div>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
         </div>
 
         <div className="relative flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
@@ -180,47 +174,24 @@ const UserManagement = () => {
             </p>
           </div>
 
-          {/* Action Button */}
-          <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
-          <button
-              onClick={handleAddUser}
-              className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
-            >
-              <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-                <FiPlus className="text-lg" />
-              </div>
-              Nouvel utilisateur
-          </button>
-          </div>
         </div>
       </div>
 
       <div className="space-y-6">
 
         {/* Search and Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
             <div className="relative">
               <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#7a8b7f]" />
-            <input
-              type="text"
+              <input
+                type="text"
                 placeholder="Rechercher par nom, email ou téléphone..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors"
               />
             </div>
-          </div>
-          <div>
-            <select
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] cursor-pointer transition-colors"
-            >
-              {roles.map((role) => (
-                <option key={role.value} value={role.value}>{role.label}</option>
-              ))}
-            </select>
           </div>
           <div>
             <select
@@ -236,14 +207,10 @@ const UserManagement = () => {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-xl border border-[#dfe8e1] p-4 text-center hover:shadow-md transition-shadow">
             <div className="text-2xl font-bold text-[#1e4029]">{userStats.total}</div>
             <div className="text-xs text-[#7a8b7f] font-medium">Total</div>
-          </div>
-          <div className="bg-white rounded-xl border border-[#dfe8e1] p-4 text-center hover:shadow-md transition-shadow">
-            <div className="text-2xl font-bold text-red-600">{userStats.admins}</div>
-            <div className="text-xs text-[#7a8b7f] font-medium">Admins</div>
           </div>
           <div className="bg-white rounded-xl border border-[#dfe8e1] p-4 text-center hover:shadow-md transition-shadow">
             <div className="text-2xl font-bold text-[#5a8f6f]">{userStats.members}</div>
@@ -257,85 +224,76 @@ const UserManagement = () => {
             <div className="text-2xl font-bold text-gray-500">{userStats.inactive}</div>
             <div className="text-xs text-[#7a8b7f] font-medium">Inactifs</div>
           </div>
-                </div>
+        </div>
 
         {/* Users Grid */}
         {filteredUsers.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredUsers.map((user) => {
               const isActive = user.lastLoginAt && new Date(user.lastLoginAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 jours
 
               return (
                 <div
                   key={user._id}
-                  className="group bg-white rounded-2xl border border-[#dfe8e1] hover:border-[#5a8f6f] hover:shadow-xl hover:shadow-[#5a8f6f]/5 transition-all duration-300 overflow-hidden"
-                    >
+                  onClick={() => handleUserClick(user)}
+                  className="group bg-white rounded-2xl border border-[#dfe8e1] hover:border-[#5a8f6f] hover:shadow-xl hover:shadow-[#5a8f6f]/5 transition-all duration-300 cursor-pointer overflow-hidden"
+                >
                   {/* Header with role color */}
                   <div
-                    className={`h-12 flex items-center justify-center ${
+                    className={`h-6 ${
                       user.role === 'admin' ? 'bg-gradient-to-r from-red-500 to-red-600' :
                       'bg-gradient-to-r from-[#5a8f6f] to-[#4a7f5f]'
                     }`}
-                  >
-                    <span className="text-white text-xs font-semibold uppercase tracking-wider">
-                      {user.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
-                    </span>
-                  </div>
-                      
+                  ></div>
+
                   {/* Avatar */}
                   <div className="flex justify-center -mt-6">
                     <div className="w-12 h-12 rounded-full bg-white border-4 border-white shadow-md flex items-center justify-center">
                       {user.profileImageUrl ? (
-                              <img
+                        <img
                           src={user.profileImageUrl}
                           alt={user.name}
                           className="w-full h-full rounded-full object-cover"
-                                onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-                              />
-                           ) : null}
+                          onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                        />
+                      ) : null}
                       <div className={`w-full h-full rounded-full bg-gradient-to-br from-[#5a8f6f] to-[#2d5f3f] flex items-center justify-center ${user.profileImageUrl ? 'hidden' : 'flex'}`}>
                         <span className="text-white font-bold">
                           {user.name?.charAt(0).toUpperCase() || 'U'}
-                              </span>
-                           </div>
-                        </div>
+                        </span>
                       </div>
+                    </div>
+                  </div>
 
-                      {/* Content */}
+                  {/* Content */}
                   <div className="px-6 pb-6">
                     <div className="text-center mb-4">
                       <h3 className="font-bold text-[#1e4029] text-lg leading-tight group-hover:text-[#2d5f3f] transition-colors line-clamp-1">
                         {user.name || "Utilisateur sans nom"}
-                             </h3>
-                      <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mt-2 ${
-                        isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        <div className={`w-2 h-2 rounded-full mr-2 ${isActive ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                        {isActive ? 'Actif' : 'Inactif'}
-                          </div>
-                        </div>
+                      </h3>
+                    </div>
 
                     {/* Contact Info */}
                     <div className="space-y-3 mb-4">
                       <div className="flex items-center gap-2">
                         <FiMail className="text-[#7a8b7f] flex-shrink-0" size={14} />
                         <span className="text-sm text-[#7a8b7f] truncate">{user.email}</span>
-                            </div>
+                      </div>
 
                       {user.phoneNumber && (
-                            <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                           <FiPhone className="text-[#7a8b7f] flex-shrink-0" size={14} />
                           <span className="text-sm text-[#7a8b7f]">{user.phoneNumber}</span>
-                            </div>
-                          )}
+                        </div>
+                      )}
 
                       {user.company && (
-                            <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                           <FiUser className="text-[#7a8b7f] flex-shrink-0" size={14} />
                           <span className="text-sm text-[#7a8b7f] truncate">{user.company}</span>
-                            </div>
-                          )}
                         </div>
+                      )}
+                    </div>
 
                     {/* Last Login */}
                     <div className="mb-4 p-2 bg-[#f4f7f4] rounded-lg">
@@ -349,32 +307,10 @@ const UserManagement = () => {
                           month: 'short',
                           year: 'numeric'
                         }) : 'Jamais connecté'}
-                            </span>
+                      </span>
                     </div>
-                            
-                    {/* Actions */}
-                            <div className="flex gap-2">
-                                <button
-                        onClick={(e) => { e.stopPropagation(); handleEditUser(user); }}
-                        className="flex-1 p-2 rounded-lg text-[#2d5f3f] bg-[#e6f0ea] hover:bg-[#e6f0ea]/80 transition-colors text-xs font-medium"
-                        title="Modifier"
-                                >
-                        <FiEdit3 size={14} className="mx-auto" />
-                                </button>
-                                <button
-                        onClick={(e) => { e.stopPropagation(); handleDeleteUser(user._id); }}
-                        disabled={deletingUser === user._id}
-                        className="flex-1 p-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors text-xs font-medium disabled:opacity-50"
-                        title="Supprimer"
-                      >
-                        {deletingUser === user._id ? (
-                          <div className="animate-spin rounded-full h-3.5 w-3.5 border border-red-600 border-t-transparent mx-auto"></div>
-                        ) : (
-                          <FiTrash2 size={14} className="mx-auto" />
-                        )}
-                                </button>
-                            </div>
-                        </div>
+
+                  </div>
                 </div>
               );
             })}
@@ -394,7 +330,7 @@ const UserManagement = () => {
                 : "Commencez par ajouter votre premier utilisateur"}
             </p>
             {!searchQuery && (
-              <button 
+              <button
                 onClick={handleAddUser}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-[#2d5f3f] text-white rounded-xl hover:bg-[#1e4029] transition-colors font-medium"
               >
@@ -405,6 +341,218 @@ const UserManagement = () => {
           </div>
         )}
       </div>
+
+      {/* User Details Modal */}
+      {isDetailsModalOpen && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-[#dfe8e1]">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`p-2 rounded-lg ${
+                    selectedUser.role === 'admin' ? 'bg-red-100' : 'bg-[#f4f7f4]'
+                  }`}
+                >
+                  <FiUser
+                    className={`text-xl ${
+                      selectedUser.role === 'admin' ? 'text-red-600' : 'text-[#5a8f6f]'
+                    }`}
+                  />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-[#1e4029]">
+                    {selectedUser.name || "Utilisateur sans nom"}
+                  </h2>
+                  <p className="text-[#7a8b7f] text-sm">
+                    {selectedUser.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsDetailsModalOpen(false)}
+                className="p-2 hover:bg-[#f4f7f4] rounded-lg transition-colors"
+              >
+                <FiX className="text-[#7a8b7f] text-xl" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+              <div className="space-y-6">
+                {/* Basic Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-[#f4f7f4] rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FiMail className="text-[#5a8f6f]" />
+                      <span className="text-sm font-semibold text-[#1e4029]">Email</span>
+                    </div>
+                    <p className="text-[#7a8b7f]">{selectedUser.email}</p>
+                  </div>
+
+                  <div className="bg-[#f4f7f4] rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FiUser className="text-[#5a8f6f]" />
+                      <span className="text-sm font-semibold text-[#1e4029]">Rôle</span>
+                    </div>
+                    <p className="text-[#7a8b7f]">
+                      {selectedUser.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Additional Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-[#f4f7f4] rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FiPhone className="text-[#5a8f6f]" />
+                      <span className="text-sm font-semibold text-[#1e4029]">Téléphone</span>
+                    </div>
+                    <p className="text-[#7a8b7f]">
+                      {selectedUser.phoneNumber || 'Non renseigné'}
+                    </p>
+                  </div>
+
+                  <div className="bg-[#f4f7f4] rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FiFlag className="text-[#5a8f6f]" />
+                      <span className="text-sm font-semibold text-[#1e4029]">Nationalité</span>
+                    </div>
+                    <p className="text-[#7a8b7f]">
+                      {selectedUser.nationality || 'Non renseignée'}
+                    </p>
+                  </div>
+
+                  <div className="bg-[#f4f7f4] rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FiCalendar className="text-[#5a8f6f]" />
+                      <span className="text-sm font-semibold text-[#1e4029]">Date d'anniversaire</span>
+                    </div>
+                    <p className="text-[#7a8b7f]">
+                      {selectedUser.birthDate
+                        ? new Date(selectedUser.birthDate).toLocaleDateString('fr-FR', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          })
+                        : 'Non renseignée'
+                      }
+                    </p>
+                  </div>
+
+                  {selectedUser.company && (
+                    <div className="bg-[#f4f7f4] rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FiBriefcase className="text-[#5a8f6f]" />
+                        <span className="text-sm font-semibold text-[#1e4029]">Entreprise</span>
+                      </div>
+                      <p className="text-[#7a8b7f]">{selectedUser.company}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Account Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-[#f4f7f4] rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FiCalendar className="text-[#5a8f6f]" />
+                      <span className="text-sm font-semibold text-[#1e4029]">Inscription</span>
+                    </div>
+                    <p className="text-[#7a8b7f]">
+                      {new Date(selectedUser.createdAt).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </p>
+                  </div>
+
+                  <div className="bg-[#f4f7f4] rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FiCalendar className="text-[#5a8f6f]" />
+                      <span className="text-sm font-semibold text-[#1e4029]">Dernière connexion</span>
+                    </div>
+                    <p className="text-[#7a8b7f]">
+                      {selectedUser.lastLoginAt
+                        ? new Date(selectedUser.lastLoginAt).toLocaleDateString('fr-FR', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          })
+                        : 'Jamais connecté'
+                      }
+                    </p>
+                  </div>
+                </div>
+
+                {/* Team & Status */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Teams Info */}
+                  <div className="bg-[#f4f7f4] rounded-xl p-4 h-full flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <FiUsers className="text-[#5a8f6f]" />
+                        <span className="text-sm font-semibold text-[#1e4029]">Équipes</span>
+                      </div>
+                      {selectedUser.teams && selectedUser.teams.length > 0 ? (
+                        <div className="space-y-2">
+                          {selectedUser.teams.map((team, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <div className="w-10 h-10 bg-[#5a8f6f] rounded-full flex items-center justify-center">
+                                <FiUsers size={12} className="text-white" />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-sm text-[#1e4029] font-medium">
+                                  {team?.name || 'Équipe assignée'}
+                                </span>
+                                {team?.department && (
+                                  <span className="text-xs text-[#7a8b7f] uppercase tracking-wide">
+                                    {team.department}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[#7a8b7f] italic">Aucune équipe assignée</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Status */}
+                  <div className="bg-white border border-[#dfe8e1] rounded-xl p-4 h-full flex flex-col justify-between">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-3 h-3 rounded-full ${
+                        selectedUser.lastLoginAt && new Date(selectedUser.lastLoginAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                          ? 'bg-green-500' : 'bg-gray-400'
+                      }`}></div>
+                      <span className="text-sm font-semibold text-[#1e4029]">Statut du compte</span>
+                    </div>
+                    <p className={`text-sm ${
+                      selectedUser.lastLoginAt && new Date(selectedUser.lastLoginAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                        ? 'text-green-700' : 'text-gray-600'
+                    }`}>
+                      {selectedUser.lastLoginAt && new Date(selectedUser.lastLoginAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                        ? 'Actif (connecté récemment)' : 'Inactif (pas de connexion récente)'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3 p-6 border-t border-[#dfe8e1]">
+              <button
+                onClick={() => setIsDetailsModalOpen(false)}
+                className="px-4 py-2 text-[#7a8b7f] bg-white border border-[#dfe8e1] rounded-xl hover:bg-[#f4f7f4] transition-colors font-medium"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <CreateTeamMemberModal
         isOpen={isModalOpen}
@@ -419,4 +567,4 @@ const UserManagement = () => {
   );
 };
 
-export default AllClients;
+export default UserManagement;

@@ -1,14 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
-import axiosInstance from "../../utils/axiosInstance";
-import { API_PATHS } from "../../utils/apiPaths";
+import { useNotifications } from "../../context/NotificationContext";
+import { UserContext } from "../../context/userContext";
 import {
   FiSearch,
   FiCheck,
   FiX,
   FiClock,
   FiAlertTriangle,
-  FiInfo
+  FiInfo,
+  FiUser,
+  FiCheckCircle
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 
@@ -22,136 +25,65 @@ const brandPalette = {
 };
 
 const AllNotifications = () => {
-  const [allNotifications, setAllNotifications] = useState([]);
+  const { notifications, markAsRead, markAllAsRead, dismissNotification } = useNotifications();
+  const { user, loading: userLoading } = useContext(UserContext);
   const [filteredNotifications, setFilteredNotifications] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  // Données mockées pour les notifications (à remplacer par les vraies données API)
-  const mockNotifications = [
-    {
-      _id: "1",
-      title: "Nouvelle tâche assignée",
-      message: "La tâche 'Créer l'interface utilisateur' vous a été assignée",
-      type: "task",
-      isRead: false,
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2h ago
-      priority: "high"
-    },
-    {
-      _id: "2",
-      title: "Facture en retard",
-      message: "La facture INV-001 est en retard de paiement",
-      type: "invoice",
-      isRead: false,
-      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-      priority: "urgent"
-    },
-    {
-      _id: "3",
-      title: "Contrat signé",
-      message: "Le contrat 'Développement Web' a été signé avec succès",
-      type: "contract",
-      isRead: true,
-      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-      priority: "normal"
-    },
-    {
-      _id: "4",
-      title: "Mise à jour du projet",
-      message: "Le projet 'Application Mobile' a été mis à jour",
-      type: "project",
-      isRead: true,
-      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
-      priority: "low"
-    }
-  ];
 
-  const getAllNotifications = async () => {
-    try {
-      setLoading(true);
-      // Simulation d'appel API - remplacer par l'appel réel quand disponible
-      setTimeout(() => {
-        setAllNotifications(mockNotifications);
-        setFilteredNotifications(mockNotifications);
-        setLoading(false);
-      }, 500);
-    } catch (error) {
-      console.error("Erreur lors de la récupération des notifications :", error);
-      toast.error("Échec du chargement des notifications");
-      setLoading(false);
-    }
-  };
-
+  // Formater et filtrer les notifications
   useEffect(() => {
-    getAllNotifications();
-  }, []);
+    if (!user) return; // Ne pas filtrer si pas d'utilisateur
 
-  useEffect(() => {
-    let filtered = allNotifications;
+    let filtered = notifications;
 
-    // Filter by search query
+    // Filtrage par recherche
     if (searchQuery.trim() !== "") {
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter((notification) =>
-        notification.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        notification.message?.toLowerCase().includes(searchQuery.toLowerCase())
+        notification.title?.toLowerCase().includes(query) ||
+        notification.message?.toLowerCase().includes(query)
       );
     }
 
-    // Filter by type/status
+    // Filtrage par statut
     if (selectedFilter !== "all") {
-      if (selectedFilter === "unread") {
-        filtered = filtered.filter(notification => !notification.isRead);
-      } else if (selectedFilter === "read") {
-        filtered = filtered.filter(notification => notification.isRead);
-      } else {
-        filtered = filtered.filter(notification => notification.type === selectedFilter);
+      if (selectedFilter === "read") {
+        filtered = filtered.filter(notification => notification.read);
+      } else if (selectedFilter === "unread") {
+        filtered = filtered.filter(notification => !notification.read);
       }
     }
 
     setFilteredNotifications(filtered);
-  }, [searchQuery, selectedFilter, allNotifications]);
+  }, [notifications, searchQuery, selectedFilter, user]);
 
-  const markAsRead = async (notificationId) => {
-    try {
-      // Simulation d'appel API
-      setAllNotifications(prev =>
-        prev.map(notif =>
-          notif._id === notificationId ? { ...notif, isRead: true } : notif
-        )
-      );
-      toast.success("Notification marquée comme lue");
-    } catch (error) {
-      toast.error("Erreur lors de la mise à jour");
+
+  const handleMarkAllAsRead = () => {
+    markAllAsRead();
+    toast.success("Toutes les notifications ont été marquées comme lues");
+  };
+
+  const handleDismissNotification = (notificationId) => {
+    dismissNotification(notificationId);
+    toast.success("Notification supprimée");
+  };
+
+  const handleNotificationClick = (notification) => {
+    // Marquer comme lue
+    if (!notification.read) {
+      markAsRead(notification.id);
+    }
+
+    // Rediriger vers l'action URL si elle existe
+    if (notification.actionUrl) {
+      navigate(notification.actionUrl);
     }
   };
 
-  const markAsUnread = async (notificationId) => {
-    try {
-      setAllNotifications(prev =>
-        prev.map(notif =>
-          notif._id === notificationId ? { ...notif, isRead: false } : notif
-        )
-      );
-      toast.success("Notification marquée comme non lue");
-    } catch (error) {
-      toast.error("Erreur lors de la mise à jour");
-    }
-  };
-
-  const deleteNotification = async (notificationId) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette notification ?")) {
-      return;
-    }
-
-    try {
-      setAllNotifications(prev => prev.filter(notif => notif._id !== notificationId));
-      toast.success("Notification supprimée");
-    } catch (error) {
-      toast.error("Erreur lors de la suppression");
-    }
-  };
 
   const getNotificationIcon = (type) => {
     const iconClass = "w-5 h-5";
@@ -201,6 +133,37 @@ const AllNotifications = () => {
     return notificationDate.toLocaleDateString('fr-FR');
   };
 
+  // Vérifier si l'utilisateur est en cours de chargement
+  if (userLoading) {
+    return (
+      <DashboardLayout activeMenu="Notifications">
+        <div className="flex flex-col items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5a8f6f]"></div>
+          <p className="mt-4 text-[#2d5f3f] font-medium">Chargement de l'utilisateur...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Vérifier si l'utilisateur n'est pas connecté
+  if (!user) {
+    return (
+      <DashboardLayout activeMenu="Notifications">
+        <div className="flex flex-col items-center justify-center h-96">
+          <div className="text-center">
+            <FiUser className="mx-auto text-[#7a8b7f] text-6xl mb-4" />
+            <h3 className="text-xl font-medium text-[#1e4029] mb-2">
+              Connexion requise
+            </h3>
+            <p className="text-[#7a8b7f] mb-6">
+              Vous devez être connecté pour accéder aux notifications.
+            </p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   if (loading) {
     return (
       <DashboardLayout activeMenu="Notifications">
@@ -235,19 +198,14 @@ const AllNotifications = () => {
               Restez informé de toutes les activités et mises à jour importantes
             </p>
             <p className="text-white/60 mt-1 text-sm">
-              {allNotifications.length} notification{allNotifications.length !== 1 ? 's' : ''} au total
+              {notifications.length} notification{notifications.length !== 1 ? 's' : ''} au total
             </p>
           </div>
 
           {/* Action Button */}
           <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
             <button
-              onClick={() => {
-                setAllNotifications(prev =>
-                  prev.map(notif => ({ ...notif, isRead: true }))
-                );
-                toast.success("Toutes les notifications marquées comme lues");
-              }}
+              onClick={handleMarkAllAsRead}
               className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
             >
               <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
@@ -296,9 +254,10 @@ const AllNotifications = () => {
           <div className="space-y-4">
             {filteredNotifications.map((notification) => (
               <div
-                key={notification._id}
-                className={`bg-white rounded-2xl border p-6 transition-all duration-300 hover:shadow-lg ${
-                  !notification.isRead
+                key={notification.id}
+                onClick={() => handleNotificationClick(notification)}
+                className={`bg-white rounded-2xl border p-6 transition-all duration-300 hover:shadow-lg cursor-pointer group ${
+                  !notification.read
                     ? 'border-[#5a8f6f] bg-[#f4f7f4]/50 shadow-sm'
                     : 'border-[#dfe8e1] hover:border-[#5a8f6f]/30'
                 }`}
@@ -315,7 +274,7 @@ const AllNotifications = () => {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <h3 className={`text-lg font-semibold ${
-                            !notification.isRead ? 'text-[#1e4029]' : 'text-[#2d5f3f]'
+                            !notification.read ? 'text-[#1e4029]' : 'text-[#2d5f3f]'
                           }`}>
                             {notification.title}
                           </h3>
@@ -334,33 +293,6 @@ const AllNotifications = () => {
                           </div>
                         </div>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {!notification.isRead ? (
-                            <button
-                              onClick={() => markAsRead(notification._id)}
-                              className="p-2 text-[#2d5f3f] hover:bg-[#e6f0ea] rounded-lg transition-colors"
-                              title="Marquer comme lu"
-                            >
-                              <FiCheck className="w-4 h-4" />
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => markAsUnread(notification._id)}
-                              className="p-2 text-[#7a8b7f] hover:bg-[#f4f7f4] rounded-lg transition-colors"
-                              title="Marquer comme non lu"
-                            >
-                              <FiClock className="w-4 h-4" />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => deleteNotification(notification._id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Supprimer"
-                          >
-                            <FiX className="w-4 h-4" />
-                          </button>
-                        </div>
                       </div>
                     </div>
                   </div>

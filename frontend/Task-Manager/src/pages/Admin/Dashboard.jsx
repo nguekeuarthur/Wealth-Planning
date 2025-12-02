@@ -63,7 +63,7 @@ moment.updateLocale('fr', {
   // meridiemHour : function (hour, meridiem) {
   //     return /* 0-23 hour, given meridiem token and hour 1-12 */ ;
   // },
-  meridiem: function (hours, minutes, isLower) {
+  meridiem: function (hours) {
     return hours < 12 ? 'PD' : 'MD';
   },
   week: {
@@ -92,15 +92,6 @@ import {
 import CustomPieChart from "../../components/Charts/CustomPieChart";
 import CustomBarChart from "../../components/Charts/CustomBarChart";
 
-const brandPalette = {
-  primary: "#1e4029",
-  secondary: "#2d5f3f",
-  accent: "#5a8f6f",
-  soft: "#f4f7f4",
-  border: "#dfe8e1",
-  muted: "#7a8b7f",
-};
-
 const COLORS = ["#2d5f3f", "#5a8f6f", "#a7c9ad"];
 
 const TASK_CARD_CONFIG = [
@@ -121,7 +112,6 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [pieChartData, setPieChartData] = useState([]);
   const [barChartData, setBarChartData] = useState([]);
-  const [projectChartData, setProjectChartData] = useState([]);
   const [invoiceChartData, setInvoiceChartData] = useState([]);
 
 
@@ -179,12 +169,10 @@ const Dashboard = () => {
       'done': 'Terminé'
     };
 
-    const data = projectsByStatus.map(item => ({
+    const _data = projectsByStatus.map(item => ({
       status: statusMap[item._id] || item._id,
       count: item.count
     }));
-
-    setProjectChartData(data);
   };
 
   // Prepare Invoice Chart Data
@@ -252,7 +240,7 @@ const Dashboard = () => {
               <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm overflow-hidden">
                 {user?.profileImageUrl ? (
                   <img
-                    src={user.profileImageUrl}
+                    src={user.profileImageUrl || null}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />

@@ -653,12 +653,22 @@ const updateUserProfile = async (req, res) => {
       profileImageUrl,
       currentPassword,
       newPassword,
+      birthDate,
+      nationality,
+      phoneNumber,
+      profileCompleted,
     } = req.body;
 
     if (name) user.name = name;
     if (typeof profileImageUrl !== "undefined") {
       user.profileImageUrl = profileImageUrl;
     }
+
+    // Nouveaux champs pour le profil
+    if (birthDate) user.birthDate = new Date(birthDate);
+    if (nationality) user.nationality = nationality;
+    if (phoneNumber) user.phoneNumber = phoneNumber;
+    if (typeof profileCompleted === 'boolean') user.profileCompleted = profileCompleted;
 
     if (email && email !== user.email) {
       const normalizedEmail = normalizeEmail(email);

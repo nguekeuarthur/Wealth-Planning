@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
-import {
-  FiSearch,
-  FiPlus,
-  FiEdit2,
-  FiTrash2,
+import { 
+  FiSearch, 
+  FiPlus, 
+  FiEdit2, 
+  FiTrash2, 
   FiCalendar,
   FiDollarSign,
   FiFileText,
@@ -190,15 +190,15 @@ const AllInvoices = () => {
 
           {/* Action Button */}
           <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
-            <button
-              onClick={handleAddInvoice}
+          <button
+            onClick={handleAddInvoice}
               className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
             >
               <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
                 <FiPlus className="text-lg" />
               </div>
               Nouvelle facture
-            </button>
+          </button>
           </div>
         </div>
       </div>
@@ -272,9 +272,9 @@ const AllInvoices = () => {
                   {filteredInvoices.map((invoice) => {
                     const overdue = isOverdue(invoice.dueDate, invoice.status);
                     const displayStatus = overdue ? "OVERDUE" : (invoice.status?.toUpperCase() || "UNPAID");
-
+                    
                     return (
-                      <tr
+                      <tr 
                         key={invoice._id}
                         className="hover:bg-[#f4f7f4] transition-colors cursor-pointer"
                         onClick={() => handleViewInvoice(invoice)}

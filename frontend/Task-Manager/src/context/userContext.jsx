@@ -26,9 +26,9 @@ const UserProvider = ({ children }) => {
     const bootstrap = async () => {
       const { token } = getSession();
       if (!token) {
-      setLoading(false);
-      return;
-    }
+        setLoading(false);
+        return;
+      }
 
       try {
         const response = await axiosInstance.get(API_PATHS.AUTH.GET_PROFILE);
@@ -39,7 +39,12 @@ const UserProvider = ({ children }) => {
         });
       } catch (error) {
         console.error("User not authenticated", error);
-        clearUser();
+        // Ne pas effacer la session automatiquement si c'est juste une erreur réseau
+        if (error.response?.status === 401) {
+          clearUser();
+        }
+        // Ne pas définir l'utilisateur à null si c'est juste une erreur réseau
+        setUser(null);
       } finally {
         setLoading(false);
       }
