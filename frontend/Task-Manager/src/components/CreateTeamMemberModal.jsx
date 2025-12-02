@@ -1,26 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Modal from "./Modal";
-import { FiUpload, FiX } from "react-icons/fi";
+import { FiSearch, FiX, FiUser, FiUserPlus } from "react-icons/fi";
 import axiosInstance from "../utils/axiosInstance";
 import { API_PATHS } from "../utils/apiPaths";
 import toast from "react-hot-toast";
 
-const CreateClientModal = ({ isOpen, onClose, onClientCreated, editClient = null }) => {
+const CreateTeamMemberModal = ({ isOpen, onClose, onClientCreated, editClient = null }) => {
   const [formData, setFormData] = useState({
-    name: editClient?.name || "",
-    email: editClient?.email || "",
-    password: "",
-    company: editClient?.company || "",
-    address: editClient?.address || "",
-    industry: editClient?.industry || "",
-    companySize: editClient?.companySize || "",
-    phoneNumber: editClient?.phoneNumber || "",
-    website: editClient?.website || "",
+    selectedUser: null,
+    role: "member",
+    industry: "",
   });
-  
-  const [logoImage, setLogoImage] = useState(null);
-  const [logoPreview, setLogoPreview] = useState(editClient?.logoUrl || null);
+
+  const [users, setUsers] = useState([]);
+  const [userSearch, setUserSearch] = useState("");
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   const industries = [
     "REAL ESTATE",
@@ -35,122 +31,79 @@ const CreateClientModal = ({ isOpen, onClose, onClientCreated, editClient = null
     "OTHER"
   ];
 
-  const companySizes = [
-    "1-10 employees",
-    "11-50 employees",
-    "51-200 employees",
-    "201-500 employees",
-    "501-1000 employees",
-    "1000+ employees"
+  const roles = [
+    { value: "member", label: "Utilisateur" },
+    { value: "project_lead", label: "Chef de projet" }
   ];
+
+  // Charger les utilisateurs et clients disponibles
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoadingUsers(true);
+
+        // Charger tous les utilisateurs (pour la recherche)
+        const usersResponse = await axiosInstance.get(API_PATHS.USERS.GET_ALL_USERS);
+        const allUsers = usersResponse.data?.users || [];
+        console.log("Utilisateurs chargés:", allUsers.slice(0, 3)); // Debug: voir la structure
+        setUsers(allUsers);
+
+      } catch (error) {
+        console.error("Erreur lors du chargement des données:", error);
+        toast.error("Erreur lors du chargement des données");
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    if (isOpen) {
+      loadData();
+    }
+  }, [isOpen]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("File size should not exceed 5MB");
-        return;
-      }
-      
-      setLogoImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleSelectUser = (user) => {
+    setFormData(prev => ({ ...prev, selectedUser: user }));
+    setUserSearch("");
+    setShowUserDropdown(false);
   };
 
-  const removeImage = () => {
-    setLogoImage(null);
-    setLogoPreview(null);
+  const handleRemoveUser = () => {
+    setFormData(prev => ({ ...prev, selectedUser: null }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validation
-    if (!formData.company || !formData.industry) {
-      toast.error("Please fill in all required fields (Company name and Industry)");
-      return;
-    }
-
-    if (!editClient && !formData.email) {
-      toast.error("Email is required for new clients");
-      return;
-    }
-
-    if (!editClient && !formData.password) {
-      toast.error("Password is required for new clients");
+    if (!formData.selectedUser) {
+      toast.error("Veuillez choisir un utilisateur inscrit");
       return;
     }
 
     setLoading(true);
     try {
-      // Upload logo if exists
-      let logoUrl = editClient?.logoUrl || null;
-      if (logoImage) {
-        try {
-          const imageFormData = new FormData();
-          imageFormData.append("image", logoImage);
-          
-          const uploadResponse = await axiosInstance.post(
-            API_PATHS.IMAGE.UPLOAD_IMAGE,
-            imageFormData,
-            {
-              headers: { "Content-Type": "multipart/form-data" },
-            }
-          );
-          logoUrl = uploadResponse.data?.imageUrl || null;
-        } catch (uploadError) {
-          console.error("Error uploading logo:", uploadError);
-          toast.error("Failed to upload logo. Client will be created without logo.");
-          logoUrl = null;
-        }
-      }
-
-      // Create or update client
-      const clientData = {
-        ...formData,
-        logoUrl: logoUrl || null,
-        role: "member", // Clients are members, not admins
+      // Mettre à jour le rôle et l'industrie de l'utilisateur
+      const updateData = {
+        role: formData.role,
+        industry: formData.industry,
       };
-      
-      // Remove empty strings to avoid validation errors
-      Object.keys(clientData).forEach(key => {
-        if (clientData[key] === "") {
-          clientData[key] = null;
-        }
-      });
 
-      let response;
-      if (editClient) {
-        // Update existing client
-        response = await axiosInstance.put(
-          API_PATHS.USERS.UPDATE_USER(editClient._id),
-          clientData
-        );
-        toast.success("Client updated successfully!");
-      } else {
-        // Create new client
-        response = await axiosInstance.post(
-          API_PATHS.USERS.CREATE_USER,
-          clientData
-        );
-        toast.success("Client created successfully!");
-      }
+      const response = await axiosInstance.put(
+        API_PATHS.USERS.UPDATE_USER(formData.selectedUser._id),
+        updateData
+      );
 
+      toast.success("Utilisateur ajouté avec succès !");
       onClientCreated(response.data.user || response.data);
       handleClose();
     } catch (error) {
-      console.error("Error saving client:", error);
-      toast.error(error.response?.data?.message || "Failed to save client");
+      console.error("Erreur lors de l'ajout de l'utilisateur:", error);
+      toast.error(error.response?.data?.message || "Échec de l'ajout de l'utilisateur");
     } finally {
       setLoading(false);
     }
@@ -158,129 +111,181 @@ const CreateClientModal = ({ isOpen, onClose, onClientCreated, editClient = null
 
   const handleClose = () => {
     setFormData({
-      name: "",
-      email: "",
-      password: "",
-      company: "",
-      address: "",
+      selectedUser: null,
+      role: "member",
       industry: "",
-      companySize: "",
-      phoneNumber: "",
-      website: "",
     });
-    setLogoImage(null);
-    setLogoPreview(null);
+    setUserSearch("");
+    setShowUserDropdown(false);
     onClose();
   };
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={handleClose} 
-      title={editClient ? "Edit Client" : "Add new client"}
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Ajouter un utilisateur"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Company Name */}
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Sélection de l'utilisateur */}
         <div>
-          <label className="block text-xs font-medium text-white mb-1.5">
-            Company name <span className="text-red-500">*</span>
+          <label className="block text-sm font-semibold text-[#1e4029] mb-2">
+            Choisir un utilisateur inscrit <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            name="company"
-            value={formData.company}
-            onChange={handleInputChange}
-            placeholder="Company name"
-            className="w-full px-3 py-2.5 bg-white border-0 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 transition-all text-sm text-gray-900 placeholder:text-gray-400"
-            required
-          />
+
+          {/* Utilisateur sélectionné */}
+          {formData.selectedUser ? (
+                <div className="flex items-center justify-between p-3 bg-[#f4f7f4] border border-[#dfe8e1] rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#5a8f6f] rounded-full flex items-center justify-center">
+                  <span className="text-white font-semibold">
+                    {formData.selectedUser.name?.charAt(0).toUpperCase() || formData.selectedUser.fullName?.charAt(0).toUpperCase() || formData.selectedUser.email?.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-[#1e4029]">
+                    {formData.selectedUser.name || formData.selectedUser.fullName || formData.selectedUser.email || "Utilisateur"}
+                  </div>
+                  <div className="text-xs text-[#7a8b7f]">
+                    {formData.selectedUser.email}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleRemoveUser}
+                className="text-[#7a8b7f] hover:text-red-500 transition-colors p-1"
+              >
+                <FiX size={16} />
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Recherche d'utilisateur */}
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Rechercher parmi les utilisateurs inscrits..."
+                  value={userSearch}
+                  onChange={(e) => {
+                    setUserSearch(e.target.value);
+                    setShowUserDropdown(true);
+                  }}
+                  onFocus={() => setShowUserDropdown(true)}
+                  className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-all text-sm text-[#1e4029] placeholder:text-[#7a8b7f]"
+                />
+                <FiSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#7a8b7f] w-5 h-5" />
+              </div>
+
+              {/* Dropdown des utilisateurs */}
+              {showUserDropdown && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-[#dfe8e1] rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                  {loadingUsers ? (
+                    <div className="px-4 py-3 text-sm text-[#7a8b7f] text-center">
+                      Chargement...
+                    </div>
+                  ) : (
+                    users
+                      .filter(u =>
+                        u.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
+                        u.fullName?.toLowerCase().includes(userSearch.toLowerCase()) ||
+                        u.email?.toLowerCase().includes(userSearch.toLowerCase())
+                      )
+                      .slice(0, 10)
+                      .map((user) => (
+                        <button
+                          key={user._id}
+                          type="button"
+                          onClick={() => handleSelectUser(user)}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f4f7f4] transition-colors text-left"
+                        >
+                          <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center">
+                            <span className="text-white text-sm font-semibold">
+                              {user.name?.charAt(0).toUpperCase() || user.fullName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-[#1e4029]">
+                              {user.name || user.fullName || user.email || "Utilisateur"}
+                            </div>
+                            <div className="text-xs text-[#7a8b7f]">
+                              {user.email}
+                            </div>
+                            {/* Debug temporaire */}
+                            {console.log("User data:", { name: user.name, fullName: user.fullName, email: user.email, firstName: user.firstName, lastName: user.lastName })}
+                          </div>
+                        </button>
+                      ))
+                  )}
+                  {!loadingUsers && users.filter(u =>
+                    u.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
+                    u.fullName?.toLowerCase().includes(userSearch.toLowerCase()) ||
+                    u.email?.toLowerCase().includes(userSearch.toLowerCase())
+                  ).length === 0 && userSearch && (
+                    <div className="px-4 py-3 text-sm text-[#7a8b7f] text-center">
+                      Aucun utilisateur trouvé
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Fermeture du dropdown au clic extérieur */}
+              {showUserDropdown && (
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowUserDropdown(false)}
+                />
+              )}
+            </>
+          )}
         </div>
 
-        {/* Contact Name */}
+        {/* Rôle */}
         <div>
-          <label className="block text-xs font-medium text-white mb-1.5">
-            Contact name
+          <label className="block text-sm font-semibold text-[#1e4029] mb-2">
+            Rôle dans l'équipe
           </label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
+          <select
+            name="role"
+            value={formData.role}
             onChange={handleInputChange}
-            placeholder="Contact person name"
-            className="w-full px-3 py-2.5 bg-white border-0 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 transition-all text-sm text-gray-900 placeholder:text-gray-400"
-          />
+            className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-all appearance-none cursor-pointer text-sm text-[#1e4029]"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%237a8b7f' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+              backgroundPosition: "right 1rem center",
+              backgroundRepeat: "no-repeat",
+              backgroundSize: "1.5em 1.5em",
+              paddingRight: "3rem"
+            }}
+          >
+            {roles.map((role) => (
+              <option key={role.value} value={role.value}>
+                {role.label}
+              </option>
+            ))}
+          </select>
         </div>
 
-        {/* Email */}
-        <div>
-          <label className="block text-xs font-medium text-white mb-1.5">
-            Email {!editClient && <span className="text-red-500">*</span>}
-          </label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            placeholder="Email address"
-            disabled={!!editClient}
-            className="w-full px-3 py-2.5 bg-white border-0 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 transition-all text-sm text-gray-900 placeholder:text-gray-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            required={!editClient}
-          />
-        </div>
 
-        {/* Password (only for new clients) */}
-        {!editClient && (
-          <div>
-            <label className="block text-xs font-medium text-white mb-1.5">
-              Password <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              placeholder="Password"
-              className="w-full px-3 py-2.5 bg-white border-0 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 transition-all text-sm text-gray-900 placeholder:text-gray-400"
-              required
-            />
-          </div>
-        )}
-
-        {/* Address */}
+        {/* Secteur d'activité */}
         <div>
-          <label className="block text-xs font-medium text-white mb-1.5">
-            Address
-          </label>
-          <input
-            type="text"
-            name="address"
-            value={formData.address}
-            onChange={handleInputChange}
-            placeholder="Address"
-            className="w-full px-3 py-2.5 bg-white border-0 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 transition-all text-sm text-gray-900 placeholder:text-gray-400"
-          />
-        </div>
-
-        {/* Industry */}
-        <div>
-          <label className="block text-xs font-medium text-white mb-1.5">
-            Industry <span className="text-red-500">*</span>
+          <label className="block text-sm font-semibold text-[#1e4029] mb-2">
+            Secteur d'activité
           </label>
           <select
             name="industry"
             value={formData.industry}
             onChange={handleInputChange}
-            className="w-full px-3 py-2.5 bg-white border-0 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 transition-all appearance-none cursor-pointer text-sm text-gray-900"
+            className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-all appearance-none cursor-pointer text-sm text-[#1e4029]"
             style={{
-              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-              backgroundPosition: "right 0.5rem center",
+              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%237a8b7f' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+              backgroundPosition: "right 1rem center",
               backgroundRepeat: "no-repeat",
               backgroundSize: "1.5em 1.5em",
-              paddingRight: "2.5rem"
+              paddingRight: "3rem"
             }}
-            required
           >
-            <option value="">Select industry</option>
+            <option value="">Sélectionner un secteur</option>
             {industries.map((industry) => (
               <option key={industry} value={industry}>
                 {industry}
@@ -289,119 +294,22 @@ const CreateClientModal = ({ isOpen, onClose, onClientCreated, editClient = null
           </select>
         </div>
 
-        {/* Company Size */}
-        <div>
-          <label className="block text-xs font-medium text-white mb-1.5">
-            Company size
-          </label>
-          <select
-            name="companySize"
-            value={formData.companySize}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2.5 bg-white border-0 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 transition-all appearance-none cursor-pointer text-sm text-gray-900"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-              backgroundPosition: "right 0.5rem center",
-              backgroundRepeat: "no-repeat",
-              backgroundSize: "1.5em 1.5em",
-              paddingRight: "2.5rem"
-            }}
-          >
-            <option value="">Select size</option>
-            {companySizes.map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Phone Number */}
-        <div>
-          <label className="block text-xs font-medium text-white mb-1.5">
-            Phone number
-          </label>
-          <input
-            type="tel"
-            name="phoneNumber"
-            value={formData.phoneNumber}
-            onChange={handleInputChange}
-            placeholder="Phone number"
-            className="w-full px-3 py-2.5 bg-white border-0 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 transition-all text-sm text-gray-900 placeholder:text-gray-400"
-          />
-        </div>
-
-        {/* Website */}
-        <div>
-          <label className="block text-xs font-medium text-white mb-1.5">
-            Website
-          </label>
-          <input
-            type="url"
-            name="website"
-            value={formData.website}
-            onChange={handleInputChange}
-            placeholder="https://www.example.com"
-            className="w-full px-3 py-2.5 bg-white border-0 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 transition-all text-sm text-gray-900 placeholder:text-gray-400"
-          />
-        </div>
-
-        {/* Logo Upload */}
-        <div>
-          <label className="block text-xs font-medium text-white mb-1.5">
-            Logo
-          </label>
-          <div className="w-full">
-            {logoPreview ? (
-              <div className="relative group">
-                <div className="w-full h-48 bg-white rounded-md flex items-center justify-center p-4">
-                  <img
-                    src={logoPreview}
-                    alt="Logo preview"
-                    className="max-h-40 max-w-full object-contain"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={removeImage}
-                  className="absolute top-2 right-2 p-1.5 bg-white rounded-full shadow-md hover:bg-gray-100 transition-all"
-                >
-                  <FiX size={16} className="text-gray-700" />
-                </button>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center w-full h-28 border-0 rounded-md cursor-pointer bg-white hover:bg-gray-50 transition-all">
-                <div className="flex flex-col items-center justify-center">
-                  <FiUpload className="w-6 h-6 mb-1.5 text-gray-400" />
-                  <p className="text-xs text-gray-500">Upload logo</p>
-                </div>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                />
-              </label>
-            )}
-          </div>
-        </div>
-
         {/* Actions */}
-        <div className="flex justify-end gap-2 pt-4">
+        <div className="flex justify-end gap-3 pt-6 border-t border-[#dfe8e1]">
           <button
             type="button"
             onClick={handleClose}
-            className="px-5 py-2 text-sm text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-all font-medium"
+            className="px-6 py-2.5 text-sm font-medium text-[#7a8b7f] bg-[#f4f7f4] rounded-xl hover:bg-[#e6f0ea] transition-colors"
             disabled={loading}
           >
-            Cancel
+            Annuler
           </button>
           <button
             type="submit"
-            className="px-5 py-2 text-sm bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            className="px-6 py-2.5 text-sm font-medium text-white bg-[#2d5f3f] rounded-xl hover:bg-[#1e4029] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}
           >
-            {loading ? (editClient ? "Updating..." : "Adding...") : (editClient ? "Update" : "Add")}
+            {loading ? "Ajout en cours..." : "Ajouter à l'équipe"}
           </button>
         </div>
       </form>
@@ -409,4 +317,4 @@ const CreateClientModal = ({ isOpen, onClose, onClientCreated, editClient = null
   );
 };
 
-export default CreateClientModal;
+export default CreateTeamMemberModal;

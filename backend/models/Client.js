@@ -49,6 +49,7 @@ const ClientSchema = new mongoose.Schema(
         "MANUFACTURING", 
         "CONSULTING", 
         "OTHER",
+        "AUTRES", // French value kept for backward compatibility
         null
       ],
       default: null 

@@ -4,16 +4,18 @@ const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    if (!process.env.MONGO_URI) {
+    // Temporary fallback for testing
+    const mongoUri = process.env.MONGO_URI || "mongodb+srv://clusterwealthplanning.sj0u4ev.mongodb.net/?retryWrites=true&w=majority";
+    if (!mongoUri) {
       console.error("[DB] MONGO_URI is not defined in environment variables");
       process.exit(1);
     }
 
     // Log only the host part to avoid displaying secrets
-    const uriHost = process.env.MONGO_URI.split("@")[1]?.split("/")[0];
+    const uriHost = mongoUri.split("@")[1]?.split("/")[0];
     console.log("[DB] Connecting to MongoDB host:", uriHost || "<unknown>");
 
-    await mongoose.connect(process.env.MONGO_URI, {
+    await mongoose.connect(mongoUri, {
       serverSelectionTimeoutMS: 10000,
     });
     

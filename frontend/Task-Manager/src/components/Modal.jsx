@@ -6,17 +6,17 @@ const Modal = ({ children, isOpen, onClose, title }) => {
   return <div className="fixed top-0 right-0 left-0 z-50 flex justify-center items-center w-full h-[calc(100%-1rem)] max-h-full overflow-y-auto overflow-x-hidden bg-black/50">
       <div className="relative p-4 w-full max-w-2xl max-h-full">
         {/* Modal content */}
-        <div className="relative bg-[#3d4a5c] rounded-lg shadow-xl">
+        <div className="relative bg-white rounded-2xl shadow-xl border border-[#dfe8e1]">
           {/* Modal header */}
 
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-600">
-            <h3 className="text-base font-medium text-white">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[#dfe8e1]">
+            <h3 className="text-lg font-semibold text-[#1e4029]">
               {title}
             </h3>
 
             <button
               type="button"
-              className="text-gray-400 bg-transparent hover:bg-gray-600 hover:text-white rounded-lg text-sm w-8 h-8 inline-flex justify-center items-center cursor-pointer transition-colors"
+              className="text-[#7a8b7f] bg-[#f4f7f4] hover:bg-[#e6f0ea] hover:text-[#2d5f3f] rounded-lg text-sm w-8 h-8 inline-flex justify-center items-center cursor-pointer transition-colors"
               onClick={onClose}
             >
               <svg
@@ -38,7 +38,7 @@ const Modal = ({ children, isOpen, onClose, title }) => {
           </div>
 
           {/* Modal body */}
-          <div className="px-5 py-4">
+          <div className="px-6 py-4">
            {children}
           </div>
         </div>

@@ -240,7 +240,7 @@ const Dashboard = () => {
               <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm overflow-hidden">
                 {user?.profileImageUrl ? (
                   <img
-                    src={user.profileImageUrl}
+                    src={user.profileImageUrl || null}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />

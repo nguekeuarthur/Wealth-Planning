@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Modal from "./Modal";
-import { FiUpload, FiX } from "react-icons/fi";
+import { FiUpload, FiX, FiSearch, FiUser } from "react-icons/fi";
 import axiosInstance from "../utils/axiosInstance";
 import { API_PATHS } from "../utils/apiPaths";
 import toast from "react-hot-toast";
@@ -24,6 +24,7 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
     projectLead: "",
     assignedUsers: [],
     startDate: "",
+    endDate: "",
     category: "",
   });
   
@@ -32,6 +33,10 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
   const [users, setUsers] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [memberSearch, setMemberSearch] = useState("");
+  const [leadSearch, setLeadSearch] = useState("");
+  const [showMemberDropdown, setShowMemberDropdown] = useState(false);
+  const [showLeadDropdown, setShowLeadDropdown] = useState(false);
 
   const statusOptions = [
     { value: "in progress", label: "En cours" },
@@ -129,8 +134,13 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
     e.preventDefault();
     
     // Validation
-    if (!formData.name || !formData.status || !formData.client || !formData.category) {
+    if (!formData.name || !formData.status || !formData.client || !formData.category || !formData.startDate) {
       toast.error("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+
+    if (formData.endDate && new Date(formData.endDate) <= new Date(formData.startDate)) {
+      toast.error("La date de fin doit être postérieure à la date de début");
       return;
     }
 
@@ -332,30 +342,101 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
         </div>
 
         {/* Project lead */}
-        <div>
+        <div className="relative">
           <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
             Chef de projet <span className="text-red-500">*</span>
           </label>
-          <select
-            name="projectLead"
-            value={formData.projectLead}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2.5 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-all appearance-none cursor-pointer text-sm text-[#1e4029]"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%237a8b7f' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-              backgroundPosition: "right 0.5rem center",
-              backgroundRepeat: "no-repeat",
-              backgroundSize: "1.5em 1.5em",
-              paddingRight: "2.5rem"
-            }}
-          >
-            <option value="">Sélectionner un chef de projet</option>
-            {users.filter(u => u.role === 'admin').map((user) => (
-              <option key={user._id} value={user._id}>
-                {user.fullName || user.email}
-              </option>
-            ))}
-          </select>
+
+          {/* Selected lead display */}
+          {formData.projectLead ? (
+            <div className="flex items-center justify-between p-3 bg-[#f4f7f4] border border-[#dfe8e1] rounded-xl">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-semibold">
+                    {users.find(u => u._id === formData.projectLead)?.fullName?.charAt(0).toUpperCase() || "?"}
+                  </span>
+                </div>
+                <span className="text-sm text-[#2d5f3f] font-medium">
+                  {users.find(u => u._id === formData.projectLead)?.fullName || users.find(u => u._id === formData.projectLead)?.email}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, projectLead: "" }))}
+                className="text-[#7a8b7f] hover:text-red-500 transition-colors"
+              >
+                <FiX size={16} />
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Search input for lead */}
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Rechercher un chef de projet..."
+                  value={leadSearch}
+                  onChange={(e) => {
+                    setLeadSearch(e.target.value);
+                    setShowLeadDropdown(true);
+                  }}
+                  onFocus={() => setShowLeadDropdown(true)}
+                  className="w-full px-3 py-2.5 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-all text-sm text-[#1e4029] placeholder:text-[#7a8b7f]"
+                />
+                <FiSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#7a8b7f] w-4 h-4" />
+              </div>
+
+              {/* Lead dropdown */}
+              {showLeadDropdown && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-[#dfe8e1] rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                  {users
+                    .filter(u => u.role === 'admin')
+                    .filter(u =>
+                      u.fullName?.toLowerCase().includes(leadSearch.toLowerCase()) ||
+                      u.email?.toLowerCase().includes(leadSearch.toLowerCase())
+                    )
+                    .map((user) => (
+                      <button
+                        key={user._id}
+                        type="button"
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, projectLead: user._id }));
+                          setLeadSearch("");
+                          setShowLeadDropdown(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f4f7f4] transition-colors text-left"
+                      >
+                        <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm font-semibold">
+                            {user.fullName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-[#1e4029]">{user.fullName || "Sans nom"}</div>
+                          <div className="text-xs text-[#7a8b7f]">{user.email}</div>
+                        </div>
+                      </button>
+                    ))}
+                  {users.filter(u => u.role === 'admin').filter(u =>
+                    u.fullName?.toLowerCase().includes(leadSearch.toLowerCase()) ||
+                    u.email?.toLowerCase().includes(leadSearch.toLowerCase())
+                  ).length === 0 && (
+                    <div className="px-4 py-3 text-sm text-[#7a8b7f] text-center">
+                      Aucun chef de projet trouvé
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Click outside to close dropdown */}
+          {showLeadDropdown && (
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setShowLeadDropdown(false)}
+            />
+          )}
         </div>
 
         {/* Project members */}
@@ -363,34 +444,91 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
           <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
             Membres du projet <span className="text-red-500">*</span>
           </label>
-          <div className="relative">
-            <select
-              multiple
-              className="w-full px-3 py-2.5 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-all min-h-[100px] cursor-pointer text-sm text-[#1e4029]"
+
+          {/* Search input for members */}
+          <div className="relative mb-3">
+            <input
+              type="text"
+              placeholder="Rechercher un membre..."
+              value={memberSearch}
               onChange={(e) => {
-                const selectedOptions = Array.from(e.target.selectedOptions).map(
-                  (option) => option.value
-                );
-                setFormData((prev) => ({ ...prev, assignedUsers: selectedOptions }));
+                setMemberSearch(e.target.value);
+                setShowMemberDropdown(true);
               }}
-              value={formData.assignedUsers}
-            >
-              {users.map((user) => (
-                <option key={user._id} value={user._id} className="py-1.5 px-2">
-                  {user.fullName || user.email}
-                </option>
-              ))}
-            </select>
-            {formData.assignedUsers.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              onFocus={() => setShowMemberDropdown(true)}
+              className="w-full px-3 py-2.5 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-all text-sm text-[#1e4029] placeholder:text-[#7a8b7f]"
+            />
+            <FiSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#7a8b7f] w-4 h-4" />
+          </div>
+
+          {/* Member dropdown */}
+          {showMemberDropdown && (
+            <div className="absolute z-50 w-full mt-1 bg-white border border-[#dfe8e1] rounded-xl shadow-lg max-h-48 overflow-y-auto">
+              {users
+                .filter(u => !formData.assignedUsers.includes(u._id))
+                .filter(u =>
+                  u.fullName?.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                  u.email?.toLowerCase().includes(memberSearch.toLowerCase())
+                )
+                .map((user) => (
+                  <button
+                    key={user._id}
+                    type="button"
+                    onClick={() => {
+                      setFormData(prev => ({
+                        ...prev,
+                        assignedUsers: [...prev.assignedUsers, user._id]
+                      }));
+                      setMemberSearch("");
+                      setShowMemberDropdown(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f4f7f4] transition-colors text-left"
+                  >
+                    <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-semibold">
+                        {user.fullName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-[#1e4029]">{user.fullName || "Sans nom"}</div>
+                      <div className="text-xs text-[#7a8b7f]">{user.email}</div>
+                    </div>
+                    <FiUser className="ml-auto text-[#7a8b7f] w-4 h-4" />
+                  </button>
+                ))}
+              {users
+                .filter(u => !formData.assignedUsers.includes(u._id))
+                .filter(u =>
+                  u.fullName?.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                  u.email?.toLowerCase().includes(memberSearch.toLowerCase())
+                ).length === 0 && (
+                <div className="px-4 py-3 text-sm text-[#7a8b7f] text-center">
+                  Aucun membre trouvé ou déjà ajouté
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Selected members */}
+          {formData.assignedUsers.length > 0 && (
+            <div className="mt-3">
+              <label className="block text-xs font-medium text-[#7a8b7f] mb-2">
+                Membres ajoutés ({formData.assignedUsers.length})
+              </label>
+              <div className="flex flex-wrap gap-2">
                 {formData.assignedUsers.map((userId) => {
                   const user = users.find((u) => u._id === userId);
                   return (
-                    <span
+                    <div
                       key={userId}
-                      className="inline-flex items-center gap-1 px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs"
+                      className="inline-flex items-center gap-2 px-3 py-2 bg-[#f4f7f4] border border-[#dfe8e1] rounded-xl text-sm"
                     >
-                      {user?.fullName || user?.email}
+                      <div className="w-6 h-6 bg-[#5a8f6f] rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-semibold">
+                          {user?.fullName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <span className="text-[#2d5f3f] font-medium">{user?.fullName || user?.email}</span>
                       <button
                         type="button"
                         onClick={() =>
@@ -401,16 +539,24 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
                             ),
                           }))
                         }
-                        className="hover:text-gray-900 transition-colors"
+                        className="text-[#7a8b7f] hover:text-red-500 transition-colors ml-1"
                       >
-                        <FiX size={12} />
+                        <FiX size={14} />
                       </button>
-                    </span>
+                    </div>
                   );
                 })}
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Click outside to close dropdown */}
+          {showMemberDropdown && (
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setShowMemberDropdown(false)}
+            />
+          )}
         </div>
 
         {/* Start date */}
@@ -426,6 +572,23 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
               onChange={handleInputChange}
               className="w-full px-3 py-2.5 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-all text-sm text-[#1e4029]"
               placeholder="Date de début"
+            />
+          </div>
+        </div>
+
+        {/* End date */}
+        <div>
+          <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
+            Date de fin
+          </label>
+          <div className="relative">
+            <input
+              type="date"
+              name="endDate"
+              value={formData.endDate}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2.5 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-all text-sm text-[#1e4029]"
+              placeholder="Date de fin"
             />
           </div>
         </div>

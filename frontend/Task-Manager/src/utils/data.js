@@ -7,7 +7,7 @@ import {
     LuUserCheck,
     LuFileText,
     LuBell,
-
+  
   } from "react-icons/lu";
   
   
@@ -32,9 +32,15 @@ import {
     },
     {
       id: "04",
-      label: "Équipe",
-      icon: LuUsers,
+      label: "Utilisateurs",
+      icon: LuUserCheck,
       path: "/admin/team",
+    },
+    {
+      id: "04b",
+      label: "Équipes",
+      icon: LuUsers,
+      path: "/admin/teams",
     },
     {
       id: "05",
@@ -82,7 +88,13 @@ import {
       path: "/user/tasks",
     },
     {
-      id: "05",
+      id: "03",
+      label: "Notifications",
+      icon: LuBell,
+      path: "/user/notifications",
+    },
+    {
+      id: "04",
       label: "Déconnexion",
       icon: LuLogOut,
       path: "logout",
@@ -93,11 +105,10 @@ import {
     { label: "Low", value: "Low" },
     { label: "Medium", value: "Medium" },
     { label: "High", value: "High" },
-  ]
+  ];
   
   export const STATUS_DATA = [
     { label: "Pending", value: "Pending" },
     { label: "In Progress", value: "In Progress" },
     { label: "Completed", value: "Completed" },
-  ]
-  
+  ];

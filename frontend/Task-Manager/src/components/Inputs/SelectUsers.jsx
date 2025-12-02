@@ -76,7 +76,7 @@ const SelectUsers = ({ selectedUsers, setSelectedUsers }) => {
               className="flex items-center gap-4 p-3 border-b border-gray-200"
             >
               <img
-                src={user.profileImageUrl}
+                src={user.profileImageUrl || null}
                 alt={user.name}
                 className="w-10 h-10 rounded-full"
               />

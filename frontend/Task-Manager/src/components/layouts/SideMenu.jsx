@@ -1,10 +1,12 @@
 import React, { useContext, useEffect, useState } from "react";
 import { SIDE_MENU_DATA, SIDE_MENU_USER_DATA } from "../../utils/data";
 import { UserContext } from "../../context/userContext";
+import { useNotifications } from "../../context/NotificationContext";
 import { useNavigate } from "react-router-dom";
 
 const SideMenu = ({ activeMenu }) => {
   const { user, logout } = useContext(UserContext);
+  const { unreadCount } = useNotifications();
   const [sideMenuData, setSideMenuData] = useState([]);
 
   const navigate = useNavigate();
@@ -33,7 +35,7 @@ const SideMenu = ({ activeMenu }) => {
       <div className="flex flex-col items-center justify-center mb-6 pt-12">
         <div className="relative">
           <img
-            src={user?.profileImageUrl || ""}
+            src={user?.profileImageUrl || null}
             alt="Profile Image"
             className="w-20 h-20 bg-slate-400 rounded-full"
           />
@@ -59,11 +61,17 @@ const SideMenu = ({ activeMenu }) => {
             activeMenu == item.label
               ? "text-primary bg-linear-to-r from-blue-50/40 to-blue-100/50 border-r-3"
               : ""
-          } py-3 px-6 mb-3 cursor-pointer`}
+          } py-3 px-6 mb-3 cursor-pointer relative`}
           onClick={() => handleClick(item.path)}
         >
           <item.icon className="text-xl" />
-          {item.label}
+          <span>{item.label}</span>
+          {/* Compteur de notifications pour l'élément "Notifications" */}
+          {item.label === "Notifications" && unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
         </button>
       ))}
     </div>;

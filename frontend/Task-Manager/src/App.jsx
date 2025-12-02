@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Outlet, Navigate } from "react-router-dom";
+import { NotificationProvider } from "./context/NotificationContext";
 import Dashboard from "./pages/Admin/Dashboard";
 import PatrimoineOverview from "./pages/Admin/PatrimoineOverview";
 import Login from "./pages/Auth/Login";
@@ -14,11 +15,13 @@ import AllProjects from "./pages/Admin/AllProjects";
 import ProjectDetails from "./pages/Admin/ProjectDetails";
 import AllClients from "./pages/Admin/AllClients";
 import ClientDetails from "./pages/Admin/ClientDetails";
-import AllTeamMembers from "./pages/Admin/AllTeamMembers";
+import UserManagement from "./pages/Admin/UserManagement";
 import TeamMemberDetails from "./pages/Admin/TeamMemberDetails";
 import AllInvoices from "./pages/Admin/AllInvoices";
 import AllContracts from "./pages/Admin/AllContracts";
 import AllNotifications from "./pages/Admin/AllNotifications";
+import ProfileCompletion from "./pages/Auth/ProfileCompletion";
+import AllTeams from "./pages/Admin/AllTeams";
 
 import UserDashboard from "./pages/User/UserDashboard";
 import MyTasks from "./pages/User/MyTasks";
@@ -39,8 +42,9 @@ import ScrollToTop from "./components/ScrollToTop";
 const App = () => {
   return (
     <UserProvider>
-      <div>
-        <Router>
+      <NotificationProvider>
+        <div>
+          <Router>
           <ScrollToTop />
           <Routes>
             {/* Public Routes avec Layout */}
@@ -58,6 +62,7 @@ const App = () => {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/profile-completion" element={<ProfileCompletion />} />
 
             {/* Admin Routes */}
             <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
@@ -67,11 +72,12 @@ const App = () => {
               <Route path="/admin/project/:id" element={<ProjectDetails />} />
               <Route path="/admin/clients" element={<AllClients />} />
               <Route path="/admin/client/:id" element={<ClientDetails />} />
-              <Route path="/admin/team" element={<AllTeamMembers />} />
+              <Route path="/admin/team" element={<UserManagement />} />
               <Route path="/admin/team/:id" element={<TeamMemberDetails />} />
               <Route path="/admin/invoices" element={<AllInvoices />} />
               <Route path="/admin/contracts" element={<AllContracts />} />
               <Route path="/admin/notifications" element={<AllNotifications />} />
+              <Route path="/admin/teams" element={<AllTeams />} />
               <Route path="/admin/tasks" element={<ManageTasks />} />
               <Route path="/admin/create-task" element={<CreateTask />} />
               <Route path="/admin/users" element={<ManageUsers />} />
@@ -85,6 +91,7 @@ const App = () => {
                 path="/user/task-details/:id"
                 element={<ViewTaskDetails />}
               />
+              <Route path="/user/notifications" element={<AllNotifications />} />
             </Route>
           </Routes>
         </Router>
@@ -98,6 +105,7 @@ const App = () => {
           },
         }}
       />
+      </NotificationProvider>
     </UserProvider>
   );
 };

@@ -5,7 +5,6 @@ import { API_PATHS } from "../../utils/apiPaths";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import AvatarGroup from "../../components/AvatarGroup";
 import moment from "moment";
-import "moment/locale/fr";
 import { LuSquareArrowOutUpRight } from "react-icons/lu";
 
 const ViewTaskDetails = () => {
@@ -113,7 +112,7 @@ const ViewTaskDetails = () => {
                     label="Due Date"
                     value={
                       task?.dueDate
-                        ? moment(task?.dueDate).locale('fr').format("D MMM YYYY")
+                        ? moment(task?.dueDate).format("Do MMM YYYY")
                         : "N/A"
                     }
                   />
