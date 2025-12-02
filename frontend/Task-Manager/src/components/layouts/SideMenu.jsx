@@ -54,17 +54,19 @@ const SideMenu = ({ activeMenu }) => {
         <p className="text-[12px] text-gray-500">{user?.email || ""}</p>
       </div>
 
-      {sideMenuData.map((item, index) => (
-        <button
-          key={`menu_${index}`}
-          className={`w-full flex items-center gap-4 text-[15px] ${
-            activeMenu == item.label
-              ? "text-primary bg-linear-to-r from-blue-50/40 to-blue-100/50 border-r-3"
-              : ""
-          } py-3 px-6 mb-3 cursor-pointer relative`}
-          onClick={() => handleClick(item.path)}
-        >
-          <item.icon className="text-xl" />
+      {sideMenuData.map((item, index) => {
+        const isActive = activeMenu == item.label;
+        return (
+          <button
+            key={`menu_${index}`}
+            className={`w-full flex items-center gap-4 text-[15px] ${
+              isActive
+                ? "text-[#1e4029] bg-gradient-to-r from-blue-50/40 to-blue-100/50 border-r-4 border-[#1e4029] font-semibold"
+                : "text-gray-600 hover:bg-gray-50"
+            } py-3 px-6 mb-3 cursor-pointer relative transition-all duration-200`}
+            onClick={() => handleClick(item.path)}
+          >
+          <item.icon className={`text-xl ${isActive ? "text-[#1e4029] stroke-2" : ""}`} />
           <span>{item.label}</span>
           {/* Compteur de notifications pour l'élément "Notifications" */}
           {item.label === "Notifications" && unreadCount > 0 && (
@@ -73,7 +75,8 @@ const SideMenu = ({ activeMenu }) => {
             </span>
           )}
         </button>
-      ))}
+        );
+      })}
     </div>;
 };
 

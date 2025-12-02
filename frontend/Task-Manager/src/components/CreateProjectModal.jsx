@@ -14,7 +14,7 @@ const brandPalette = {
   muted: "#7a8b7f",
 };
 
-const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClient = null, preSelectedClientId = null }) => {
+const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClient = null, preSelectedClientId = null, editProject = null }) => {
   const [formData, setFormData] = useState({
     name: "",
     status: "",
@@ -61,20 +61,39 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
     if (isOpen) {
       fetchUsers();
       fetchClients();
-      // Set pre-selected client if provided (from Team member or Client)
-      if (preSelectedClient) {
-        setFormData(prev => ({
-          ...prev,
-          client: preSelectedClient._id
-        }));
-      } else if (preSelectedClientId) {
-        setFormData(prev => ({
-          ...prev,
-          client: preSelectedClientId
-        }));
+      
+      // If editing, populate form with project data
+      if (editProject) {
+        setFormData({
+          name: editProject.name || "",
+          status: editProject.status || "",
+          client: editProject.client?._id || editProject.client || "",
+          description: editProject.description || "",
+          projectLead: editProject.projectLead?._id || editProject.projectLead || "",
+          assignedUsers: editProject.assignedUsers?.map(u => u._id || u) || [],
+          startDate: editProject.startDate ? new Date(editProject.startDate).toISOString().split('T')[0] : "",
+          endDate: editProject.endDate ? new Date(editProject.endDate).toISOString().split('T')[0] : "",
+          category: editProject.category || "",
+        });
+        if (editProject.imageUrl) {
+          setCoverImagePreview(editProject.imageUrl);
+        }
+      } else {
+        // Set pre-selected client if provided (from Team member or Client)
+        if (preSelectedClient) {
+          setFormData(prev => ({
+            ...prev,
+            client: preSelectedClient._id
+          }));
+        } else if (preSelectedClientId) {
+          setFormData(prev => ({
+            ...prev,
+            client: preSelectedClientId
+          }));
+        }
       }
     }
-  }, [isOpen, preSelectedClient, preSelectedClientId]);
+  }, [isOpen, preSelectedClient, preSelectedClientId, editProject]);
 
   const fetchUsers = async () => {
     try {
@@ -133,7 +152,7 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
     e.preventDefault();
     
     // Validation
-    if (!formData.name || !formData.status || !formData.client || !formData.category || !formData.startDate) {
+    if (!formData.name || !formData.status || !formData.client || !formData.category || !formData.startDate || !formData.projectLead) {
       toast.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
@@ -145,8 +164,8 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
 
     setLoading(true);
     try {
-      // Upload image if exists
-      let imageUrl = "";
+      // Upload image if a new one is selected
+      let imageUrl = editProject?.imageUrl || "";
       if (coverImage) {
         const imageFormData = new FormData();
         imageFormData.append("image", coverImage);
@@ -161,19 +180,30 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
         imageUrl = uploadResponse.data?.imageUrl || "";
       }
 
-      // Create project
+      // Create or update project
       const projectData = {
         ...formData,
-        imageUrl,
+        ...(imageUrl && { imageUrl }),
         endDate: formData.endDate || undefined,
       };
 
-      const response = await axiosInstance.post(
-        API_PATHS.PROJECTS.CREATE_PROJECT,
-        projectData
-      );
+      let response;
+      if (editProject) {
+        // Update existing project
+        response = await axiosInstance.put(
+          API_PATHS.PROJECTS.UPDATE_PROJECT(editProject._id),
+          projectData
+        );
+        toast.success("Projet mis à jour avec succès !");
+      } else {
+        // Create new project
+        response = await axiosInstance.post(
+          API_PATHS.PROJECTS.CREATE_PROJECT,
+          projectData
+        );
+        toast.success("Projet créé avec succès !");
+      }
 
-      toast.success("Projet créé avec succès !");
       onProjectCreated(response.data.project);
       handleClose();
     } catch (error) {
@@ -193,6 +223,7 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
       projectLead: "",
       assignedUsers: [],
       startDate: "",
+      endDate: "",
       category: "",
     });
     setCoverImage(null);
@@ -201,7 +232,7 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Nouveau projet">
+    <Modal isOpen={isOpen} onClose={handleClose} title={editProject ? "Modifier le projet" : "Nouveau projet"}>
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Project name */}
         <div>
@@ -346,11 +377,18 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center">
                   <span className="text-white text-sm font-semibold">
-                    {users.find(u => u._id === formData.projectLead)?.fullName?.charAt(0).toUpperCase() || "?"}
+                    {(() => {
+                      const client = clients.find(c => c._id === formData.projectLead);
+                      const name = client?.companyName || client?.contactName || client?.fullName || client?.email || "";
+                      return name.charAt(0).toUpperCase() || "?";
+                    })()}
                   </span>
                 </div>
                 <span className="text-sm text-[#2d5f3f] font-medium">
-                  {users.find(u => u._id === formData.projectLead)?.fullName || users.find(u => u._id === formData.projectLead)?.email}
+                  {(() => {
+                    const client = clients.find(c => c._id === formData.projectLead);
+                    return client?.companyName || client?.contactName || client?.fullName || client?.email || "";
+                  })()}
                 </span>
               </div>
               <button
@@ -367,7 +405,7 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Rechercher un chef de projet..."
+                  placeholder="Rechercher un client..."
                   value={leadSearch}
                   onChange={(e) => {
                     setLeadSearch(e.target.value);
@@ -382,40 +420,50 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
               {/* Lead dropdown */}
               {showLeadDropdown && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-[#dfe8e1] rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                  {users
-                    .filter(u => u.role === 'admin')
-                    .filter(u =>
-                      u.fullName?.toLowerCase().includes(leadSearch.toLowerCase()) ||
-                      u.email?.toLowerCase().includes(leadSearch.toLowerCase())
+                  {clients
+                    .filter(client =>
+                      (client.companyName?.toLowerCase().includes(leadSearch.toLowerCase()) ||
+                      client.contactName?.toLowerCase().includes(leadSearch.toLowerCase()) ||
+                      client.fullName?.toLowerCase().includes(leadSearch.toLowerCase()) ||
+                      client.email?.toLowerCase().includes(leadSearch.toLowerCase()))
                     )
-                    .map((user) => (
-                      <button
-                        key={user._id}
-                        type="button"
-                        onClick={() => {
-                          setFormData(prev => ({ ...prev, projectLead: user._id }));
-                          setLeadSearch("");
-                          setShowLeadDropdown(false);
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f4f7f4] transition-colors text-left"
-                      >
-                        <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center">
-                          <span className="text-white text-sm font-semibold">
-                            {user.fullName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-[#1e4029]">{user.fullName || "Sans nom"}</div>
-                          <div className="text-xs text-[#7a8b7f]">{user.email}</div>
-                        </div>
-                      </button>
-                    ))}
-                  {users.filter(u => u.role === 'admin').filter(u =>
-                    u.fullName?.toLowerCase().includes(leadSearch.toLowerCase()) ||
-                    u.email?.toLowerCase().includes(leadSearch.toLowerCase())
+                    .map((client) => {
+                      const displayName = client.companyName || client.contactName || client.fullName || client.email || "Sans nom";
+                      const displayEmail = client.email || "";
+                      const initial = displayName.charAt(0).toUpperCase();
+                      return (
+                        <button
+                          key={client._id}
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => ({ ...prev, projectLead: client._id }));
+                            setLeadSearch("");
+                            setShowLeadDropdown(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f4f7f4] transition-colors text-left"
+                        >
+                          <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center">
+                            <span className="text-white text-sm font-semibold">
+                              {initial}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-[#1e4029]">{displayName}</div>
+                            {displayEmail && (
+                              <div className="text-xs text-[#7a8b7f]">{displayEmail}</div>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  {clients.filter(client =>
+                    (client.companyName?.toLowerCase().includes(leadSearch.toLowerCase()) ||
+                    client.contactName?.toLowerCase().includes(leadSearch.toLowerCase()) ||
+                    client.fullName?.toLowerCase().includes(leadSearch.toLowerCase()) ||
+                    client.email?.toLowerCase().includes(leadSearch.toLowerCase()))
                   ).length === 0 && (
                     <div className="px-4 py-3 text-sm text-[#7a8b7f] text-center">
-                      Aucun chef de projet trouvé
+                      Aucun client trouvé
                     </div>
                   )}
                 </div>
@@ -639,7 +687,7 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
             className="px-6 py-2.5 text-sm bg-[#2d5f3f] text-white rounded-xl hover:bg-[#1e4029] transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg hover:shadow-xl"
             disabled={loading}
           >
-            {loading ? "Création..." : "Ajouter"}
+            {loading ? (editProject ? "Modification..." : "Création...") : (editProject ? "Modifier" : "Ajouter")}
           </button>
         </div>
       </form>

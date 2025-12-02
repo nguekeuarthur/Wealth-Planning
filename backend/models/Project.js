@@ -69,6 +69,10 @@ const projectSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'WeeklyUpdate' 
   }],
+  milestones: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Milestone' 
+  }],
   messages: [{ 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Message' 

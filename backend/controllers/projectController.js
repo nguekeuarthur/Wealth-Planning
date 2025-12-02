@@ -39,6 +39,7 @@ exports.getProjectById = async (req, res) => {
       .populate('documents')
       .populate('invoices')
       .populate('weeklyUpdates')
+      .populate('milestones')
       .populate({
         path: 'messages',
         populate: { path: 'sender receiver', select: 'fullName email' }
@@ -117,7 +118,13 @@ exports.updateProject = async (req, res) => {
     Object.assign(project, req.body);
     await project.save();
 
-    res.json({ message: 'Projet mis à jour', project });
+    // Populate relations before sending response
+    const populatedProject = await Project.findById(project._id)
+      .populate('client', 'fullName email profilePic phoneNumber')
+      .populate('projectLead', 'fullName email')
+      .populate('assignedUsers', 'fullName email');
+
+    res.json({ message: 'Projet mis à jour', project: populatedProject });
   } catch (error) {
     res.status(500).json({ message: 'Erreur lors de la mise à jour', error: error.message });
   }

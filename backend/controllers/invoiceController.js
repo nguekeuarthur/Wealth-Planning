@@ -55,6 +55,26 @@ exports.createInvoice = async (req, res) => {
       return res.status(403).json({ message: 'Accès refusé - Admin uniquement' });
     }
 
+    // Validate required fields
+    if (!req.body.amount || req.body.amount <= 0) {
+      return res.status(400).json({ message: 'Le montant est requis et doit être supérieur à 0' });
+    }
+
+    if (!req.body.client) {
+      return res.status(400).json({ message: 'Le client est requis' });
+    }
+
+    if (!req.body.dueDate) {
+      return res.status(400).json({ message: 'La date d\'échéance est requise' });
+    }
+
+    // Generate invoice number if not provided
+    if (!req.body.invoiceNumber) {
+      const timestamp = Date.now();
+      const random = Math.floor(Math.random() * 1000);
+      req.body.invoiceNumber = `INV-${timestamp}-${random}`;
+    }
+
     const invoice = new Invoice(req.body);
     await invoice.save();
 
@@ -65,8 +85,13 @@ exports.createInvoice = async (req, res) => {
       });
     }
 
-    res.status(201).json({ message: 'Facture créée avec succès', invoice });
+    const populatedInvoice = await Invoice.findById(invoice._id)
+      .populate('client', 'fullName email')
+      .populate('project', 'name category');
+
+    res.status(201).json({ message: 'Facture créée avec succès', invoice: populatedInvoice });
   } catch (error) {
+    console.error('Error creating invoice:', error);
     res.status(500).json({ message: 'Erreur lors de la création', error: error.message });
   }
 };

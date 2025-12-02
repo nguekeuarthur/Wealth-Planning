@@ -5,25 +5,27 @@ const Task = require("../models/Task");
 // @access  Private
 const getTasks = async (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, project } = req.query;
     let filter = {};
 
     if (status) {
       filter.status = status;
     }
 
+    if (project) {
+      filter.project = project;
+    }
+
     let tasks;
 
     if (req.user.role === "admin") {
-      tasks = await Task.find(filter).populate(
-        "assignedTo",
-        "name email profileImageUrl"
-      );
+      tasks = await Task.find(filter)
+        .populate("assignedTo", "name email profileImageUrl")
+        .populate("project", "name");
     } else {
-      tasks = await Task.find({ ...filter, assignedTo: req.user._id }).populate(
-        "assignedTo",
-        "name email profileImageUrl"
-      );
+      tasks = await Task.find({ ...filter, assignedTo: req.user._id })
+        .populate("assignedTo", "name email profileImageUrl")
+        .populate("project", "name");
     }
 
     // Add completed todoChecklist count to each task

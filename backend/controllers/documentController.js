@@ -107,6 +107,37 @@ exports.uploadDocument = async (req, res) => {
   }
 };
 
+// Update document metadata
+exports.updateDocument = async (req, res) => {
+  try {
+    const document = await Document.findById(req.params.id).populate('project');
+
+    if (!document) {
+      return res.status(404).json({ message: 'Document non trouvé' });
+    }
+
+    // Check permissions
+    if (req.user.role !== 'admin' && document.project.client.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Accès refusé' });
+    }
+
+    if (req.body.name) document.name = req.body.name;
+    if (req.body.description !== undefined) document.description = req.body.description;
+    if (req.body.type) document.type = req.body.type;
+    if (req.body.category !== undefined) document.category = req.body.category;
+
+    await document.save();
+
+    const populatedDocument = await Document.findById(document._id)
+      .populate('uploadedBy', 'fullName email')
+      .populate('project', 'name category');
+
+    res.json({ message: 'Document mis à jour', document: populatedDocument });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur lors de la mise à jour', error: error.message });
+  }
+};
+
 // Update document version
 exports.updateDocumentVersion = async (req, res) => {
   try {
