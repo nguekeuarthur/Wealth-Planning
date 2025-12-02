@@ -10,7 +10,6 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
     name: "",
     status: "",
     client: "",
-    clientContacts: [],
     description: "",
     projectLead: "",
     assignedUsers: [],
@@ -120,7 +119,7 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
     e.preventDefault();
     
     // Validation
-    if (!formData.name || !formData.status || !formData.client || !formData.category) {
+    if (!formData.name || !formData.status || !formData.client || !formData.category || !formData.projectLead) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -171,7 +170,6 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
       name: "",
       status: "",
       client: "",
-      clientContacts: [],
       description: "",
       projectLead: "",
       assignedUsers: [],
@@ -181,11 +179,6 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
     setCoverImage(null);
     setCoverImagePreview(null);
     onClose();
-  };
-
-  const getSelectedClientContacts = () => {
-    const selectedClient = clients.find(c => c._id === formData.client);
-    return selectedClient ? [selectedClient] : [];
   };
 
   return (
@@ -285,26 +278,10 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
             <option value="">Client</option>
             {clients.map((client) => (
               <option key={client._id} value={client._id}>
-                {client.fullName || client.email}
+                {client.companyName || client.contactName || client.fullName || client.email}
               </option>
             ))}
           </select>
-        </div>
-
-        {/* Client contacts (read-only display) */}
-        <div>
-          <label className="block text-xs font-medium text-white mb-1.5">
-            Client contacts <span className="text-red-500">*</span>
-          </label>
-          <div className="w-full px-3 py-2.5 bg-white border-0 rounded-md min-h-[42px] flex items-center cursor-not-allowed">
-            {formData.client ? (
-              <span className="text-sm text-gray-500">
-                {clients.find(c => c._id === formData.client)?.email || "No contact"}
-              </span>
-            ) : (
-              <span className="text-sm text-gray-400">Select a client first</span>
-            )}
-          </div>
         </div>
 
         {/* Description */}
@@ -339,9 +316,10 @@ const CreateProjectModal = ({ isOpen, onClose, onProjectCreated, preSelectedClie
               backgroundSize: "1.5em 1.5em",
               paddingRight: "2.5rem"
             }}
+            required
           >
-            <option value="">Project lead</option>
-            {users.filter(u => u.role === 'admin').map((user) => (
+            <option value="">Select project lead</option>
+            {users.map((user) => (
               <option key={user._id} value={user._id}>
                 {user.fullName || user.email}
               </option>

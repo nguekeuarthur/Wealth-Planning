@@ -66,11 +66,26 @@ exports.createProject = async (req, res) => {
       return res.status(403).json({ message: 'Accès refusé - Admin uniquement' });
     }
 
-    const project = new Project(req.body);
+    // Validation des champs requis
+    const { name, category, client, status, projectLead } = req.body;
+    if (!name || !category || !client || !status || !projectLead) {
+      return res.status(400).json({ 
+        message: 'Les champs name, category, client, status et projectLead sont requis' 
+      });
+    }
+
+    // Nettoyer les champs vides optionnels pour éviter les erreurs de conversion ObjectId
+    const projectData = { ...req.body };
+    if (!projectData.assignedUsers || projectData.assignedUsers.length === 0) {
+      delete projectData.assignedUsers;
+    }
+
+    const project = new Project(projectData);
     await project.save();
 
     res.status(201).json({ message: 'Projet créé avec succès', project });
   } catch (error) {
+    console.error('Erreur création projet:', error);
     res.status(500).json({ message: 'Erreur lors de la création', error: error.message });
   }
 };
