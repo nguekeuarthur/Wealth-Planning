@@ -381,10 +381,18 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {stats?.projects?.recent?.length > 0 ? (
-            stats.projects.recent.slice(0, 3).map((project, index) => (
+            stats.projects.recent.slice(0, 3).map((project) => (
               <div
-                key={index}
-                className="bg-white border border-[#dfe8e1] rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col gap-4"
+                key={project._id || project.id}
+                onClick={() => navigate(`/admin/project/${project._id || project.id}`)}
+                className="bg-white border border-[#dfe8e1] rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col gap-4 cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    navigate(`/admin/project/${project._id || project.id}`);
+                  }
+                }}
               >
                 <div className="flex items-start justify-between">
                   <div>
@@ -500,7 +508,10 @@ const Dashboard = () => {
                 Factures ouvertes
               </h3>
             </div>
-            <button className="text-sm text-[#2d5f3f] font-medium hover:underline">
+            <button
+              onClick={() => navigate("/admin/invoices")}
+              className="text-sm text-[#2d5f3f] font-medium hover:underline"
+            >
               Exporter
             </button>
           </div>
@@ -546,7 +557,10 @@ const Dashboard = () => {
                           .format("DD/MM/YYYY")}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button className="text-[#2d5f3f] hover:text-[#1e4029] text-sm font-medium">
+                        <button
+                          onClick={() => navigate("/admin/invoices")}
+                          className="text-[#2d5f3f] hover:text-[#1e4029] text-sm font-medium"
+                        >
                           Voir
                         </button>
                       </td>
