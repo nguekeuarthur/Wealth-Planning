@@ -3,7 +3,8 @@ import DashboardLayout from "../../components/layouts/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
-import { FiSearch, FiPlus, FiFolder, FiFilter } from "react-icons/fi";
+import { FiSearch, FiPlus, FiFolder, FiFilter, FiCheckSquare, FiSquare, FiArchive, FiSettings } from "react-icons/fi";
+import toast from "react-hot-toast";
 import CreateProjectModal from "../../components/CreateProjectModal";
 
 const brandPalette = {
@@ -33,6 +34,9 @@ const AllProjects = () => {
     field: 'createdAt',
     order: 'desc'
   });
+  const [selectedProjects, setSelectedProjects] = useState([]);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const navigate = useNavigate();
 
   const getAllProjects = async () => {
@@ -204,6 +208,86 @@ const AllProjects = () => {
     });
     setSearchQuery("");
   };
+
+  // Gestion de la sélection
+  const handleProjectSelect = (projectId, checked) => {
+    if (checked) {
+      setSelectedProjects(prev => [...prev, projectId]);
+    } else {
+      setSelectedProjects(prev => prev.filter(id => id !== projectId));
+    }
+  };
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedProjects(filteredProjects.map(p => p._id));
+    } else {
+      setSelectedProjects([]);
+    }
+  };
+
+  const isProjectSelected = (projectId) => selectedProjects.includes(projectId);
+
+  // Actions groupées
+  const handleBulkStatusChange = async (newStatus) => {
+    if (selectedProjects.length === 0) return;
+
+    setBulkActionLoading(true);
+    try {
+      // Mettre à jour le statut de tous les projets sélectionnés
+      const updatePromises = selectedProjects.map(projectId =>
+        axiosInstance.put(API_PATHS.PROJECTS.UPDATE_PROJECT(projectId), { status: newStatus })
+      );
+
+      await Promise.all(updatePromises);
+
+      // Mettre à jour l'état local
+      setAllProjects(prev =>
+        prev.map(project =>
+          selectedProjects.includes(project._id)
+            ? { ...project, status: newStatus }
+            : project
+        )
+      );
+
+      setSelectedProjects([]);
+      toast.success(`${selectedProjects.length} projet(s) mis à jour`);
+    } catch (error) {
+      console.error("Error updating projects:", error);
+      toast.error("Erreur lors de la mise à jour des projets");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkArchive = async () => {
+    if (selectedProjects.length === 0) return;
+
+    setBulkActionLoading(true);
+    try {
+      // Archiver tous les projets sélectionnés (soft delete)
+      const archivePromises = selectedProjects.map(projectId =>
+        axiosInstance.delete(API_PATHS.PROJECTS.DELETE_PROJECT(projectId))
+      );
+
+      await Promise.all(archivePromises);
+
+      // Supprimer des projets de l'état local
+      setAllProjects(prev => prev.filter(project => !selectedProjects.includes(project._id)));
+      setSelectedProjects([]);
+      toast.success(`${selectedProjects.length} projet(s) archivé(s)`);
+    } catch (error) {
+      console.error("Error archiving projects:", error);
+      toast.error("Erreur lors de l'archivage des projets");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  // Effets pour gérer l'affichage des actions groupées
+  useEffect(() => {
+    setShowBulkActions(selectedProjects.length > 0);
+  }, [selectedProjects]);
 
   // Options pour les filtres
   const statusOptions = [
@@ -439,13 +523,86 @@ const AllProjects = () => {
           )}
         </div>
 
+        {/* Bulk Actions Bar */}
+        {showBulkActions && (
+          <div className="bg-[#e6f0ea] border border-[#5a8f6f]/30 rounded-xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-[#2d5f3f] font-medium">
+                {selectedProjects.length} projet(s) sélectionné(s)
+              </span>
+              <button
+                onClick={() => setSelectedProjects([])}
+                className="text-sm text-[#7a8b7f] hover:text-[#2d5f3f] underline"
+              >
+                Désélectionner tout
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-[#2d5f3f] mr-2">Actions :</span>
+
+              {/* Change Status */}
+              <select
+                onChange={(e) => e.target.value && handleBulkStatusChange(e.target.value)}
+                disabled={bulkActionLoading}
+                className="px-3 py-1 bg-white border border-[#dfe8e1] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] disabled:opacity-50"
+                defaultValue=""
+              >
+                <option value="">Changer statut</option>
+                <option value="in progress">En cours</option>
+                <option value="in review">À revoir</option>
+                <option value="done">Terminé</option>
+              </select>
+
+              {/* Archive */}
+              <button
+                onClick={handleBulkArchive}
+                disabled={bulkActionLoading}
+                className="flex items-center gap-2 px-3 py-1 bg-white border border-[#dfe8e1] rounded-lg text-sm hover:bg-[#f4f7f4] transition-colors disabled:opacity-50"
+              >
+                <FiArchive className="text-sm" />
+                Archiver
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Projects Grid Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => handleSelectAll(selectedProjects.length !== filteredProjects.length)}
+              className="flex items-center gap-2 text-[#2d5f3f] hover:text-[#1e4029] transition-colors"
+            >
+              {selectedProjects.length === filteredProjects.length && filteredProjects.length > 0 ? (
+                <FiCheckSquare className="text-lg" />
+              ) : (
+                <FiSquare className="text-lg" />
+              )}
+              <span className="text-sm font-medium">
+                {selectedProjects.length === filteredProjects.length && filteredProjects.length > 0
+                  ? 'Tout désélectionner'
+                  : 'Tout sélectionner'
+                }
+              </span>
+            </button>
+            <span className="text-[#7a8b7f] text-sm">
+              {filteredProjects.length} projet(s) affiché(s)
+            </span>
+          </div>
+        </div>
+
         {/* Projects Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProjects.map((project) => (
             <div
               key={project._id}
-              onClick={() => handleProjectClick(project._id)}
-              className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer border border-[#dfe8e1] hover:border-[#5a8f6f]/30"
+              onClick={() => !showBulkActions && handleProjectClick(project._id)}
+              className={`bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer border ${
+                isProjectSelected(project._id)
+                  ? 'border-[#5a8f6f] bg-[#f4f7f4]/50'
+                  : 'border-[#dfe8e1] hover:border-[#5a8f6f]/30'
+              }`}
             >
               {/* Project Image */}
               <div className="relative h-48 bg-gradient-to-br from-[#f4f7f4] to-[#e8f0e8]">
@@ -468,6 +625,19 @@ const AllProjects = () => {
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(project.status)}`}>
                     {getStatusLabel(project.status)}
                   </span>
+                </div>
+
+                {/* Selection Checkbox */}
+                <div className="absolute top-3 right-3">
+                  <input
+                    type="checkbox"
+                    checked={isProjectSelected(project._id)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      handleProjectSelect(project._id, e.target.checked);
+                    }}
+                    className="w-5 h-5 text-[#5a8f6f] bg-white border-2 border-[#dfe8e1] rounded focus:ring-[#5a8f6f] focus:ring-2 cursor-pointer"
+                  />
                 </div>
               </div>
 
