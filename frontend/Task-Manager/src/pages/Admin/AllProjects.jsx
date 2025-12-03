@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
@@ -6,6 +6,7 @@ import { API_PATHS } from "../../utils/apiPaths";
 import { FiSearch, FiPlus, FiFolder, FiFilter, FiCheckSquare, FiSquare, FiArchive, FiSettings, FiCalendar, FiClock, FiUser } from "react-icons/fi";
 import toast from "react-hot-toast";
 import CreateProjectModal from "../../components/CreateProjectModal";
+import { UserContext } from "../../context/userContext";
 
 const brandPalette = {
   primary: "#1e4029",
@@ -37,6 +38,7 @@ const AllProjects = () => {
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const { user } = useContext(UserContext);
   const navigate = useNavigate();
 
   // Fonction pour calculer la progression automatique d'un projet
@@ -295,34 +297,32 @@ const AllProjects = () => {
   window.recalculateProjectProgress = recalculateProjectProgress;
 
   // Système de permissions pour les projets
-  const checkProjectPermissions = (user, project, action) => {
-    if (!user || !project) return false;
-
-    // Admin peut tout faire
-    if (user.role === 'admin') return true;
-
+  const checkProjectPermissions = (currentUser, project, action) => {
+    if (!currentUser) return false;
+    if (currentUser.role === 'admin') return true;
+    if (!project) {
+      // Actions globales (ex: créer un projet) réservées aux admins
+      return action === 'edit' ? currentUser.role === 'admin' : false;
+    }
     switch (action) {
       case 'view':
-        return user.role === 'admin' ||
-               project.client === user._id ||
-               project.projectLead === user._id ||
-               project.assignedUsers?.includes(user._id);
+        return project.client === currentUser._id ||
+               project.projectLead === currentUser._id ||
+               project.assignedUsers?.includes(currentUser._id);
 
       case 'edit':
-        return user.role === 'admin' ||
-               project.projectLead === user._id ||
-               (project.assignedUsers?.includes(user._id) && action !== 'delete');
+        return project.projectLead === currentUser._id ||
+               (project.assignedUsers?.includes(currentUser._id) && action !== 'delete');
 
       case 'delete':
-        return user.role === 'admin' || project.projectLead === user._id;
+        return project.projectLead === currentUser._id;
 
       case 'assign_users':
-        return user.role === 'admin' || project.projectLead === user._id;
+        return project.projectLead === currentUser._id;
 
       case 'change_status':
-        return user.role === 'admin' ||
-               project.projectLead === user._id ||
-               project.assignedUsers?.includes(user._id);
+        return project.projectLead === currentUser._id ||
+               project.assignedUsers?.includes(currentUser._id);
 
       default:
         return false;
@@ -331,11 +331,7 @@ const AllProjects = () => {
 
   // Wrapper pour les actions nécessitant des permissions
   const withPermission = (action, project, callback) => {
-    // Pour l'instant, on suppose que l'utilisateur est disponible via un contexte
-    // Dans un vrai projet, on utiliserait le contexte utilisateur
-    const mockUser = { role: 'admin', _id: 'user_id' }; // À remplacer par le vrai contexte
-
-    if (checkProjectPermissions(mockUser, project, action)) {
+    if (checkProjectPermissions(user, project, action)) {
       callback();
     } else {
       toast.error("Vous n'avez pas les permissions nécessaires pour cette action");
@@ -583,20 +579,17 @@ const AllProjects = () => {
 
           {/* Action Button */}
           <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
-          {(() => {
-            const mockUser = { role: 'admin', _id: 'user_id' }; // À remplacer par le vrai contexte
-            return checkProjectPermissions(mockUser, null, 'edit') && (
+            {user?.role === 'admin' && (
               <button
                 onClick={handleAddProject}
-              className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
-          >
-              <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-            <FiPlus className="text-lg" />
-              </div>
-              Nouveau projet
-            </button>
-            );
-          })()}
+                className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
+              >
+                <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+                  <FiPlus className="text-lg" />
+                </div>
+                Nouveau projet
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -745,9 +738,9 @@ const AllProjects = () => {
               <span className="text-sm text-[#2d5f3f] mr-2">Actions :</span>
 
               {/* Change Status - Seulement si permissions */}
-              {selectedProjects.some(projectId => {
+            {user && selectedProjects.some(projectId => {
                 const project = filteredProjects.find(p => p._id === projectId);
-                return checkProjectPermissions({ role: 'admin', _id: 'user_id' }, project, 'change_status');
+                return project && checkProjectPermissions(user, project, 'change_status');
               }) && (
                 <select
                   onChange={(e) => e.target.value && handleBulkStatusChange(e.target.value)}
@@ -763,9 +756,9 @@ const AllProjects = () => {
               )}
 
               {/* Archive - Seulement si permissions */}
-              {selectedProjects.some(projectId => {
+              {user && selectedProjects.some(projectId => {
                 const project = filteredProjects.find(p => p._id === projectId);
-                return checkProjectPermissions({ role: 'admin', _id: 'user_id' }, project, 'delete');
+                return project && checkProjectPermissions(user, project, 'delete');
               }) && (
                 <button
                   onClick={handleBulkArchive}
@@ -812,12 +805,10 @@ const AllProjects = () => {
               key={project._id}
               onClick={() => {
                 if (showBulkActions) return;
-                const mockUser = { role: 'admin', _id: 'user_id' }; // À remplacer par le vrai contexte
-                if (checkProjectPermissions(mockUser, project, 'view')) {
-                  handleProjectClick(project._id);
-                } else {
-                  toast.error("Vous n'avez pas accès à ce projet");
+                if (!user || !checkProjectPermissions(user, project, 'view')) {
+                  return toast.error("Vous n'avez pas accès à ce projet");
                 }
+                handleProjectClick(project._id);
               }}
               className={`bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer border ${
                 isProjectSelected(project._id)
@@ -1002,7 +993,7 @@ const AllProjects = () => {
                 ? "Essayez d'ajuster votre recherche"
                 : "Commencez par créer votre premier projet"}
             </p>
-            {!searchQuery && (
+            {!searchQuery && user?.role === 'admin' && (
               <button
                 onClick={handleAddProject}
                 className="inline-flex items-center gap-2 bg-[#2d5f3f] text-white px-6 py-3 rounded-xl hover:bg-[#1e4029] transition-colors font-medium"
