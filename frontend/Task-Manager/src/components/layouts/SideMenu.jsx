@@ -64,14 +64,16 @@ const SideMenu = ({ activeMenu }) => {
           } py-3 px-6 mb-3 cursor-pointer relative`}
           onClick={() => handleClick(item.path)}
         >
-          <item.icon className="text-xl" />
+          <div className="relative">
+            <item.icon className="text-xl" />
+            {/* Compteur de notifications pour l'élément "Notifications" - positionné sur l'icône */}
+            {item.label === "Notifications" && unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </div>
           <span>{item.label}</span>
-          {/* Compteur de notifications pour l'élément "Notifications" */}
-          {item.label === "Notifications" && unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1">
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
-          )}
         </button>
       ))}
     </div>;
