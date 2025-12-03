@@ -3,7 +3,7 @@ import DashboardLayout from "../../components/layouts/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
-import { FiSearch, FiPlus, FiFolder } from "react-icons/fi";
+import { FiSearch, FiPlus, FiFolder, FiFilter } from "react-icons/fi";
 import CreateProjectModal from "../../components/CreateProjectModal";
 
 const brandPalette = {
@@ -20,6 +20,19 @@ const AllProjects = () => {
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    status: 'all',
+    category: 'all',
+    client: 'all',
+    projectLead: 'all',
+    dateRange: 'all',
+    priority: 'all'
+  });
+  const [sortBy, setSortBy] = useState({
+    field: 'createdAt',
+    order: 'desc'
+  });
   const navigate = useNavigate();
 
   const getAllProjects = async () => {
@@ -36,17 +49,126 @@ const AllProjects = () => {
     getAllProjects();
   }, []);
 
-  useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setFilteredProjects(allProjects);
-    } else {
-      const filtered = allProjects.filter((project) =>
-        project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        project.category.toLowerCase().includes(searchQuery.toLowerCase())
+  // Fonction de filtrage avancé
+  const applyFilters = (projects, search, filterOptions) => {
+    let filtered = [...projects];
+
+    // Recherche textuelle avancée
+    if (search.trim() !== "") {
+      const query = search.toLowerCase();
+      filtered = filtered.filter((project) =>
+        project.name.toLowerCase().includes(query) ||
+        project.category.toLowerCase().includes(query) ||
+        project.description?.toLowerCase().includes(query) ||
+        project.client?.fullName?.toLowerCase().includes(query) ||
+        project.projectLead?.fullName?.toLowerCase().includes(query) ||
+        project.tasks?.some(task => task.title?.toLowerCase().includes(query)) ||
+        project.messages?.some(msg => msg.content?.toLowerCase().includes(query))
       );
-      setFilteredProjects(filtered);
     }
-  }, [searchQuery, allProjects]);
+
+    // Filtres par statut
+    if (filterOptions.status !== 'all') {
+      filtered = filtered.filter(project => project.status === filterOptions.status);
+    }
+
+    // Filtres par catégorie
+    if (filterOptions.category !== 'all') {
+      filtered = filtered.filter(project => project.category === filterOptions.category);
+    }
+
+    // Filtres par client
+    if (filterOptions.client !== 'all') {
+      filtered = filtered.filter(project => project.client?._id === filterOptions.client);
+    }
+
+    // Filtres par chef de projet
+    if (filterOptions.projectLead !== 'all') {
+      filtered = filtered.filter(project => project.projectLead?._id === filterOptions.projectLead);
+    }
+
+    // Filtres par priorité (basé sur les délais et progression)
+    if (filterOptions.priority !== 'all') {
+      filtered = filtered.filter(project => {
+        const daysRemaining = project.endDate ?
+          Math.ceil((new Date(project.endDate) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+
+        switch (filterOptions.priority) {
+          case 'high':
+            return daysRemaining !== null && daysRemaining <= 7;
+          case 'medium':
+            return daysRemaining !== null && daysRemaining <= 30 && daysRemaining > 7;
+          case 'low':
+            return daysRemaining === null || daysRemaining > 30;
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Filtres par période
+    if (filterOptions.dateRange !== 'all') {
+      const now = new Date();
+      filtered = filtered.filter(project => {
+        const projectDate = new Date(project.createdAt);
+
+        switch (filterOptions.dateRange) {
+          case 'this_week':
+            const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
+            return projectDate >= weekStart;
+          case 'this_month':
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            return projectDate >= monthStart;
+          case 'this_year':
+            const yearStart = new Date(now.getFullYear(), 0, 1);
+            return projectDate >= yearStart;
+          default:
+            return true;
+        }
+      });
+    }
+
+    return filtered;
+  };
+
+  // Fonction de tri
+  const applySorting = (projects, sortOptions) => {
+    return [...projects].sort((a, b) => {
+      let aValue, bValue;
+
+      switch (sortOptions.field) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'completion':
+          aValue = a.completion || 0;
+          bValue = b.completion || 0;
+          break;
+        case 'endDate':
+          aValue = a.endDate ? new Date(a.endDate) : new Date(9999, 12, 31);
+          bValue = b.endDate ? new Date(b.endDate) : new Date(9999, 12, 31);
+          break;
+        case 'createdAt':
+        default:
+          aValue = new Date(a.createdAt);
+          bValue = new Date(b.createdAt);
+          break;
+      }
+
+      if (sortOptions.order === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+  };
+
+  useEffect(() => {
+    let filtered = applyFilters(allProjects, searchQuery, filters);
+    filtered = applySorting(filtered, sortBy);
+    setFilteredProjects(filtered);
+  }, [searchQuery, filters, sortBy, allProjects]);
 
   const handleProjectClick = (projectId) => {
     navigate(`/admin/project/${projectId}`);
@@ -58,8 +180,74 @@ const AllProjects = () => {
 
   const handleProjectCreated = (newProject) => {
     setAllProjects([newProject, ...allProjects]);
-    setFilteredProjects([newProject, ...filteredProjects]);
   };
+
+  const handleFilterChange = (filterType, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterType]: value
+    }));
+  };
+
+  const handleSortChange = (field, order) => {
+    setSortBy({ field, order });
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      status: 'all',
+      category: 'all',
+      client: 'all',
+      projectLead: 'all',
+      dateRange: 'all',
+      priority: 'all'
+    });
+    setSearchQuery("");
+  };
+
+  // Options pour les filtres
+  const statusOptions = [
+    { value: 'all', label: 'Tous les statuts' },
+    { value: 'in progress', label: 'En cours' },
+    { value: 'in review', label: 'À revoir' },
+    { value: 'done', label: 'Terminé' }
+  ];
+
+  const categoryOptions = [
+    { value: 'all', label: 'Toutes les catégories' },
+    { value: 'Création entreprise onshore', label: 'Création entreprise onshore' },
+    { value: 'Création entreprise offshore', label: 'Création entreprise offshore' },
+    { value: 'Ouverture compte bancaire onshore', label: 'Ouverture compte bancaire onshore' },
+    { value: 'Ouverture compte bancaire offshore', label: 'Ouverture compte bancaire offshore' },
+    { value: 'Domiciliation', label: 'Domiciliation' },
+    { value: 'Réception courrier', label: 'Réception courrier' },
+    { value: 'Proposition structuration patrimoniale', label: 'Proposition structuration patrimoniale' },
+    { value: 'Proposition structuration patrimoniale:Reviewed', label: 'Proposition structuration patrimoniale:Reviewed' },
+    { value: 'Exécution structuration patrimoniale', label: 'Exécution structuration patrimoniale' },
+    { value: 'Proposition stratégie fiscale', label: 'Proposition stratégie fiscale' },
+    { value: 'Proposition stratégie fiscale:Reviewed', label: 'Proposition stratégie fiscale:Reviewed' }
+  ];
+
+  const dateRangeOptions = [
+    { value: 'all', label: 'Toutes les périodes' },
+    { value: 'this_week', label: 'Cette semaine' },
+    { value: 'this_month', label: 'Ce mois' },
+    { value: 'this_year', label: 'Cette année' }
+  ];
+
+  const priorityOptions = [
+    { value: 'all', label: 'Toutes les priorités' },
+    { value: 'high', label: 'Haute' },
+    { value: 'medium', label: 'Moyenne' },
+    { value: 'low', label: 'Basse' }
+  ];
+
+  const sortOptions = [
+    { value: 'createdAt', label: 'Date de création' },
+    { value: 'name', label: 'Nom' },
+    { value: 'completion', label: 'Progression' },
+    { value: 'endDate', label: 'Échéance' }
+  ];
 
   const getStatusBadgeClass = (status) => {
     switch (status) {
@@ -138,6 +326,117 @@ const AllProjects = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors"
           />
+        </div>
+
+        {/* Advanced Filters */}
+        <div className="bg-white border border-[#dfe8e1] rounded-xl p-4">
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2 text-[#2d5f3f] font-medium"
+            >
+              <FiFilter className="text-lg" />
+              Filtres avancés
+              <span className={`transform transition-transform ${showFilters ? 'rotate-180' : ''}`}>
+                ▼
+              </span>
+            </button>
+            {(Object.values(filters).some(v => v !== 'all') || searchQuery) && (
+              <button
+                onClick={resetFilters}
+                className="text-sm text-[#7a8b7f] hover:text-[#2d5f3f] underline"
+              >
+                Réinitialiser
+              </button>
+            )}
+          </div>
+
+          {showFilters && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+              {/* Status Filter */}
+              <div>
+                <label className="block text-sm font-medium text-[#2d5f3f] mb-2">Statut</label>
+                <select
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  className="w-full px-3 py-2 bg-[#f4f7f4] border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f]"
+                >
+                  {statusOptions.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Category Filter */}
+              <div>
+                <label className="block text-sm font-medium text-[#2d5f3f] mb-2">Catégorie</label>
+                <select
+                  value={filters.category}
+                  onChange={(e) => handleFilterChange('category', e.target.value)}
+                  className="w-full px-3 py-2 bg-[#f4f7f4] border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f]"
+                >
+                  {categoryOptions.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Priority Filter */}
+              <div>
+                <label className="block text-sm font-medium text-[#2d5f3f] mb-2">Priorité</label>
+                <select
+                  value={filters.priority}
+                  onChange={(e) => handleFilterChange('priority', e.target.value)}
+                  className="w-full px-3 py-2 bg-[#f4f7f4] border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f]"
+                >
+                  {priorityOptions.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Date Range Filter */}
+              <div>
+                <label className="block text-sm font-medium text-[#2d5f3f] mb-2">Période</label>
+                <select
+                  value={filters.dateRange}
+                  onChange={(e) => handleFilterChange('dateRange', e.target.value)}
+                  className="w-full px-3 py-2 bg-[#f4f7f4] border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f]"
+                >
+                  {dateRangeOptions.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sort Options */}
+              <div>
+                <label className="block text-sm font-medium text-[#2d5f3f] mb-2">Trier par</label>
+                <select
+                  value={sortBy.field}
+                  onChange={(e) => handleSortChange(e.target.value, sortBy.order)}
+                  className="w-full px-3 py-2 bg-[#f4f7f4] border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f]"
+                >
+                  {sortOptions.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sort Order */}
+              <div>
+                <label className="block text-sm font-medium text-[#2d5f3f] mb-2">Ordre</label>
+                <select
+                  value={sortBy.order}
+                  onChange={(e) => handleSortChange(sortBy.field, e.target.value)}
+                  className="w-full px-3 py-2 bg-[#f4f7f4] border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f]"
+                >
+                  <option value="desc">Décroissant</option>
+                  <option value="asc">Croissant</option>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Projects Grid */}
