@@ -3,7 +3,7 @@ import DashboardLayout from "../../components/layouts/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
-import { FiSearch, FiPlus, FiFolder, FiFilter, FiCheckSquare, FiSquare, FiArchive, FiSettings } from "react-icons/fi";
+import { FiSearch, FiPlus, FiFolder, FiFilter, FiCheckSquare, FiSquare, FiArchive, FiSettings, FiCalendar, FiClock, FiUser } from "react-icons/fi";
 import toast from "react-hot-toast";
 import CreateProjectModal from "../../components/CreateProjectModal";
 
@@ -293,6 +293,40 @@ const AllProjects = () => {
 
   // Fonction exposée pour les autres composants
   window.recalculateProjectProgress = recalculateProjectProgress;
+
+  // Fonction pour calculer les métriques d'un projet
+  const calculateProjectMetrics = (project) => {
+    const totalTasks = project.tasks?.length || 0;
+    const completedTasks = project.tasks?.filter(task => task.status === 'completed').length || 0;
+    const overdueTasks = project.tasks?.filter(task => {
+      if (!task.dueDate || task.status === 'completed') return false;
+      return new Date(task.dueDate) < new Date();
+    }).length || 0;
+
+    // Calcul du temps total passé (supposé stocké dans chaque tâche)
+    const totalTimeSpent = project.tasks?.reduce((sum, task) => sum + (task.timeSpent || 0), 0) || 0;
+
+    // Calcul du budget (basé sur les factures)
+    const budgetUsed = project.invoices?.reduce((sum, invoice) => sum + (invoice.amount || 0), 0) || 0;
+    const budgetRemaining = (project.budget || 0) - budgetUsed;
+
+    // Calcul des jours restants
+    const daysRemaining = project.endDate ?
+      Math.ceil((new Date(project.endDate) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+
+    return {
+      totalTasks,
+      completedTasks,
+      overdueTasks,
+      completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+      totalTimeSpent,
+      budgetUsed,
+      budgetRemaining,
+      daysRemaining,
+      isOverdue: daysRemaining !== null && daysRemaining < 0,
+      isUrgent: daysRemaining !== null && daysRemaining <= 7 && daysRemaining > 0
+    };
+  };
 
   const handleFilterChange = (filterType, value) => {
     setFilters(prev => ({
@@ -743,6 +777,39 @@ const AllProjects = () => {
                   </span>
                 </div>
 
+                {/* Smart Tags */}
+                {(() => {
+                  const metrics = calculateProjectMetrics(project);
+                  const tags = [];
+
+                  if (metrics.isOverdue) {
+                    tags.push({ label: 'En retard', color: 'bg-red-100 text-red-700' });
+                  } else if (metrics.isUrgent) {
+                    tags.push({ label: 'Urgent', color: 'bg-orange-100 text-orange-700' });
+                  }
+
+                  if (metrics.overdueTasks > 0) {
+                    tags.push({ label: `${metrics.overdueTasks} tâche(s) en retard`, color: 'bg-red-100 text-red-700' });
+                  }
+
+                  if (project.completion === 100) {
+                    tags.push({ label: 'Terminé', color: 'bg-green-100 text-green-700' });
+                  }
+
+                  return tags.length > 0 ? (
+                    <div className="absolute top-3 right-12 flex flex-col gap-1">
+                      {tags.slice(0, 2).map((tag, index) => (
+                        <span
+                          key={index}
+                          className={`px-2 py-1 rounded text-xs font-medium ${tag.color} whitespace-nowrap`}
+                        >
+                          {tag.label}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null;
+                })()}
+
                 {/* Selection Checkbox */}
                 <div className="absolute top-3 right-3">
                   <input
@@ -786,6 +853,53 @@ const AllProjects = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Project Metrics */}
+                {(() => {
+                  const metrics = calculateProjectMetrics(project);
+                  return (
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      <div className="flex items-center gap-2">
+                        <FiFolder className="text-[#7a8b7f] text-sm" />
+                        <span className="text-xs text-[#7a8b7f]">
+                          {metrics.completedTasks}/{metrics.totalTasks} tâches
+                        </span>
+                      </div>
+
+                      {metrics.daysRemaining !== null && (
+                        <div className={`flex items-center gap-2 ${metrics.isOverdue ? 'text-red-500' : metrics.isUrgent ? 'text-orange-500' : 'text-[#7a8b7f]'}`}>
+                          <FiCalendar className="text-sm" />
+                          <span className="text-xs">
+                            {metrics.isOverdue
+                              ? `${Math.abs(metrics.daysRemaining)}j en retard`
+                              : metrics.daysRemaining === 0
+                                ? 'Échéance aujourd\'hui'
+                                : `${metrics.daysRemaining}j restants`
+                            }
+                          </span>
+                        </div>
+                      )}
+
+                      {metrics.overdueTasks > 0 && (
+                        <div className="flex items-center gap-2 text-red-500">
+                          <FiClock className="text-sm" />
+                          <span className="text-xs">
+                            {metrics.overdueTasks} tâche(s) en retard
+                          </span>
+                        </div>
+                      )}
+
+                      {metrics.totalTimeSpent > 0 && (
+                        <div className="flex items-center gap-2 text-[#7a8b7f]">
+                          <FiUser className="text-sm" />
+                          <span className="text-xs">
+                            {Math.round(metrics.totalTimeSpent)}h travaillées
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Client Info */}
                 {project.client && (
