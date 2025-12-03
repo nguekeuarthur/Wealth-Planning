@@ -87,7 +87,7 @@ const ProjectDetails = () => {
       setProject(response.data?.project || null);
     } catch (error) {
       console.error("Error fetching project details:", error);
-      toast.error("Failed to load project details");
+      toast.error("Impossible de charger les détails du projet");
     } finally {
       setLoading(false);
     }
@@ -169,13 +169,13 @@ const ProjectDetails = () => {
   const getStatusLabel = (status) => {
     switch (status) {
       case "in progress":
-        return "In progress";
+        return "En cours";
       case "in review":
-        return "In review";
+        return "En révision";
       case "done":
-        return "Done";
+        return "Terminé";
       default:
-        return status;
+        return status || "Non défini";
     }
   };
 
@@ -300,16 +300,22 @@ const ProjectDetails = () => {
   };
 
   const tabs = [
-    { id: "members", label: "Project Members", icon: FiUsers },
-    { id: "plan", label: "Project Plan", icon: FiFolder },
-    { id: "updates", label: "Weekly Updates", icon: FiClock },
-    { id: "milestones", label: "Milestones", icon: FiMapPin },
-    { id: "files", label: "Files", icon: FiFile },
-    { id: "invoices", label: "Invoices", icon: FiDollarSign },
-    { id: "comments", label: "Comments", icon: FiMessageSquare },
+    { id: "members", label: "Membres du projet", icon: FiUsers },
+    { id: "plan", label: "Plan du projet", icon: FiFolder },
+    { id: "updates", label: "Notes hebdomadaires", icon: FiClock },
+    { id: "milestones", label: "Jalons", icon: FiMapPin },
+    { id: "files", label: "Fichiers", icon: FiFile },
+    { id: "invoices", label: "Factures", icon: FiDollarSign },
+    { id: "comments", label: "Commentaires", icon: FiMessageSquare },
   ];
 
   const taskFilters = ["TO DO", "IN PROGRESS", "IN REVIEW", "DONE"];
+  const taskFilterLabels = {
+    "TO DO": "À FAIRE",
+    "IN PROGRESS": "EN COURS",
+    "IN REVIEW": "EN REVUE",
+    "DONE": "TERMINÉES",
+  };
 
   const filteredTasks = tasks.filter(task => {
     if (!searchQuery) return true;
@@ -326,7 +332,7 @@ const ProjectDetails = () => {
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading project...</p>
+            <p className="mt-4 text-gray-600">Chargement du projet...</p>
           </div>
         </div>
       </DashboardLayout>
@@ -339,13 +345,13 @@ const ProjectDetails = () => {
         <div className="flex flex-col items-center justify-center h-96">
           <div className="text-6xl mb-4">📁</div>
           <h3 className="text-xl font-semibold text-gray-700 mb-2">
-            Project not found
+            Projet introuvable
           </h3>
           <button
             onClick={() => navigate("/admin/projects")}
             className="mt-4 flex items-center gap-2 text-blue-600 hover:text-blue-700"
           >
-            <FiArrowLeft /> Back to Projects
+            <FiArrowLeft /> Retour aux projets
           </button>
         </div>
       </DashboardLayout>
@@ -380,31 +386,37 @@ const ProjectDetails = () => {
           )}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
-              <p className="text-gray-500 mb-1">START DATE</p>
+              <p className="text-gray-500 mb-1">DATE DE DÉBUT</p>
               <p className="font-medium text-gray-900">
                 {project.startDate
                   ? new Date(project.startDate).toLocaleDateString('fr-FR')
-                  : "Not set"}
+                  : "Non défini"}
               </p>
             </div>
             <div>
-              <p className="text-gray-500 mb-1">END DATE</p>
+              <p className="text-gray-500 mb-1">DATE DE FIN</p>
               <p className="font-medium text-gray-900">
                 {project.endDate
                   ? new Date(project.endDate).toLocaleDateString('fr-FR')
-                  : "Not set"}
+                  : "Non défini"}
               </p>
             </div>
             <div>
-              <p className="text-gray-500 mb-1">PROJECT LEAD</p>
+              <p className="text-gray-500 mb-1">CHEF DE PROJET</p>
               <p className="font-medium text-gray-900">
-                {project.projectLead?.fullName || project.projectLead?.email || "Not assigned"}
+                {project.projectLead?.name ||
+                  project.projectLead?.fullName ||
+                  project.projectLead?.email ||
+                  "Non assigné"}
               </p>
             </div>
             <div>
-              <p className="text-gray-500 mb-1">CLIENT CONTACTS</p>
+              <p className="text-gray-500 mb-1">CONTACT CLIENT</p>
               <p className="font-medium text-gray-900">
-                {project.client?.email || "Not set"}
+                {project.client?.name ||
+                  project.client?.fullName ||
+                  project.client?.email ||
+                  "Non défini"}
               </p>
             </div>
           </div>
@@ -415,7 +427,7 @@ const ProjectDetails = () => {
             className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
           >
             <FiEdit size={16} />
-            Edit
+            Modifier
           </button>
           <button 
             onClick={handleDelete}
@@ -423,7 +435,7 @@ const ProjectDetails = () => {
             className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FiTrash2 size={16} />
-            {isDeleting ? "Suppression..." : "Delete"}
+            {isDeleting ? "Suppression..." : "Supprimer"}
           </button>
         </div>
       </div>
@@ -433,7 +445,7 @@ const ProjectDetails = () => {
   // Tasks Section Component (reusable section)
   const TasksSection = () => (
     <div className="mt-8">
-      <h3 className="text-xl font-bold text-gray-900 mb-4">Tasks</h3>
+      <h3 className="text-xl font-bold text-gray-900 mb-4">Tâches</h3>
       
       {/* Search and Add Task */}
       <div className="flex items-center justify-between mb-4">
@@ -441,7 +453,7 @@ const ProjectDetails = () => {
           <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Search"
+            placeholder="Rechercher"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -452,7 +464,7 @@ const ProjectDetails = () => {
           className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
         >
           <FiPlus size={16} />
-          Add task
+          Ajouter une tâche
         </button>
       </div>
 
@@ -468,7 +480,7 @@ const ProjectDetails = () => {
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            {filter}
+            {taskFilterLabels[filter] || filter}
           </button>
         ))}
       </div>
@@ -498,10 +510,10 @@ const ProjectDetails = () => {
         <div className="bg-white rounded-lg shadow-sm p-12 border border-gray-200 text-center">
           <FiCheckCircle className="mx-auto text-gray-300 text-5xl mb-4" />
           <h3 className="text-lg font-semibold text-gray-700 mb-2">
-            No tasks found
+            Aucune tâche trouvée
           </h3>
           <p className="text-gray-500">
-            {searchQuery ? "Try a different search query" : "No tasks in this status"}
+            {searchQuery ? "Essayez une autre recherche" : "Aucune tâche pour ce statut"}
           </p>
         </div>
       )}
@@ -514,7 +526,7 @@ const ProjectDetails = () => {
       case "members":
         return (
           <div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Project Members</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Membres du projet</h3>
             {project.assignedUsers && project.assignedUsers.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {project.assignedUsers.map((user) => (
@@ -529,7 +541,9 @@ const ProjectDetails = () => {
                         </span>
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{user.fullName || "N/A"}</p>
+                        <p className="font-medium text-gray-900">
+                          {user.name || user.fullName || "N/A"}
+                        </p>
                         <p className="text-sm text-gray-500">{user.email}</p>
                       </div>
                     </div>
@@ -537,7 +551,7 @@ const ProjectDetails = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500">No members assigned to this project</p>
+              <p className="text-gray-500">Aucun membre assigné à ce projet</p>
             )}
           </div>
         );
@@ -545,7 +559,7 @@ const ProjectDetails = () => {
       case "plan":
         return (
           <div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Project Plan</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Plan du projet</h3>
             {project.startDate && project.endDate ? (
               <ProjectCalendar 
                 startDate={project.startDate} 
@@ -565,13 +579,13 @@ const ProjectDetails = () => {
         return (
           <div>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">Weekly Updates</h3>
+              <h3 className="text-xl font-semibold text-gray-900">Notes hebdomadaires</h3>
               <button
                 onClick={() => setIsAddUpdateModalOpen(true)}
                 className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
               >
                 <FiPlus size={16} />
-                Add note
+                Ajouter une note
               </button>
             </div>
             <WeeklyUpdatesTimeline updates={weeklyUpdates} />
@@ -582,13 +596,13 @@ const ProjectDetails = () => {
         return (
           <div>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">Milestones</h3>
+              <h3 className="text-xl font-semibold text-gray-900">Jalons</h3>
               <button
                 onClick={() => setIsAddMilestoneModalOpen(true)}
                 className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
               >
                 <FiPlus size={16} />
-                Add milestone
+                Ajouter un jalon
               </button>
             </div>
             <MilestonesList milestones={milestones} />
@@ -599,13 +613,13 @@ const ProjectDetails = () => {
         return (
           <div>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">Files</h3>
+              <h3 className="text-xl font-semibold text-gray-900">Fichiers</h3>
               <button
                 onClick={() => setIsAddFileModalOpen(true)}
                 className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
               >
                 <FiPlus size={16} />
-                Add file
+                Ajouter un fichier
               </button>
             </div>
             <FilesList
@@ -622,7 +636,7 @@ const ProjectDetails = () => {
         return (
           <div>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">Invoices</h3>
+              <h3 className="text-xl font-semibold text-gray-900">Factures</h3>
               <button
                 onClick={() => {
                   if (!project?.client && !project?.client?._id) {
@@ -635,7 +649,7 @@ const ProjectDetails = () => {
                 disabled={!project?.client && !project?.client?._id}
               >
                 <FiPlus size={16} />
-                Add invoice
+                Ajouter une facture
               </button>
             </div>
             <InvoicesTable
@@ -666,9 +680,9 @@ const ProjectDetails = () => {
             onClick={() => navigate("/admin/projects")}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
           >
-            <FiArrowLeft /> Back to Projects
+            <FiArrowLeft /> Retour aux projets
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Project details</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Détails du projet</h1>
         </div>
 
         {/* Project Details Section - Always visible at top */}

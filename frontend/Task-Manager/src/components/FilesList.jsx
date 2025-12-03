@@ -12,11 +12,12 @@ const FilesList = ({ files, onFileDeleted, onFileUpdated, projectId, onEditFile 
   const getTypeLabel = (type) => {
     switch (type) {
       case "contract":
-        return "CONTRACT";
+        return "CONTRAT";
       case "livrable":
-        return "DELIVERABLE";
+      case "deliverable":
+        return "LIVRABLE";
       default:
-        return type.toUpperCase();
+        return type ? type.toUpperCase() : "";
     }
   };
 
@@ -75,7 +76,7 @@ const FilesList = ({ files, onFileDeleted, onFileUpdated, projectId, onEditFile 
     const matchesFilter =
       activeFilter === "all" ||
       (activeFilter === "contract" && file.type === "contract") ||
-      (activeFilter === "deliverable" && file.type === "livrable");
+      (activeFilter === "deliverable" && (file.type === "livrable" || file.type === "deliverable"));
 
     const matchesSearch =
       !searchQuery ||
@@ -100,7 +101,7 @@ const FilesList = ({ files, onFileDeleted, onFileUpdated, projectId, onEditFile 
         <div className="relative flex-1 max-w-md">
           <input
             type="text"
-            placeholder="Search"
+            placeholder="Rechercher un fichier"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
@@ -128,7 +129,7 @@ const FilesList = ({ files, onFileDeleted, onFileUpdated, projectId, onEditFile 
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
-            All
+            Tous
           </button>
           <button
             onClick={() => setActiveFilter("contract")}
@@ -138,7 +139,7 @@ const FilesList = ({ files, onFileDeleted, onFileUpdated, projectId, onEditFile 
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
-            CONTRACT
+            Contrats
           </button>
           <button
             onClick={() => setActiveFilter("deliverable")}
@@ -148,7 +149,7 @@ const FilesList = ({ files, onFileDeleted, onFileUpdated, projectId, onEditFile 
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
-            DELIVERABLE
+            Livrables
           </button>
         </div>
       </div>

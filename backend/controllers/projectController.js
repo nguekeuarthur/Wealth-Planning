@@ -16,9 +16,9 @@ exports.getAllProjects = async (req, res) => {
     }
 
     const projects = await Project.find(filter)
-      .populate('client', 'fullName email')
-      .populate('projectLead', 'fullName email')
-      .populate('assignedUsers', 'fullName email')
+      .populate('client', 'name fullName email')
+      .populate('projectLead', 'name fullName email')
+      .populate('assignedUsers', 'name fullName email')
       .populate('tasks')
       .sort({ createdAt: -1 });
 
@@ -32,9 +32,9 @@ exports.getAllProjects = async (req, res) => {
 exports.getProjectById = async (req, res) => {
   try {
     const project = await Project.findById(req.params.id)
-      .populate('client', 'fullName email profilePic phoneNumber')
-      .populate('projectLead', 'fullName email')
-      .populate('assignedUsers', 'fullName email')
+      .populate('client', 'name fullName email profilePic phoneNumber')
+      .populate('projectLead', 'name fullName email')
+      .populate('assignedUsers', 'name fullName email')
       .populate('tasks')
       .populate('documents')
       .populate('invoices')
@@ -120,9 +120,9 @@ exports.updateProject = async (req, res) => {
 
     // Populate relations before sending response
     const populatedProject = await Project.findById(project._id)
-      .populate('client', 'fullName email profilePic phoneNumber')
-      .populate('projectLead', 'fullName email')
-      .populate('assignedUsers', 'fullName email');
+      .populate('client', 'name fullName email profilePic phoneNumber')
+      .populate('projectLead', 'name fullName email')
+      .populate('assignedUsers', 'name fullName email');
 
     res.json({ message: 'Projet mis à jour', project: populatedProject });
   } catch (error) {
