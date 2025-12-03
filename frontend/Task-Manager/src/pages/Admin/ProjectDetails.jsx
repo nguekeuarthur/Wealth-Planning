@@ -3,11 +3,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
-import {
-  FiArrowLeft,
-  FiCalendar,
-  FiUser,
-  FiUsers,
+import { 
+  FiArrowLeft, 
+  FiCalendar, 
+  FiUser, 
+  FiUsers, 
   FiFolder,
   FiMessageSquare,
   FiFileText,
@@ -18,11 +18,20 @@ import {
   FiTrendingUp,
   FiActivity,
   FiAlertTriangle,
+  FiPlus,
   FiShield,
-  FiPlus
+  FiEdit,
+  FiChevronDown,
+  FiChevronUp,
+  FiDownload
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { UserContext } from "../../context/userContext";
+import ManageProjectTeamsModal from "../../components/ManageProjectTeamsModal";
+import CreateProjectTaskModal from "../../components/CreateProjectTaskModal";
+import CreateProjectDocumentModal from "../../components/CreateProjectDocumentModal";
+import CreateInvoiceModal from "../../components/CreateInvoiceModal";
+import CreateProjectUpdateModal from "../../components/CreateProjectUpdateModal";
 
 const tabs = [
   { id: "overview", label: "Vue d'ensemble", icon: FiFolder },
@@ -79,6 +88,13 @@ const ProjectDetails = () => {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  const [showTeamsModal, setShowTeamsModal] = useState(false);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [expandedTeams, setExpandedTeams] = useState(new Set());
 
   useEffect(() => {
     fetchProjectDetails();
@@ -98,6 +114,18 @@ const ProjectDetails = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleTeam = (teamId) => {
+    setExpandedTeams(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(teamId)) {
+        newSet.delete(teamId);
+      } else {
+        newSet.add(teamId);
+      }
+      return newSet;
+    });
   };
 
   const calculateProjectMetrics = (data) => {
@@ -228,33 +256,37 @@ const ProjectDetails = () => {
             <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-16 -translate-x-24"></div>
           </div>
 
+          {/* Badge de statut en haut à droite */}
+          <div className="absolute top-6 right-6 z-10">
+            <span className={`px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg ${getStatusBadgeClass(project.status)}`}>
+              {project.status === "in progress"
+                ? "En cours"
+                : project.status === "in review"
+                ? "En revue"
+                : "Terminé"}
+            </span>
+          </div>
+
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center justify-between">
             <div>
-              <button
-                onClick={() => navigate("/admin/projects")}
+          <button
+            onClick={() => navigate("/admin/projects")}
                 className="inline-flex items-center gap-2 text-white/70 text-xs uppercase tracking-[0.2em]"
-              >
+          >
                 <FiArrowLeft /> Retour aux projets
-              </button>
-
+          </button>
+          
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <h1 className="text-3xl lg:text-4xl font-bold text-white">
                   {project.name}
                 </h1>
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClass(project.status)}`}>
-                  {project.status === "in progress"
-                    ? "En cours"
-                    : project.status === "in review"
-                    ? "En revue"
-                    : "Terminé"}
-                </span>
                 {smartTags.map((tag, index) => (
                   <span
                     key={index}
                     className={`px-2 py-1 rounded-full text-xs font-medium ${tag.color}`}
                   >
                     {tag.label}
-                  </span>
+                </span>
                 ))}
               </div>
 
@@ -268,11 +300,11 @@ const ProjectDetails = () => {
                 </p>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 text-white/80 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 text-white/80 text-sm">
                 <div>
                   <p className="text-white/60 text-xs uppercase">Client</p>
                   <p className="font-semibold">
-                    {project.client?.fullName || "—"}
+                    {project.client?.companyName || "—"}
                   </p>
                 </div>
                 <div>
@@ -280,41 +312,23 @@ const ProjectDetails = () => {
                     Chef de projet
                   </p>
                   <p className="font-semibold">
-                    {project.projectLead?.fullName || "—"}
+                    {project.projectLead?.name || "—"}
                   </p>
-                </div>
-                <div>
-                  <p className="text-white/60 text-xs uppercase">
-                    Budget utilisé
-                  </p>
-                  <p className="font-semibold">
-                    {metrics ? `${metrics.budgetUsed.toLocaleString()} CHF` : "—"}
-                  </p>
-                </div>
-              </div>
             </div>
+          </div>
+        </div>
 
-            {can("edit") && (
-              <div className="flex flex-wrap gap-3">
-                <button className="px-4 py-2 border border-white/40 text-white rounded-xl text-sm font-medium">
-                  Modifier
-                </button>
-                <button className="px-4 py-2 bg-white text-[#1e4029] rounded-xl text-sm font-semibold flex items-center gap-2">
-                  <FiPlus /> Nouveau livrable
-                </button>
-              </div>
-            )}
           </div>
         </div>
 
         <div className="flex flex-wrap gap-3">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   isActive
                     ? "bg-[#e6f0ea] text-[#1e4029]"
@@ -322,15 +336,15 @@ const ProjectDetails = () => {
                 }`}
               >
                 <Icon size={16} />
-                {tab.label}
-              </button>
-            );
-          })}
+                  {tab.label}
+                </button>
+              );
+            })}
         </div>
 
         <div className="grid xl:grid-cols-[2fr_1fr] gap-6">
-          <div className="space-y-6">
-            {activeTab === "overview" && (
+        <div className="space-y-6">
+          {activeTab === "overview" && (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                   <MetricCard
@@ -364,7 +378,7 @@ const ProjectDetails = () => {
                     label="Tâches en retard"
                     value={metrics?.overdueTasks || 0}
                   />
-                </div>
+                      </div>
 
                 <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm">
                   <div className="flex flex-col gap-6 lg:flex-row">
@@ -375,7 +389,7 @@ const ProjectDetails = () => {
                       <p className="text-[#4a5c52] whitespace-pre-wrap">
                         {project.description || "Aucune description fournie."}
                       </p>
-                    </div>
+                      </div>
                     <div className="lg:w-64 space-y-3">
                       <div className="p-4 rounded-xl bg-[#f4f7f4]">
                         <p className="text-xs text-[#7a8b7f] uppercase">
@@ -390,7 +404,7 @@ const ProjectDetails = () => {
                                 ? new Date(project.startDate).toLocaleDateString()
                                 : "—"}
                             </span>
-                          </div>
+                    </div>
                           <div className="flex items-center gap-2">
                             <FiClock className="text-[#b76a28]" />
                             <span>
@@ -399,34 +413,34 @@ const ProjectDetails = () => {
                                 ? new Date(project.endDate).toLocaleDateString()
                                 : "—"}
                             </span>
-                          </div>
-                        </div>
+                  </div>
+                      </div>
                       </div>
                       <div className="p-4 rounded-xl border border-dashed border-[#dfe8e1] text-xs text-[#7a8b7f]">
                         Utilisez les updates pour documenter les décisions,
                         jalons ou blocages.
-                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
+                      </div>
+                      </div>
+                    </div>
             )}
 
             {activeTab === "tasks" && (
               <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
-                  <div>
+                      <div>
                     <h3 className="text-xl font-semibold text-[#1e4029]">
                       Tâches du projet
                     </h3>
                     <p className="text-sm text-[#7a8b7f]">
                       {project.tasks?.length || 0} tâches au total
-                    </p>
-                  </div>
+                        </p>
+                      </div>
                   {can("edit") && (
                     <button
-                      onClick={() => navigate(`/admin/create-task?project=${id}`)}
-                      className="flex items-center gap-2 px-4 py-2 bg-[#2d5f3f] text-white rounded-xl text-sm font-medium"
+                      onClick={() => setShowTaskModal(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-[#2d5f3f] text-white rounded-xl text-sm font-medium hover:bg-[#1e4029] transition-colors"
                     >
                       <FiPlus /> Nouvelle tâche
                     </button>
@@ -435,49 +449,124 @@ const ProjectDetails = () => {
 
                 {project.tasks?.length ? (
                   <div className="space-y-4">
-                    {project.tasks.map((task) => (
-                      <div
-                        key={task._id}
-                        className="p-4 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 transition-colors"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <h4 className="text-[#1e4029] font-semibold text-base">
-                              {task.title || "Tâche sans titre"}
-                            </h4>
-                            <p className="text-sm text-[#7a8b7f] mt-1">
-                              {task.description || "Aucune description"}
-                            </p>
-                            <div className="flex flex-wrap gap-4 mt-3 text-xs text-[#7a8b7f]">
-                              {task.dueDate && (
-                                <span className="flex items-center gap-1">
-                                  <FiCalendar size={12} />
-                                  {new Date(task.dueDate).toLocaleDateString()}
-                                </span>
-                              )}
-                              {task.assignedTo && (
-                                <span className="flex items-center gap-1">
-                                  <FiUser size={12} />
-                                  {task.assignedTo.fullName || task.assignedTo.email}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                              task.status === "completed"
-                                ? "bg-[#dff5e7] text-[#1e4029]"
-                                : task.status === "in progress"
-                                ? "bg-[#fff6ea] text-[#b76a28]"
-                                : "bg-[#f4f7f4] text-[#7a8b7f]"
-                            }`}
-                          >
-                            {task.status || "pending"}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                    {project.tasks.map((task) => {
+                      const assignedUsers = Array.isArray(task.assignedTo) ? task.assignedTo : (task.assignedTo ? [task.assignedTo] : []);
+                      const dueDate = task.dueDate ? new Date(task.dueDate) : null;
+                      const isOverdue = dueDate && dueDate < new Date() && task.status !== "Completed";
+                      
+                      return (
+                        <div
+                          key={task._id}
+                          className="p-4 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 transition-colors bg-white"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h4 className="text-[#1e4029] font-semibold text-base">
+                                  {task.title || "Tâche sans titre"}
+                                </h4>
+                                <span
+                                  className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                    task.priority === "Urgent"
+                                      ? "bg-red-100 text-red-700"
+                                      : task.priority === "High"
+                                      ? "bg-orange-100 text-orange-700"
+                                      : task.priority === "Medium"
+                                      ? "bg-yellow-100 text-yellow-700"
+                                      : "bg-blue-100 text-blue-700"
+                                  }`}
+                                >
+                                  {task.priority === "Urgent"
+                                    ? "Urgente"
+                                    : task.priority === "High"
+                                    ? "Haute"
+                                    : task.priority === "Medium"
+                                    ? "Moyenne"
+                                    : "Basse"}
+                      </span>
                   </div>
+
+                              {task.description && (
+                                <p className="text-sm text-[#7a8b7f] mt-1 mb-3">
+                                  {task.description}
+                                </p>
+                              )}
+
+                              {/* Assignés et date d'échéance */}
+                              <div className="flex flex-wrap items-center gap-4 mt-3">
+                                {/* Assignés */}
+                                {assignedUsers.length > 0 && (
+                                  <div className="flex items-center gap-2">
+                                    <FiUser className="text-[#7a8b7f] text-sm" />
+                                    <div className="flex items-center gap-1">
+                                      {assignedUsers.slice(0, 3).map((user, idx) => (
+                                        <div key={user._id || idx} className="flex items-center -ml-2 first:ml-0">
+                                          {user.profileImageUrl ? (
+                                            <img
+                                              src={user.profileImageUrl}
+                                              alt={user.name || "Avatar"}
+                                              className="w-6 h-6 rounded-full object-cover border-2 border-white"
+                                              title={user.name || user.email}
+                                            />
+                                          ) : (
+                                            <div className="w-6 h-6 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-xs font-semibold border-2 border-white" title={user.name || user.email}>
+                                              {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
+                      </div>
+                      )}
+                    </div>
+                                      ))}
+                                      {assignedUsers.length > 3 && (
+                                        <span className="text-xs text-[#7a8b7f] ml-1">
+                                          +{assignedUsers.length - 3}
+                                        </span>
+                                      )}
+                      </div>
+                                    <span className="text-xs text-[#7a8b7f]">
+                                      {assignedUsers.length === 1 
+                                        ? assignedUsers[0].name || assignedUsers[0].email
+                                        : `${assignedUsers.length} personnes`
+                                      }
+                                    </span>
+                      </div>
+                )}
+
+                                {/* Date d'échéance */}
+                                {dueDate && (
+                                  <div className={`flex items-center gap-2 ${isOverdue ? 'text-red-600' : 'text-[#7a8b7f]'}`}>
+                                    <FiCalendar className="text-sm" />
+                                    <span className="text-xs font-medium">
+                                      {isOverdue ? 'En retard - ' : 'Échéance: '}
+                                      {dueDate.toLocaleDateString('fr-FR', { 
+                                        day: 'numeric', 
+                                        month: 'short', 
+                                        year: 'numeric' 
+                                      })}
+                        </span>
+                    </div>
+                                )}
+                </div>
+              </div>
+
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
+                                task.status === "Completed"
+                                  ? "bg-[#dff5e7] text-[#1e4029]"
+                                  : task.status === "In Progress"
+                                  ? "bg-[#fff6ea] text-[#b76a28]"
+                                  : "bg-[#f4f7f4] text-[#7a8b7f]"
+                              }`}
+                            >
+                              {task.status === "Completed" 
+                                ? "Terminée" 
+                                : task.status === "In Progress"
+                                ? "En cours"
+                                : "En attente"}
+                      </span>
+                      </div>
+                      </div>
+                      );
+                    })}
+                        </div>
                 ) : (
                   <EmptyState
                     icon="✅"
@@ -485,72 +574,183 @@ const ProjectDetails = () => {
                     subtitle="Créez votre première tâche pour ce projet."
                   />
                 )}
-              </div>
-            )}
+                  </div>
+                )}
 
             {activeTab === "documents" && (
               <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm space-y-4">
                 <div className="flex items-center justify-between">
-                  <div>
+                      <div>
                     <h3 className="text-xl font-semibold text-[#1e4029]">
                       Documents
-                    </h3>
+                </h3>
                     <p className="text-sm text-[#7a8b7f]">
                       {project.documents?.length || 0} fichiers
-                    </p>
-                  </div>
+                        </p>
+                      </div>
                   {can("edit") && (
-                    <button className="px-3 py-1.5 text-sm border border-[#dfe8e1] rounded-lg text-[#2d5f3f]">
-                      Ajouter un document
+                    <button
+                      onClick={() => setShowDocumentModal(true)}
+                      className="px-4 py-2 text-sm bg-[#2d5f3f] text-white rounded-xl hover:bg-[#1e4029] transition-colors font-medium flex items-center gap-2"
+                    >
+                      <FiPlus /> Ajouter un document
                     </button>
                   )}
-                </div>
+                    </div>
 
                 {project.documents?.length ? (
-                  <div className="space-y-4">
-                    {project.documents.map((doc) => (
-                      <div
-                        key={doc._id}
-                        className="p-4 border border-[#dfe8e1] rounded-2xl flex items-center gap-4"
-                      >
-                        <div className="p-3 bg-[#f4f7f4] rounded-xl text-[#2d5f3f]">
-                          <FiFile />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-[#1e4029]">
-                            {doc.title || "Document"}
-                          </p>
-                          <p className="text-sm text-[#7a8b7f]">
-                            {doc.type || "Non catégorisé"} — {" "}
-                            {doc.uploadedAt
-                              ? new Date(doc.uploadedAt).toLocaleDateString()
-                              : "Date inconnue"}
-                          </p>
-                        </div>
-                        {doc.fileUrl && (
-                          <a
-                            href={doc.fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#2d5f3f] text-sm font-medium"
-                          >
-                            Ouvrir
-                          </a>
-                        )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {project.documents.map((doc) => {
+                      const getTypeLabel = (type) => {
+                        switch (type) {
+                          case "contract": return "Contrat";
+                          case "livrable": return "Livrable";
+                          case "personal_data": return "Données personnelles";
+                          default: return "Autre";
+                        }
+                      };
+
+                      const getFileIcon = (fileType) => {
+                        if (!fileType) return <FiFile />;
+                        const ext = fileType.toLowerCase();
+                        if (ext.includes('pdf')) return "📄";
+                        if (ext.includes('image') || ['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return "🖼️";
+                        if (['doc', 'docx'].includes(ext)) return "📝";
+                        if (['xls', 'xlsx'].includes(ext)) return "📊";
+                        return "📎";
+                      };
+
+                      return (
+                        <div
+                          key={doc._id}
+                          className="p-4 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 transition-colors bg-white"
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="p-3 bg-[#f4f7f4] rounded-xl text-2xl flex-shrink-0">
+                              {getFileIcon(doc.fileType)}
                       </div>
-                    ))}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-[#1e4029] mb-1 truncate">
+                                {doc.name || "Document"}
+                              </h4>
+                              <div className="flex flex-wrap items-center gap-2 mb-2">
+                                <span className="px-2 py-0.5 bg-[#e6f0ea] text-[#2d5f3f] rounded text-xs font-medium">
+                                  {getTypeLabel(doc.type)}
+                            </span>
+                                {doc.category && (
+                                  <span className="text-xs text-[#7a8b7f]">
+                                    {doc.category}
+                                  </span>
+                                )}
+                          </div>
+                              {doc.description && (
+                                <p className="text-sm text-[#7a8b7f] mb-2 line-clamp-2">
+                                  {doc.description}
+                                </p>
+                              )}
+                              <div className="flex items-center justify-between mt-3">
+                                <span className="text-xs text-[#7a8b7f]">
+                                  {doc.createdAt
+                                    ? new Date(doc.createdAt).toLocaleDateString('fr-FR', {
+                                        day: 'numeric',
+                                        month: 'short',
+                                        year: 'numeric'
+                                      })
+                                    : "Date inconnue"}
+                                </span>
+                                {doc.fileUrl && (() => {
+                                  const handleDownload = async (e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    try {
+                                      // Utiliser l'endpoint de téléchargement avec authentification
+                                      const response = await axiosInstance.get(
+                                        `${API_PATHS.DOCUMENTS.GET_DOCUMENT_BY_ID(doc._id)}/download`,
+                                        {
+                                          responseType: 'blob'
+                                        }
+                                      );
+                                      
+                                      // Déterminer le type MIME à partir du type de fichier ou du Content-Type de la réponse
+                                      const contentType = response.headers['content-type'] || doc.fileType || 'application/octet-stream';
+                                      
+                                      // Créer un blob avec le bon type MIME
+                                      const blob = new Blob([response.data], { type: contentType });
+                                      const url = window.URL.createObjectURL(blob);
+                                      
+                                      // Préserver l'extension du fichier dans le nom
+                                      let fileName = doc.name || 'document';
+                                      
+                                      // S'assurer que le nom a la bonne extension
+                                      if (doc.fileType) {
+                                        const mimeToExt = {
+                                          'application/pdf': '.pdf',
+                                          'application/msword': '.doc',
+                                          'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+                                          'application/vnd.ms-excel': '.xls',
+                                          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+                                          'application/vnd.ms-powerpoint': '.ppt',
+                                          'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+                                          'image/jpeg': '.jpg',
+                                          'image/png': '.png',
+                                          'image/gif': '.gif',
+                                          'text/plain': '.txt',
+                                          'text/csv': '.csv'
+                                        };
+                                        
+                                        // Vérifier si le nom a déjà une extension
+                                        const hasExtension = /\.\w+$/.test(fileName);
+                                        if (!hasExtension && mimeToExt[doc.fileType]) {
+                                          fileName += mimeToExt[doc.fileType];
+                                        } else if (!hasExtension) {
+                                          // Essayer d'extraire l'extension du type MIME
+                                          const extMatch = doc.fileType.match(/\/(\w+)$/);
+                                          if (extMatch) {
+                                            fileName += '.' + extMatch[1];
+                                          }
+                                        }
+                                      }
+                                      
+                                      const link = document.createElement('a');
+                                      link.href = url;
+                                      link.download = fileName;
+                                      document.body.appendChild(link);
+                                      link.click();
+                                      document.body.removeChild(link);
+                                      window.URL.revokeObjectURL(url);
+                                    } catch (error) {
+                                      console.error('Erreur lors du téléchargement:', error);
+                                      toast.error('Erreur lors du téléchargement du fichier');
+                                    }
+                                  };
+
+                                  return (
+                                    <button
+                                      onClick={handleDownload}
+                                      className="px-3 py-1.5 bg-[#2d5f3f] text-white rounded-lg text-xs font-medium hover:bg-[#1e4029] transition-colors flex items-center gap-1.5"
+                                    >
+                                      <FiDownload size={14} /> Télécharger
+                                    </button>
+                                  );
+                                })()}
+                          </div>
+                        </div>
+                    </div>
                   </div>
+                      );
+                    })}
+                      </div>
                 ) : (
                   <EmptyState
                     icon="📄"
                     title="Aucun document"
                     subtitle="Ajoutez des contrats, rapports ou pièces jointes."
                   />
-                )}
-              </div>
-            )}
+              )}
+            </div>
+          )}
 
-            {activeTab === "invoices" && (
+          {activeTab === "invoices" && (
               <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -562,112 +762,265 @@ const ProjectDetails = () => {
                     </p>
                   </div>
                   {can("finance") && (
-                    <button className="px-3 py-1.5 text-sm border border-[#dfe8e1] rounded-lg text-[#2d5f3f]">
-                      Générer une facture
+                    <button
+                      onClick={() => {
+                        setSelectedInvoice(null);
+                        setShowInvoiceModal(true);
+                      }}
+                      className="px-4 py-2 bg-[#2d5f3f] text-white rounded-xl hover:bg-[#1e4029] transition-colors font-medium flex items-center gap-2"
+                    >
+                      <FiPlus /> Créer une facture
                     </button>
                   )}
                 </div>
 
                 {project.invoices?.length ? (
-                  <div className="space-y-4">
-                    {project.invoices.map((invoice) => (
-                      <div
-                        key={invoice._id}
-                        className="p-4 border border-[#dfe8e1] rounded-2xl flex items-center justify-between"
-                      >
-                        <div>
-                          <p className="font-semibold text-[#1e4029]">
-                            {invoice.invoiceNumber || invoice._id}
-                          </p>
-                          <p className="text-sm text-[#7a8b7f]">
-                            Échéance : {" "}
-                            {invoice.dueDate
-                              ? new Date(invoice.dueDate).toLocaleDateString()
-                              : "—"}
-                          </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {project.invoices.map((invoice) => {
+                      const getStatusLabel = (status) => {
+                        const statusMap = {
+                          'payée': 'Payée',
+                          'en attente': 'En attente',
+                          'à envoyer': 'À envoyer',
+                          'partiellement payée': 'Partiellement payée',
+                          'paiement reçu': 'Paiement reçu',
+                          'non payée': 'Non payée'
+                        };
+                        return statusMap[status] || status;
+                      };
+
+                      const getStatusColor = (status) => {
+                        switch (status) {
+                          case 'payée':
+                          case 'paiement reçu':
+                            return 'bg-[#dff5e7] text-[#1e4029]';
+                          case 'partiellement payée':
+                            return 'bg-[#fff6ea] text-[#b76a28]';
+                          case 'non payée':
+                            return 'bg-[#ffe5e5] text-[#c34242]';
+                          case 'en attente':
+                            return 'bg-[#e8f0ff] text-[#2a4fa2]';
+                          default:
+                            return 'bg-[#f4f7f4] text-[#7a8b7f]';
+                        }
+                      };
+
+                      return (
+                        <div
+                          key={invoice._id}
+                          className="p-4 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 transition-colors bg-white"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-[#1e4029] mb-1">
+                                {invoice.invoiceNumber || `Facture #${invoice._id.slice(-6)}`}
+                              </h4>
+                              {invoice.service && (
+                                <p className="text-sm text-[#7a8b7f] mb-2">
+                                  {invoice.service}
+                                </p>
+                              )}
+                            </div>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getStatusColor(invoice.status)}`}
+                            >
+                              {getStatusLabel(invoice.status)}
+                            </span>
+                          </div>
+
+                          {invoice.description && (
+                            <p className="text-sm text-[#7a8b7f] mb-3 line-clamp-2">
+                              {invoice.description}
+                            </p>
+                          )}
+
+                          <div className="space-y-2 mb-4">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-[#7a8b7f]">Montant:</span>
+                              <span className="font-semibold text-[#1e4029]">
+                                {invoice.amount
+                                  ? `${invoice.amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} CHF`
+                                  : "—"}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-[#7a8b7f]">Émission:</span>
+                              <span className="text-[#1e4029]">
+                                {invoice.issueDate
+                                  ? new Date(invoice.issueDate).toLocaleDateString('fr-FR', {
+                                      day: 'numeric',
+                                      month: 'short',
+                                      year: 'numeric'
+                                    })
+                                  : "—"}
+                              </span>
+                            </div>
+                            {invoice.paidDate && (
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-[#7a8b7f]">Payée le:</span>
+                                <span className="text-[#1e4029]">
+                                  {new Date(invoice.paidDate).toLocaleDateString('fr-FR', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {can("finance") && (
+                            <div className="flex items-center gap-2 pt-3 border-t border-[#dfe8e1]">
+                              <button
+                                onClick={() => {
+                                  setSelectedInvoice(invoice);
+                                  setShowInvoiceModal(true);
+                                }}
+                                className="flex-1 px-3 py-1.5 text-xs bg-[#f4f7f4] text-[#2d5f3f] rounded-lg hover:bg-[#e6f0ea] transition-colors font-medium"
+                              >
+                                Modifier
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  if (window.confirm('Êtes-vous sûr de vouloir supprimer cette facture ?')) {
+                                    try {
+                                      await axiosInstance.delete(API_PATHS.INVOICES.DELETE_INVOICE(invoice._id));
+                                      toast.success('Facture supprimée avec succès');
+                                      fetchProjectDetails();
+                                    } catch (error) {
+                                      toast.error(error.response?.data?.message || 'Erreur lors de la suppression');
+                                    }
+                                  }
+                                }}
+                                className="px-3 py-1.5 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium"
+                              >
+                                Supprimer
+                              </button>
+                            </div>
+                          )}
                         </div>
-                        <div className="text-right">
-                          <p className="text-lg font-semibold text-[#1e4029]">
-                            {invoice.amount
-                              ? `${invoice.amount.toLocaleString()} CHF`
-                              : "—"}
-                          </p>
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                              invoice.status === "paid"
-                                ? "bg-[#dff5e7] text-[#1e4029]"
-                                : invoice.status === "overdue"
-                                ? "bg-[#ffe5e5] text-[#c34242]"
-                                : "bg-[#f4f7f4] text-[#7a8b7f]"
-                            }`}
-                          >
-                            {invoice.status || "pending"}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <EmptyState
                     icon="💶"
-                    title="Aucune facturation"
-                    subtitle="Les factures du projet apparaîtront ici."
+                    title="Aucune facture"
+                    subtitle="Créez votre première facture pour ce projet."
                   />
                 )}
               </div>
             )}
 
             {activeTab === "updates" && (
-              <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-6">
+              <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-xl font-semibold text-[#1e4029]">
                       Journal & updates
                     </h3>
                     <p className="text-sm text-[#7a8b7f]">
-                      Toutes les activités liées au projet
+                      {project.messages?.length || 0} note{project.messages?.length !== 1 ? 's' : ''}
                     </p>
                   </div>
                   {can("edit") && (
-                    <button className="px-3 py-1.5 text-sm border border-[#dfe8e1] rounded-lg text-[#2d5f3f]">
-                      Ajouter une note
+                    <button
+                      onClick={() => setShowUpdateModal(true)}
+                      className="px-4 py-2 bg-[#2d5f3f] text-white rounded-xl hover:bg-[#1e4029] transition-colors font-medium flex items-center gap-2"
+                    >
+                      <FiPlus /> Ajouter une note
                     </button>
                   )}
                 </div>
 
                 {project.messages?.length ? (
                   <div className="space-y-4">
-                    {project.messages.map((message) => (
-                      <div
-                        key={message._id}
-                        className="p-4 border border-[#dfe8e1] rounded-2xl flex gap-4"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-[#f4f7f4] flex items-center justify-center text-[#2d5f3f] font-semibold">
-                          {message.sender?.fullName?.charAt(0).toUpperCase() || "U"}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-3">
-                            <p className="font-semibold text-[#1e4029]">
-                              {message.sender?.fullName || "Utilisateur"}
-                            </p>
-                            {message.createdAt && (
-                              <span className="text-xs text-[#7a8b7f]">
-                                {new Date(message.createdAt).toLocaleString()}
-                              </span>
-                            )}
+                    {project.messages.map((message) => {
+                      const getTimeAgo = (date) => {
+                        const now = new Date();
+                        const messageDate = new Date(date);
+                        const diffInSeconds = Math.floor((now - messageDate) / 1000);
+                        
+                        if (diffInSeconds < 60) return "À l'instant";
+                        if (diffInSeconds < 3600) return `Il y a ${Math.floor(diffInSeconds / 60)} min`;
+                        if (diffInSeconds < 86400) return `Il y a ${Math.floor(diffInSeconds / 3600)} h`;
+                        if (diffInSeconds < 604800) return `Il y a ${Math.floor(diffInSeconds / 86400)} j`;
+                        
+                        return messageDate.toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: messageDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+                        });
+                      };
+
+                      return (
+                        <div
+                          key={message._id}
+                          className="p-4 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 transition-colors bg-white"
+                        >
+                          <div className="flex gap-4">
+                            {/* Avatar */}
+                            <div className="flex-shrink-0">
+                              {message.sender?.profileImageUrl ? (
+                                <img
+                                  src={message.sender.profileImageUrl}
+                                  alt={message.sender.name || "Avatar"}
+                                  className="w-10 h-10 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#5a8f6f] to-[#2d5f3f] flex items-center justify-center text-white font-semibold">
+                                  {(message.sender?.name || message.sender?.fullName || "U")?.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Contenu */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-semibold text-[#1e4029]">
+                                    {message.sender?.name || message.sender?.fullName || "Utilisateur"}
+                                  </p>
+                                  {message.sender?.email && (
+                                    <span className="text-xs text-[#7a8b7f]">
+                                      ({message.sender.email})
+                                    </span>
+                                  )}
+                                </div>
+                                {message.createdAt && (
+                                  <span className="text-xs text-[#7a8b7f] whitespace-nowrap">
+                                    {getTimeAgo(message.createdAt)}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              <p className="text-sm text-[#4a5c52] whitespace-pre-wrap break-words">
+                                {message.content || message.text || "—"}
+                              </p>
+
+                              {/* Date complète au survol */}
+                              {message.createdAt && (
+                                <p className="text-xs text-[#7a8b7f] mt-2">
+                                  {new Date(message.createdAt).toLocaleDateString('fr-FR', {
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                          <p className="text-sm text-[#4a5c52] mt-1">
-                            {message.content || message.text || "—"}
-                          </p>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <EmptyState
                     icon="💬"
-                    title="Aucune activité"
-                    subtitle="Les commentaires et updates apparaîtront ici."
+                    title="Aucune note"
+                    subtitle="Ajoutez des notes pour suivre l'avancement et documenter les décisions du projet."
                   />
                 )}
               </div>
@@ -678,98 +1031,270 @@ const ProjectDetails = () => {
             <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm">
               <h3 className="text-lg font-semibold text-[#1e4029] flex items-center gap-2 mb-4">
                 <FiUser /> Client
-              </h3>
+                  </h3>
               {project.client ? (
-                <div className="space-y-3 text-sm text-[#4a5c52]">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                   <div>
-                    <p className="text-[#7a8b7f] text-xs uppercase">Nom</p>
-                    <p className="font-semibold">{project.client.fullName}</p>
-                  </div>
+                    <p className="text-[#7a8b7f] text-xs uppercase mb-1">Entreprise</p>
+                    <p className="font-semibold text-[#1e4029]">{project.client.companyName}</p>
+              </div>
                   <div>
-                    <p className="text-[#7a8b7f] text-xs uppercase">Email</p>
-                    <p>{project.client.email}</p>
+                    <p className="text-[#7a8b7f] text-xs uppercase mb-1">Contact</p>
+                    <p className="text-[#4a5c52]">{project.client.contactName}</p>
+                        </div>
+                  {project.client.industry && (
+                    <div>
+                      <p className="text-[#7a8b7f] text-xs uppercase mb-1">Secteur</p>
+                      <p className="text-[#4a5c52]">{project.client.industry}</p>
+                </div>
+              )}
+                  <div>
+                    <p className="text-[#7a8b7f] text-xs uppercase mb-1">Email</p>
+                    <p className="text-[#4a5c52] break-words">{project.client.email}</p>
                   </div>
                   {project.client.phoneNumber && (
                     <div>
-                      <p className="text-[#7a8b7f] text-xs uppercase">Téléphone</p>
-                      <p>{project.client.phoneNumber}</p>
-                    </div>
-                  )}
-                </div>
+                      <p className="text-[#7a8b7f] text-xs uppercase mb-1">Téléphone</p>
+                      <p className="text-[#4a5c52]">{project.client.phoneNumber}</p>
+            </div>
+          )}
+                          </div>
               ) : (
                 <p className="text-sm text-[#7a8b7f]">Aucun client assigné.</p>
               )}
-            </div>
+                        </div>
 
             <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-[#1e4029] flex items-center gap-2">
-                  <FiUsers /> Équipe ({project.assignedUsers?.length || 0})
+                  <FiUsers /> Équipe ({project.teams?.length || 0} équipe{project.teams?.length > 1 ? 's' : ''})
                 </h3>
                 {can("team") && (
-                  <button className="text-sm text-[#2d5f3f]">Gérer</button>
-                )}
+                  <button
+                    onClick={() => setShowTeamsModal(true)}
+                    className="text-sm text-[#2d5f3f] hover:text-[#1e4029] font-medium"
+                  >
+                    Gérer
+                  </button>
+                        )}
               </div>
-              <div className="space-y-3">
+              <div className="space-y-4">
+                {/* Chef de projet */}
                 {project.projectLead && (
                   <div className="p-3 border border-[#dfe8e1] rounded-xl flex items-center gap-3 bg-[#f4f7f4]">
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#2d5f3f] font-semibold">
-                      {project.projectLead.fullName?.charAt(0).toUpperCase() || "P"}
-                    </div>
+                    {project.projectLead.profileImageUrl ? (
+                      <img
+                        src={project.projectLead.profileImageUrl}
+                        alt={project.projectLead.name || "Avatar"}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#2d5f3f] font-semibold">
+                        {project.projectLead.name?.charAt(0).toUpperCase() || "P"}
+                </div>
+              )}
                     <div>
                       <p className="text-sm font-semibold text-[#1e4029]">
-                        {project.projectLead.fullName}
+                        {project.projectLead.name || "Chef de projet"}
                       </p>
                       <p className="text-xs text-[#7a8b7f]">Chef de projet</p>
                     </div>
-                  </div>
-                )}
+            </div>
+          )}
 
-                {project.assignedUsers?.length ? (
-                  project.assignedUsers.map((member) => (
-                    <div
-                      key={member._id}
-                      className="flex items-center gap-3 border border-[#dfe8e1] rounded-xl p-3"
-                    >
-                      <div className="w-8 h-8 bg-[#f4f7f4] rounded-full flex items-center justify-center text-[#2d5f3f] text-xs font-semibold">
-                        {member.fullName?.charAt(0).toUpperCase() || "U"}
+                {/* Équipes assignées */}
+                {project.teams && project.teams.length > 0 ? (
+                  project.teams.map((team) => {
+                    const isExpanded = expandedTeams.has(team._id);
+                    return (
+                      <div
+                        key={team._id}
+                        className="border border-[#dfe8e1] rounded-xl bg-white overflow-hidden"
+                      >
+                        {/* Header cliquable */}
+                        <button
+                          onClick={() => toggleTeam(team._id)}
+                          className="w-full p-4 flex items-center justify-between hover:bg-[#f4f7f4] transition-colors"
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <div
+                              className="w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0"
+                              style={{ backgroundColor: team.color || "#5a8f6f" }}
+                            >
+                              <FiUsers />
+                          </div>
+                            <div className="flex-1 text-left">
+                              <h4 className="font-semibold text-[#1e4029]">{team.name}</h4>
+                              {team.department && (
+                                <p className="text-xs text-[#7a8b7f] uppercase">{team.department}</p>
+                              )}
+                              {team.members && (
+                                <p className="text-xs text-[#7a8b7f] mt-1">
+                                  {team.members.length} membre{team.members.length > 1 ? 's' : ''}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex-shrink-0 ml-3">
+                            {isExpanded ? (
+                              <FiChevronUp className="text-[#7a8b7f] w-5 h-5" />
+                            ) : (
+                              <FiChevronDown className="text-[#7a8b7f] w-5 h-5" />
+                        )}
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-[#1e4029]">
-                          {member.fullName}
-                        </p>
-                        <p className="text-xs text-[#7a8b7f]">{member.email}</p>
+                        </button>
+
+                        {/* Contenu déroulant */}
+                        {isExpanded && (
+                          <div className="px-4 pb-4 pt-2 border-t border-[#dfe8e1] bg-[#fafafa]">
+                            {/* Chef d'équipe */}
+                            {team.leader && (
+                              <div className="mb-4 p-3 bg-white rounded-lg border border-[#dfe8e1]">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <FiUser className="text-[#5a8f6f] text-sm" />
+                                  <span className="text-xs text-[#7a8b7f] font-medium uppercase">Chef d'équipe</span>
+                    </div>
+                                <div className="flex items-center gap-3">
+                                  {team.leader.profileImageUrl ? (
+                                    <img
+                                      src={team.leader.profileImageUrl}
+                                      alt={team.leader.name || "Avatar"}
+                                      className="w-8 h-8 rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                                      {team.leader.name?.charAt(0).toUpperCase() || "L"}
+                </div>
+              )}
+                                  <div>
+                                    <p className="text-sm font-semibold text-[#1e4029]">
+                                      {team.leader.name || team.leader.email}
+                                    </p>
+                                    <p className="text-xs text-[#7a8b7f]">{team.leader.email}</p>
+                                  </div>
+                                </div>
+            </div>
+          )}
+
+                            {/* Membres de l'équipe */}
+                            {team.members && team.members.length > 0 && (
+                              <div>
+                                <div className="flex items-center gap-2 mb-3">
+                                  <FiUsers className="text-[#5a8f6f] text-sm" />
+                                  <span className="text-xs text-[#7a8b7f] font-medium uppercase">
+                                    Membres ({team.members.length})
+                                  </span>
+              </div>
+                                <div className="space-y-2">
+                                  {team.members.map((member) => (
+                                    <div
+                                      key={member._id}
+                                      className="flex items-center gap-3 p-2 bg-white rounded-lg border border-[#dfe8e1] hover:border-[#5a8f6f]/30 transition-colors"
+                                    >
+                                      {member.profileImageUrl ? (
+                                        <img
+                                          src={member.profileImageUrl}
+                                          alt={member.name || "Avatar"}
+                                          className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                                        />
+                                      ) : (
+                                        <div className="w-8 h-8 bg-[#f4f7f4] rounded-full flex items-center justify-center text-[#2d5f3f] text-xs font-semibold flex-shrink-0">
+                                          {member.name?.charAt(0).toUpperCase() || "U"}
+                        </div>
+                                      )}
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-[#1e4029] truncate">
+                                          {member.name || "Membre"}
+                                        </p>
+                                        <p className="text-xs text-[#7a8b7f] truncate">{member.email}</p>
                       </div>
                     </div>
-                  ))
+                  ))}
+                </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+                    );
+                  })
                 ) : (
-                  <p className="text-sm text-[#7a8b7f]">Aucun membre assigné.</p>
+                  <p className="text-sm text-[#7a8b7f] text-center py-4">
+                    Aucune équipe assignée. Cliquez sur "Gérer" pour ajouter des équipes.
+                  </p>
                 )}
-              </div>
+      </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-[#1e4029] flex items-center gap-2 mb-4">
-                <FiShield /> Permissions
-              </h3>
-              <div className="space-y-3 text-sm text-[#4a5c52]">
-                <p>
-                  <strong>Lecture :</strong> {can("view") ? "Autorisé" : "Restreint"}
-                </p>
-                <p>
-                  <strong>Édition :</strong> {can("edit") ? "Autorisé" : "Restreint"}
-                </p>
-                <p>
-                  <strong>Finances :</strong> {can("finance") ? "Autorisé" : "Restreint"}
-                </p>
-                <p>
-                  <strong>Gestion équipe :</strong> {can("team") ? "Autorisé" : "Restreint"}
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
+
+      {/* Manage Teams Modal */}
+      {project && (
+        <ManageProjectTeamsModal
+          isOpen={showTeamsModal}
+          onClose={() => setShowTeamsModal(false)}
+          project={project}
+          onUpdate={fetchProjectDetails}
+        />
+      )}
+
+      {/* Create Task Modal */}
+      {project && (
+        <CreateProjectTaskModal
+          isOpen={showTaskModal}
+          onClose={() => setShowTaskModal(false)}
+          project={project}
+          onTaskCreated={(newTask) => {
+            fetchProjectDetails(); // Refresh project data
+            setActiveTab("tasks"); // Switch to tasks tab
+          }}
+        />
+      )}
+
+      {/* Create Document Modal */}
+      {project && (
+        <CreateProjectDocumentModal
+          isOpen={showDocumentModal}
+          onClose={() => setShowDocumentModal(false)}
+          project={project}
+          onDocumentCreated={(newDocument) => {
+            fetchProjectDetails(); // Refresh project data
+            setActiveTab("documents"); // Switch to documents tab
+          }}
+        />
+      )}
+
+      {/* Create/Edit Invoice Modal */}
+      {project && (
+        <CreateInvoiceModal
+          isOpen={showInvoiceModal}
+          onClose={() => {
+            setShowInvoiceModal(false);
+            setSelectedInvoice(null);
+          }}
+          project={project}
+          invoice={selectedInvoice}
+          onInvoiceCreated={(newInvoice) => {
+            fetchProjectDetails(); // Refresh project data
+            setActiveTab("invoices"); // Switch to invoices tab
+          }}
+        />
+      )}
+
+      {/* Create Update Modal */}
+      {project && (
+        <CreateProjectUpdateModal
+          isOpen={showUpdateModal}
+          onClose={() => setShowUpdateModal(false)}
+          project={project}
+          onUpdateCreated={(newUpdate) => {
+            fetchProjectDetails(); // Refresh project data
+            setActiveTab("updates"); // Switch to updates tab
+          }}
+        />
+      )}
     </DashboardLayout>
   );
 };

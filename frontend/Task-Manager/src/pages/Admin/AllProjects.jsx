@@ -26,10 +26,7 @@ const AllProjects = () => {
   const [filters, setFilters] = useState({
     status: 'all',
     category: 'all',
-    client: 'all',
-    projectLead: 'all',
-    dateRange: 'all',
-    priority: 'all'
+    projectLead: 'all'
   });
   const [sortBy, setSortBy] = useState({
     field: 'createdAt',
@@ -143,8 +140,8 @@ const AllProjects = () => {
         project.name.toLowerCase().includes(query) ||
         project.category.toLowerCase().includes(query) ||
         project.description?.toLowerCase().includes(query) ||
-        project.client?.fullName?.toLowerCase().includes(query) ||
-        project.projectLead?.fullName?.toLowerCase().includes(query) ||
+        project.client?.companyName?.toLowerCase().includes(query) ||
+        project.projectLead?.name?.toLowerCase().includes(query) ||
         project.tasks?.some(task => task.title?.toLowerCase().includes(query)) ||
         project.messages?.some(msg => msg.content?.toLowerCase().includes(query))
       );
@@ -160,56 +157,13 @@ const AllProjects = () => {
       filtered = filtered.filter(project => project.category === filterOptions.category);
     }
 
-    // Filtres par client
-    if (filterOptions.client !== 'all') {
-      filtered = filtered.filter(project => project.client?._id === filterOptions.client);
-    }
 
     // Filtres par chef de projet
     if (filterOptions.projectLead !== 'all') {
       filtered = filtered.filter(project => project.projectLead?._id === filterOptions.projectLead);
     }
 
-    // Filtres par priorité (basé sur les délais et progression)
-    if (filterOptions.priority !== 'all') {
-      filtered = filtered.filter(project => {
-        const daysRemaining = project.endDate ?
-          Math.ceil((new Date(project.endDate) - new Date()) / (1000 * 60 * 60 * 24)) : null;
 
-        switch (filterOptions.priority) {
-          case 'high':
-            return daysRemaining !== null && daysRemaining <= 7;
-          case 'medium':
-            return daysRemaining !== null && daysRemaining <= 30 && daysRemaining > 7;
-          case 'low':
-            return daysRemaining === null || daysRemaining > 30;
-          default:
-            return true;
-        }
-      });
-    }
-
-    // Filtres par période
-    if (filterOptions.dateRange !== 'all') {
-      const now = new Date();
-      filtered = filtered.filter(project => {
-        const projectDate = new Date(project.createdAt);
-
-        switch (filterOptions.dateRange) {
-          case 'this_week':
-            const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
-            return projectDate >= weekStart;
-          case 'this_month':
-            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-            return projectDate >= monthStart;
-          case 'this_year':
-            const yearStart = new Date(now.getFullYear(), 0, 1);
-            return projectDate >= yearStart;
-          default:
-            return true;
-        }
-      });
-    }
 
     return filtered;
   };
@@ -387,10 +341,7 @@ const AllProjects = () => {
     setFilters({
       status: 'all',
       category: 'all',
-      client: 'all',
-      projectLead: 'all',
-      dateRange: 'all',
-      priority: 'all'
+      projectLead: 'all'
     });
     setSearchQuery("");
   };
@@ -506,19 +457,7 @@ const AllProjects = () => {
     { value: 'Proposition stratégie fiscale:Reviewed', label: 'Proposition stratégie fiscale:Reviewed' }
   ];
 
-  const dateRangeOptions = [
-    { value: 'all', label: 'Toutes les périodes' },
-    { value: 'this_week', label: 'Cette semaine' },
-    { value: 'this_month', label: 'Ce mois' },
-    { value: 'this_year', label: 'Cette année' }
-  ];
 
-  const priorityOptions = [
-    { value: 'all', label: 'Toutes les priorités' },
-    { value: 'high', label: 'Haute' },
-    { value: 'medium', label: 'Moyenne' },
-    { value: 'low', label: 'Basse' }
-  ];
 
   const sortOptions = [
     { value: 'createdAt', label: 'Date de création' },
@@ -577,18 +516,27 @@ const AllProjects = () => {
             </p>
           </div>
 
-          {/* Action Button */}
+          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
             {user?.role === 'admin' && (
-              <button
-                onClick={handleAddProject}
-                className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
-              >
-                <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-                  <FiPlus className="text-lg" />
-                </div>
-                Nouveau projet
-              </button>
+              <>
+                <button
+                  onClick={() => navigate("/admin/projects/archived")}
+                  className="group bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:bg-white/30 border border-white/20"
+                >
+                  <FiArchive className="text-lg" />
+                  Projets archivés
+                </button>
+          <button
+            onClick={handleAddProject}
+              className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
+          >
+              <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+            <FiPlus className="text-lg" />
+              </div>
+              Nouveau projet
+          </button>
+              </>
             )}
           </div>
         </div>
@@ -661,33 +609,7 @@ const AllProjects = () => {
                 </select>
               </div>
 
-              {/* Priority Filter */}
-              <div>
-                <label className="block text-sm font-medium text-[#2d5f3f] mb-2">Priorité</label>
-                <select
-                  value={filters.priority}
-                  onChange={(e) => handleFilterChange('priority', e.target.value)}
-                  className="w-full px-3 py-2 bg-[#f4f7f4] border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f]"
-                >
-                  {priorityOptions.map(option => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </div>
 
-              {/* Date Range Filter */}
-              <div>
-                <label className="block text-sm font-medium text-[#2d5f3f] mb-2">Période</label>
-                <select
-                  value={filters.dateRange}
-                  onChange={(e) => handleFilterChange('dateRange', e.target.value)}
-                  className="w-full px-3 py-2 bg-[#f4f7f4] border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f]"
-                >
-                  {dateRangeOptions.map(option => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </div>
 
               {/* Sort Options */}
               <div>
@@ -803,7 +725,11 @@ const AllProjects = () => {
           {filteredProjects.map((project) => (
             <div
               key={project._id}
-              onClick={() => {
+              onClick={(e) => {
+                // Prevent navigation if clicking on checkbox or its container
+                if (e.target.type === 'checkbox' || e.target.closest('input[type="checkbox"]')) {
+                  return;
+                }
                 if (showBulkActions) return;
                 if (!user || !checkProjectPermissions(user, project, 'view')) {
                   return toast.error("Vous n'avez pas accès à ce projet");
@@ -878,8 +804,13 @@ const AllProjects = () => {
                     type="checkbox"
                     checked={isProjectSelected(project._id)}
                     onChange={(e) => {
+                      e.preventDefault();
                       e.stopPropagation();
                       handleProjectSelect(project._id, e.target.checked);
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                     }}
                     className="w-5 h-5 text-[#5a8f6f] bg-white border-2 border-[#dfe8e1] rounded focus:ring-[#5a8f6f] focus:ring-2 cursor-pointer"
                   />
@@ -963,17 +894,30 @@ const AllProjects = () => {
                   );
                 })()}
 
-                {/* Client Info */}
+                {/* Client and Project Lead Info */}
+                <div className="mt-4 space-y-2">
                 {project.client && (
-                  <div className="mt-4 flex items-center gap-2">
-                    <div className="w-6 h-6 bg-[#f4f7f4] rounded-full flex items-center justify-center text-xs font-medium text-[#7a8b7f]">
-                      {project.client.fullName?.charAt(0).toUpperCase() || "C"}
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-[#f4f7f4] rounded-full flex items-center justify-center text-xs font-medium text-[#7a8b7f]">
+                        {project.client.companyName?.charAt(0).toUpperCase() || "C"}
+                      </div>
+                      <span className="text-xs text-[#7a8b7f] truncate">
+                        Client: {project.client.companyName || "Client"}
+                      </span>
                     </div>
-                    <span className="text-xs text-[#7a8b7f] truncate">
-                      {project.client.fullName || "Client"}
+                  )}
+
+                  {project.projectLead && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-[#2d5f3f] rounded-full flex items-center justify-center text-xs font-medium text-white">
+                        {project.projectLead.name?.charAt(0).toUpperCase() || "P"}
+                      </div>
+                      <span className="text-xs text-[#2d5f3f] truncate font-medium">
+                        Chef: {project.projectLead.name || project.projectLead.email}
                     </span>
                   </div>
                 )}
+                </div>
               </div>
             </div>
           ))}
