@@ -39,11 +39,65 @@ const AllProjects = () => {
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Fonction pour calculer la progression automatique d'un projet
+  const calculateProjectCompletion = (project) => {
+    if (!project.tasks || project.tasks.length === 0) {
+      return project.completion || 0;
+    }
+
+    const totalTasks = project.tasks.length;
+    const completedTasks = project.tasks.filter(task => task.status === 'completed').length;
+    const calculatedCompletion = Math.round((completedTasks / totalTasks) * 100);
+
+    // Si la progression calculée diffère de celle stockée, on peut la mettre à jour automatiquement
+    if (calculatedCompletion !== (project.completion || 0)) {
+      // Mise à jour automatique côté backend (optionnel)
+      updateProjectCompletion(project._id, calculatedCompletion);
+    }
+
+    return calculatedCompletion;
+  };
+
+  // Fonction pour mettre à jour la progression côté backend
+  const updateProjectCompletion = async (projectId, completion) => {
+    try {
+      await axiosInstance.put(API_PATHS.PROJECTS.UPDATE_PROJECT(projectId), {
+        completion: completion
+      });
+    } catch (error) {
+      console.error("Error updating project completion:", error);
+    }
+  };
+
+  // Fonction pour déterminer automatiquement le statut basé sur la progression
+  const calculateProjectStatus = (project, completion) => {
+    if (completion === 100) {
+      return 'done';
+    } else if (completion >= 75) {
+      return 'in review';
+    } else {
+      return project.status || 'in progress';
+    }
+  };
+
   const getAllProjects = async () => {
     try {
       const response = await axiosInstance.get(API_PATHS.PROJECTS.GET_ALL_PROJECTS);
-      setAllProjects(response.data?.projects || []);
-      setFilteredProjects(response.data?.projects || []);
+      let projects = response.data?.projects || [];
+
+      // Calculer automatiquement la progression et le statut pour chaque projet
+      projects = projects.map(project => {
+        const calculatedCompletion = calculateProjectCompletion(project);
+        const calculatedStatus = calculateProjectStatus(project, calculatedCompletion);
+
+        return {
+          ...project,
+          completion: calculatedCompletion,
+          status: calculatedStatus
+        };
+      });
+
+      setAllProjects(projects);
     } catch (error) {
       console.error("Error fetching projects:", error);
     }
@@ -51,6 +105,29 @@ const AllProjects = () => {
 
   useEffect(() => {
     getAllProjects();
+  }, []);
+
+  // Hook pour recalculer automatiquement la progression quand les tâches changent
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Vérifier si les tâches ont changé et recalculer si nécessaire
+      setAllProjects(prevProjects =>
+        prevProjects.map(project => {
+          const currentCompletion = calculateProjectCompletion(project);
+          if (currentCompletion !== project.completion) {
+            const newStatus = calculateProjectStatus(project, currentCompletion);
+            return {
+              ...project,
+              completion: currentCompletion,
+              status: newStatus
+            };
+          }
+          return project;
+        })
+      );
+    }, 5000); // Vérifier toutes les 5 secondes
+
+    return () => clearInterval(interval);
   }, []);
 
   // Fonction de filtrage avancé
@@ -183,8 +260,39 @@ const AllProjects = () => {
   };
 
   const handleProjectCreated = (newProject) => {
-    setAllProjects([newProject, ...allProjects]);
+    const calculatedCompletion = calculateProjectCompletion(newProject);
+    const calculatedStatus = calculateProjectStatus(newProject, calculatedCompletion);
+
+    const updatedProject = {
+      ...newProject,
+      completion: calculatedCompletion,
+      status: calculatedStatus
+    };
+
+    setAllProjects([updatedProject, ...allProjects]);
   };
+
+  // Fonction pour recalculer la progression d'un projet spécifique
+  const recalculateProjectProgress = (projectId) => {
+    setAllProjects(prevProjects =>
+      prevProjects.map(project => {
+        if (project._id === projectId) {
+          const calculatedCompletion = calculateProjectCompletion(project);
+          const calculatedStatus = calculateProjectStatus(project, calculatedCompletion);
+
+          return {
+            ...project,
+            completion: calculatedCompletion,
+            status: calculatedStatus
+          };
+        }
+        return project;
+      })
+    );
+  };
+
+  // Fonction exposée pour les autres composants
+  window.recalculateProjectProgress = recalculateProjectProgress;
 
   const handleFilterChange = (filterType, value) => {
     setFilters(prev => ({
@@ -241,11 +349,19 @@ const AllProjects = () => {
 
       await Promise.all(updatePromises);
 
-      // Mettre à jour l'état local
+      // Mettre à jour l'état local avec recalcul automatique
       setAllProjects(prev =>
         prev.map(project =>
           selectedProjects.includes(project._id)
-            ? { ...project, status: newStatus }
+            ? (() => {
+                const updatedProject = { ...project, status: newStatus };
+                const calculatedCompletion = calculateProjectCompletion(updatedProject);
+                return {
+                  ...updatedProject,
+                  completion: calculatedCompletion,
+                  status: calculateProjectStatus(updatedProject, calculatedCompletion)
+                };
+              })()
             : project
         )
       );
