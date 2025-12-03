@@ -294,6 +294,54 @@ const AllProjects = () => {
   // Fonction exposée pour les autres composants
   window.recalculateProjectProgress = recalculateProjectProgress;
 
+  // Système de permissions pour les projets
+  const checkProjectPermissions = (user, project, action) => {
+    if (!user || !project) return false;
+
+    // Admin peut tout faire
+    if (user.role === 'admin') return true;
+
+    switch (action) {
+      case 'view':
+        return user.role === 'admin' ||
+               project.client === user._id ||
+               project.projectLead === user._id ||
+               project.assignedUsers?.includes(user._id);
+
+      case 'edit':
+        return user.role === 'admin' ||
+               project.projectLead === user._id ||
+               (project.assignedUsers?.includes(user._id) && action !== 'delete');
+
+      case 'delete':
+        return user.role === 'admin' || project.projectLead === user._id;
+
+      case 'assign_users':
+        return user.role === 'admin' || project.projectLead === user._id;
+
+      case 'change_status':
+        return user.role === 'admin' ||
+               project.projectLead === user._id ||
+               project.assignedUsers?.includes(user._id);
+
+      default:
+        return false;
+    }
+  };
+
+  // Wrapper pour les actions nécessitant des permissions
+  const withPermission = (action, project, callback) => {
+    // Pour l'instant, on suppose que l'utilisateur est disponible via un contexte
+    // Dans un vrai projet, on utiliserait le contexte utilisateur
+    const mockUser = { role: 'admin', _id: 'user_id' }; // À remplacer par le vrai contexte
+
+    if (checkProjectPermissions(mockUser, project, action)) {
+      callback();
+    } else {
+      toast.error("Vous n'avez pas les permissions nécessaires pour cette action");
+    }
+  };
+
   // Fonction pour calculer les métriques d'un projet
   const calculateProjectMetrics = (project) => {
     const totalTasks = project.tasks?.length || 0;
@@ -535,15 +583,20 @@ const AllProjects = () => {
 
           {/* Action Button */}
           <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
-          <button
-            onClick={handleAddProject}
+          {(() => {
+            const mockUser = { role: 'admin', _id: 'user_id' }; // À remplacer par le vrai contexte
+            return checkProjectPermissions(mockUser, null, 'edit') && (
+              <button
+                onClick={handleAddProject}
               className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
           >
               <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
             <FiPlus className="text-lg" />
               </div>
               Nouveau projet
-          </button>
+            </button>
+            );
+          })()}
           </div>
         </div>
       </div>
@@ -691,28 +744,38 @@ const AllProjects = () => {
             <div className="flex items-center gap-2">
               <span className="text-sm text-[#2d5f3f] mr-2">Actions :</span>
 
-              {/* Change Status */}
-              <select
-                onChange={(e) => e.target.value && handleBulkStatusChange(e.target.value)}
-                disabled={bulkActionLoading}
-                className="px-3 py-1 bg-white border border-[#dfe8e1] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] disabled:opacity-50"
-                defaultValue=""
-              >
-                <option value="">Changer statut</option>
-                <option value="in progress">En cours</option>
-                <option value="in review">À revoir</option>
-                <option value="done">Terminé</option>
-              </select>
+              {/* Change Status - Seulement si permissions */}
+              {selectedProjects.some(projectId => {
+                const project = filteredProjects.find(p => p._id === projectId);
+                return checkProjectPermissions({ role: 'admin', _id: 'user_id' }, project, 'change_status');
+              }) && (
+                <select
+                  onChange={(e) => e.target.value && handleBulkStatusChange(e.target.value)}
+                  disabled={bulkActionLoading}
+                  className="px-3 py-1 bg-white border border-[#dfe8e1] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] disabled:opacity-50"
+                  defaultValue=""
+                >
+                  <option value="">Changer statut</option>
+                  <option value="in progress">En cours</option>
+                  <option value="in review">À revoir</option>
+                  <option value="done">Terminé</option>
+                </select>
+              )}
 
-              {/* Archive */}
-              <button
-                onClick={handleBulkArchive}
-                disabled={bulkActionLoading}
-                className="flex items-center gap-2 px-3 py-1 bg-white border border-[#dfe8e1] rounded-lg text-sm hover:bg-[#f4f7f4] transition-colors disabled:opacity-50"
-              >
-                <FiArchive className="text-sm" />
-                Archiver
-              </button>
+              {/* Archive - Seulement si permissions */}
+              {selectedProjects.some(projectId => {
+                const project = filteredProjects.find(p => p._id === projectId);
+                return checkProjectPermissions({ role: 'admin', _id: 'user_id' }, project, 'delete');
+              }) && (
+                <button
+                  onClick={handleBulkArchive}
+                  disabled={bulkActionLoading}
+                  className="flex items-center gap-2 px-3 py-1 bg-white border border-[#dfe8e1] rounded-lg text-sm hover:bg-[#f4f7f4] transition-colors disabled:opacity-50"
+                >
+                  <FiArchive className="text-sm" />
+                  Archiver
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -747,7 +810,15 @@ const AllProjects = () => {
           {filteredProjects.map((project) => (
             <div
               key={project._id}
-              onClick={() => !showBulkActions && handleProjectClick(project._id)}
+              onClick={() => {
+                if (showBulkActions) return;
+                const mockUser = { role: 'admin', _id: 'user_id' }; // À remplacer par le vrai contexte
+                if (checkProjectPermissions(mockUser, project, 'view')) {
+                  handleProjectClick(project._id);
+                } else {
+                  toast.error("Vous n'avez pas accès à ce projet");
+                }
+              }}
               className={`bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer border ${
                 isProjectSelected(project._id)
                   ? 'border-[#5a8f6f] bg-[#f4f7f4]/50'
