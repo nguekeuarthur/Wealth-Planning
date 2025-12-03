@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import { useNotifications } from "../../context/NotificationContext";
 import { UserContext } from "../../context/userContext";
@@ -32,6 +32,18 @@ const AllNotifications = () => {
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Marquer automatiquement toutes les notifications comme lues quand on accède à la page
+  useEffect(() => {
+    if (user && notifications.length > 0) {
+      const unreadNotifications = notifications.filter(n => !n.read);
+      if (unreadNotifications.length > 0) {
+        markAllAsRead();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]); // Se déclenche à chaque fois qu'on arrive sur cette page
 
 
   // Formater et filtrer les notifications
