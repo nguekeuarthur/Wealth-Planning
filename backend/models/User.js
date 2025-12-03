@@ -56,4 +56,13 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Virtual property for fullName (returns the name field for compatibility)
+UserSchema.virtual('fullName').get(function() {
+  return this.name;
+});
+
+// Ensure virtual fields are serialized when converting to JSON
+UserSchema.set('toJSON', { virtuals: true });
+UserSchema.set('toObject', { virtuals: true });
+
 module.exports = mongoose.model("User", UserSchema);

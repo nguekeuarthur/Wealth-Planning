@@ -72,4 +72,13 @@ const ClientSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Virtual property for fullName (returns the contactName field for compatibility)
+ClientSchema.virtual('fullName').get(function() {
+  return this.contactName;
+});
+
+// Ensure virtual fields are serialized when converting to JSON
+ClientSchema.set('toJSON', { virtuals: true });
+ClientSchema.set('toObject', { virtuals: true });
+
 module.exports = mongoose.model("Client", ClientSchema);
