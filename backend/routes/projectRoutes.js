@@ -12,6 +12,9 @@ router.get('/stats', projectController.getProjectStats);
 // Get all projects
 router.get('/', projectController.getAllProjects);
 
+// Get archived projects (Admin only)
+router.get('/archived', projectController.getArchivedProjects);
+
 // Get single project
 router.get('/:id', projectController.getProjectById);
 
@@ -21,7 +24,10 @@ router.post('/', projectController.createProject);
 // Update project
 router.put('/:id', projectController.updateProject);
 
-// Delete project (Admin only)
+// Restore archived project (Admin only)
+router.put('/:id/restore', projectController.restoreProject);
+
+// Archive project (Admin only)
 router.delete('/:id', projectController.deleteProject);
 
 module.exports = router;
