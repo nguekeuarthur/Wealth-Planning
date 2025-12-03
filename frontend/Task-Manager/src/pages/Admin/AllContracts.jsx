@@ -49,6 +49,16 @@ const AllContracts = () => {
     "expired": "bg-red-50 text-red-700 border-red-200"
   };
 
+  const getStatusLabel = (status) => {
+    const statusMap = {
+      'signed': 'Signé',
+      'pending': 'En attente',
+      'draft': 'Brouillon',
+      'expired': 'Expiré'
+    };
+    return statusMap[status] || status;
+  };
+
   const getAllContracts = async () => {
     try {
       setLoading(true);
@@ -157,20 +167,47 @@ const AllContracts = () => {
   const handleDownload = async (contract, e) => {
     e.stopPropagation();
     try {
-      const response = await axiosInstance.get(contract.fileUrl, {
-        responseType: 'blob'
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      // Utiliser l'endpoint de téléchargement avec authentification
+      const response = await axiosInstance.get(
+        `${API_PATHS.DOCUMENTS.GET_DOCUMENT_BY_ID(contract._id)}/download`,
+        {
+          responseType: 'blob'
+        }
+      );
+
+      // Déterminer le type MIME
+      const contentType = response.headers['content-type'] || contract.fileType || 'application/octet-stream';
+      
+      // Créer un blob avec le bon type MIME
+      const blob = new Blob([response.data], { type: contentType });
+      const url = window.URL.createObjectURL(blob);
+      
+      // Préserver l'extension du fichier
+      let fileName = contract.name || 'contrat';
+      if (contract.fileType) {
+        const mimeToExt = {
+          'application/pdf': '.pdf',
+          'application/msword': '.doc',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+        };
+        const hasExtension = /\.\w+$/.test(fileName);
+        if (!hasExtension && mimeToExt[contract.fileType]) {
+          fileName += mimeToExt[contract.fileType];
+        }
+      }
+      
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', contract.name);
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
-      link.remove();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
       toast.success("Téléchargement démarré");
     } catch (error) {
       console.error("Error downloading contract:", error);
-      toast.error("Échec du téléchargement du contrat");
+      toast.error(error.response?.data?.message || "Échec du téléchargement du contrat");
     }
     setOpenDropdown(null);
   };
@@ -320,14 +357,21 @@ const AllContracts = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2 text-sm text-[#2d5f3f] hover:text-[#1e4029] cursor-pointer">
-                            {getFileIcon(contract.fileType)}
-                            <span>{contract.name || "Fichier"}</span>
-                          </div>
+                          {contract.fileUrl ? (
+                            <button
+                              onClick={(e) => handleDownload(contract, e)}
+                              className="flex items-center gap-2 text-sm text-[#2d5f3f] hover:text-[#1e4029] transition-colors group"
+                            >
+                              <FiDownload className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                              <span className="font-medium">Télécharger</span>
+                            </button>
+                          ) : (
+                            <span className="text-sm text-[#7a8b7f]">Aucun fichier</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${statusColors["signed"]}`}>
-                            Signed
+                          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${statusColors[contract.status] || statusColors["draft"]}`}>
+                            {getStatusLabel(contract.status || "draft")}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -343,9 +387,18 @@ const AllContracts = () => {
                             {/* Dropdown Menu */}
                             {openDropdown === contract._id && (
                               <div
-                                className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-[#dfe8e1] py-1 z-50"
+                                className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-[#dfe8e1] py-1 z-50"
                                 onClick={(e) => e.stopPropagation()}
                               >
+                                {contract.fileUrl && (
+                                  <button
+                                    onClick={(e) => handleDownload(contract, e)}
+                                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[#2d5f3f] hover:bg-[#f4f7f4] transition-colors"
+                                  >
+                                    <FiDownload className="w-4 h-4" />
+                                    Télécharger
+                                  </button>
+                                )}
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();

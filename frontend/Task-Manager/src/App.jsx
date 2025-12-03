@@ -12,6 +12,7 @@ import ManageTasks from "./pages/Admin/ManageTasks";
 import CreateTask from "./pages/Admin/CreateTask";
 import ManageUsers from "./pages/Admin/ManageUsers";
 import AllProjects from "./pages/Admin/AllProjects";
+import ArchivedProjects from "./pages/Admin/ArchivedProjects";
 import ProjectDetails from "./pages/Admin/ProjectDetails";
 import AllClients from "./pages/Admin/AllClients";
 import ClientDetails from "./pages/Admin/ClientDetails";
@@ -69,6 +70,7 @@ const App = () => {
               <Route path="/admin/dashboard" element={<Dashboard />} />
               <Route path="/admin/patrimoine" element={<PatrimoineOverview />} />
               <Route path="/admin/projects" element={<AllProjects />} />
+              <Route path="/admin/projects/archived" element={<ArchivedProjects />} />
               <Route path="/admin/project/:id" element={<ProjectDetails />} />
               <Route path="/admin/clients" element={<AllClients />} />
               <Route path="/admin/client/:id" element={<ClientDetails />} />

@@ -17,8 +17,8 @@ exports.getAllMessages = async (req, res) => {
     ];
 
     const messages = await Message.find(filter)
-      .populate('sender', 'fullName email profilePic')
-      .populate('receiver', 'fullName email profilePic')
+      .populate('sender', 'name email profileImageUrl')
+      .populate('receiver', 'name email profileImageUrl')
       .populate('project', 'name')
       .sort({ createdAt: -1 });
 
@@ -51,9 +51,9 @@ exports.getProjectMessages = async (req, res) => {
     }
 
     const messages = await Message.find({ project: projectId })
-      .populate('sender', 'fullName email profilePic')
-      .populate('receiver', 'fullName email profilePic')
-      .sort({ createdAt: 1 });
+      .populate('sender', 'name email profileImageUrl')
+      .populate('receiver', 'name email profileImageUrl')
+      .sort({ createdAt: -1 });
 
     res.json({ messages });
   } catch (error) {
@@ -115,8 +115,8 @@ exports.sendMessage = async (req, res) => {
     }
 
     const populatedMessage = await Message.findById(message._id)
-      .populate('sender', 'fullName email profilePic')
-      .populate('receiver', 'fullName email profilePic')
+      .populate('sender', 'name email profileImageUrl')
+      .populate('receiver', 'name email profileImageUrl')
       .populate('project', 'name');
 
     res.status(201).json({ message: 'Message envoyé', data: populatedMessage });

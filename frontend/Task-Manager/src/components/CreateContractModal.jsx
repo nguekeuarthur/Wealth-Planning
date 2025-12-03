@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Modal from "./Modal";
-import { FiUpload, FiX, FiFile } from "react-icons/fi";
+import { FiUpload, FiX, FiFile, FiCalendar } from "react-icons/fi";
 import toast from "react-hot-toast";
 import axiosInstance from "../utils/axiosInstance";
 import { API_PATHS } from "../utils/apiPaths";
@@ -8,15 +8,34 @@ import { API_PATHS } from "../utils/apiPaths";
 const CreateContractModal = ({ isOpen, onClose, onContractCreated, editContract = null }) => {
   const [formData, setFormData] = useState({
     project: "",
-    title: "",
+    name: "",
     description: "",
+    category: "",
     contractFile: null,
-    status: "signed"
+    status: "draft"
   });
 
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [filePreview, setFilePreview] = useState(null);
   const [fileName, setFileName] = useState("");
+
+  const statusOptions = [
+    { value: "draft", label: "Brouillon" },
+    { value: "pending", label: "En attente" },
+    { value: "signed", label: "Signé" },
+    { value: "expired", label: "Expiré" }
+  ];
+
+  const categoryOptions = [
+    { value: "", label: "Sélectionner une catégorie" },
+    { value: "Contrat de service", label: "Contrat de service" },
+    { value: "Contrat de domiciliation", label: "Contrat de domiciliation" },
+    { value: "Contrat bancaire", label: "Contrat bancaire" },
+    { value: "Contrat de confidentialité", label: "Contrat de confidentialité" },
+    { value: "Contrat de partenariat", label: "Contrat de partenariat" },
+    { value: "Autre", label: "Autre" }
+  ];
 
   useEffect(() => {
     if (isOpen) {
@@ -24,12 +43,16 @@ const CreateContractModal = ({ isOpen, onClose, onContractCreated, editContract 
       if (editContract) {
         setFormData({
           project: editContract.project?._id || "",
-          title: editContract.name || "",
+          name: editContract.name || "",
           description: editContract.description || "",
+          category: editContract.category || "",
           contractFile: null,
-          status: editContract.status || "signed"
+          status: editContract.status || "draft"
         });
         setFileName(editContract.filePath ? editContract.filePath.split('/').pop() : "");
+        if (editContract.fileUrl) {
+          setFilePreview(editContract.fileUrl);
+        }
       } else {
         resetForm();
       }
@@ -43,19 +66,21 @@ const CreateContractModal = ({ isOpen, onClose, onContractCreated, editContract 
       setProjects(projectsData);
     } catch (error) {
       console.error("Error fetching projects:", error);
-      toast.error("Failed to load projects");
+      toast.error("Erreur lors du chargement des projets");
     }
   };
 
   const resetForm = () => {
     setFormData({
       project: "",
-      title: "",
+      name: "",
       description: "",
+      category: "",
       contractFile: null,
-      status: "signed"
+      status: "draft"
     });
     setFileName("");
+    setFilePreview(null);
   };
 
   const handleChange = (e) => {
@@ -70,7 +95,7 @@ const CreateContractModal = ({ isOpen, onClose, onContractCreated, editContract 
     const file = e.target.files[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
-        toast.error("File size must be less than 10MB");
+        toast.error("Le fichier ne doit pas dépasser 10MB");
         return;
       }
       setFormData((prev) => ({
@@ -78,6 +103,15 @@ const CreateContractModal = ({ isOpen, onClose, onContractCreated, editContract 
         contractFile: file,
       }));
       setFileName(file.name);
+      
+      // Prévisualisation pour les images
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onloadend = () => setFilePreview(reader.result);
+        reader.readAsDataURL(file);
+      } else {
+        setFilePreview(null);
+      }
     }
   };
 
@@ -87,69 +121,103 @@ const CreateContractModal = ({ isOpen, onClose, onContractCreated, editContract 
       contractFile: null,
     }));
     setFileName("");
+    setFilePreview(null);
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Validation
-    if (!formData.project) {
-      toast.error("Please select a project");
+    if (!editContract && !formData.project) {
+      toast.error("Veuillez sélectionner un projet");
       return;
     }
-    if (!formData.title) {
-      toast.error("Please enter a title");
+    if (!formData.name.trim()) {
+      toast.error("Le nom du contrat est obligatoire");
       return;
     }
     if (!editContract && !formData.contractFile) {
-      toast.error("Please select a contract file");
+      toast.error("Veuillez sélectionner un fichier de contrat");
       return;
     }
 
     setLoading(true);
 
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append("project", formData.project);
-      formDataToSend.append("name", formData.title);
-      formDataToSend.append("description", formData.description);
-      formDataToSend.append("type", "contract");
-      formDataToSend.append("status", formData.status);
-      
-      if (formData.contractFile) {
-        formDataToSend.append("document", formData.contractFile);
-      }
-
       let response;
+      
       if (editContract) {
+        // Mise à jour
+        if (formData.contractFile) {
+          // Mise à jour avec nouveau fichier
+          const fileFormData = new FormData();
+          fileFormData.append("file", formData.contractFile);
+          fileFormData.append("name", formData.name);
+          fileFormData.append("description", formData.description || "");
+          fileFormData.append("category", formData.category || "");
+          fileFormData.append("type", "contract");
+
         response = await axiosInstance.put(
           API_PATHS.DOCUMENTS.UPDATE_DOCUMENT(editContract._id),
-          formDataToSend,
+            fileFormData,
           {
             headers: {
               "Content-Type": "multipart/form-data",
             },
           }
         );
-        toast.success("Contract updated successfully");
+        } else {
+          // Mise à jour sans nouveau fichier
+          const updateData = {
+            name: formData.name,
+            description: formData.description || "",
+            category: formData.category || "",
+            type: "contract"
+          };
+
+          response = await axiosInstance.put(
+            API_PATHS.DOCUMENTS.UPDATE_DOCUMENT(editContract._id),
+            updateData
+          );
+        }
+        toast.success("Contrat mis à jour avec succès");
       } else {
+        // Création - fichier obligatoire
+        const fileFormData = new FormData();
+        fileFormData.append("file", formData.contractFile);
+        fileFormData.append("name", formData.name);
+        fileFormData.append("description", formData.description || "");
+        fileFormData.append("category", formData.category || "");
+        fileFormData.append("type", "contract");
+        if (formData.project) {
+          fileFormData.append("project", formData.project);
+        }
+
         response = await axiosInstance.post(
           API_PATHS.DOCUMENTS.UPLOAD_DOCUMENT,
-          formDataToSend,
+          fileFormData,
           {
             headers: {
               "Content-Type": "multipart/form-data",
             },
           }
         );
-        toast.success("Contract created successfully");
+        toast.success("Contrat créé avec succès");
       }
 
       onContractCreated();
       handleClose();
     } catch (error) {
       console.error("Error saving contract:", error);
-      toast.error(error.response?.data?.message || "Failed to save contract");
+      toast.error(error.response?.data?.message || "Erreur lors de la sauvegarde du contrat");
     } finally {
       setLoading(false);
     }
@@ -160,34 +228,30 @@ const CreateContractModal = ({ isOpen, onClose, onContractCreated, editContract 
     onClose();
   };
 
-  const statusOptions = [
-    { value: "signed", label: "Signed" },
-    { value: "pending", label: "Pending" },
-    { value: "draft", label: "Draft" },
-    { value: "expired", label: "Expired" }
-  ];
-
   return (
-    <Modal isOpen={isOpen} onClose={handleClose}>
-      <div className="p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">
-          {editContract ? "Update contract" : "New contract"}
-        </h2>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Project Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Project <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="project"
-              value={formData.project}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Pick a project</option>
+    <Modal isOpen={isOpen} onClose={handleClose} title={editContract ? "Modifier le contrat" : "Créer un contrat"}>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Projet */}
+        <div>
+          <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
+            Projet {!editContract && <span className="text-red-500">*</span>}
+          </label>
+          <select
+            name="project"
+            value={formData.project}
+            onChange={handleChange}
+            required={!editContract}
+            disabled={editContract}
+            className={`w-full px-3 py-2.5 bg-[#fdfdfc] border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] text-sm text-[#1e4029] appearance-none cursor-pointer ${editContract ? 'bg-[#f4f7f4] cursor-not-allowed' : ''}`}
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%237a8b7f' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+              backgroundPosition: "right 0.5rem center",
+              backgroundRepeat: "no-repeat",
+              backgroundSize: "1.5em 1.5em",
+              paddingRight: "2.5rem"
+            }}
+          >
+            <option value="">Sélectionner un projet</option>
               {projects.map((project) => (
                 <option key={project._id} value={project._id}>
                   {project.name}
@@ -196,92 +260,65 @@ const CreateContractModal = ({ isOpen, onClose, onContractCreated, editContract 
             </select>
           </div>
 
-          {/* Title */}
+        {/* Nom du contrat */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Title <span className="text-red-500">*</span>
+          <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
+            Nom du contrat <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              name="title"
-              value={formData.title}
+            name="name"
+            value={formData.name}
               onChange={handleChange}
-              placeholder="Title"
+            placeholder="Ex: Contrat de service XYZ"
               required
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2.5 bg-[#fdfdfc] border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] text-sm text-[#1e4029] placeholder:text-[#7a8b7f]"
             />
           </div>
 
-          {/* Description */}
+        {/* Catégorie et Statut */}
+        <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description <span className="text-red-500">*</span>
+            <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
+              Catégorie
             </label>
-            <textarea
-              name="description"
-              value={formData.description}
+            <select
+              name="category"
+              value={formData.category}
               onChange={handleChange}
-              placeholder="Description"
-              required
-              rows={3}
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-            />
+              className="w-full px-3 py-2.5 bg-[#fdfdfc] border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] text-sm text-[#1e4029] appearance-none cursor-pointer"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%237a8b7f' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                backgroundPosition: "right 0.5rem center",
+                backgroundRepeat: "no-repeat",
+                backgroundSize: "1.5em 1.5em",
+                paddingRight: "2.5rem"
+              }}
+            >
+              {categoryOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Contract File Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Contract {!editContract && <span className="text-red-500">*</span>}
-            </label>
-            <div className="flex flex-col gap-3">
-              {!fileName && (
-                <label className="cursor-pointer">
-                  <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">
-                    <FiUpload className="w-8 h-8 text-gray-400" />
-                    <span className="text-sm text-gray-600">
-                      Select a file
-                    </span>
-                    <span className="text-xs text-gray-400">Max 10MB</span>
-                  </div>
-                  <input
-                    type="file"
-                    accept=".pdf,.doc,.docx,image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                </label>
-              )}
-              {fileName && (
-                <div className="flex items-center justify-between gap-2 px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <FiFile className="w-5 h-5 text-gray-600" />
-                    <span className="text-sm text-gray-700 truncate max-w-[250px]">
-                      {fileName}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={removeFile}
-                    className="text-gray-400 hover:text-red-600 transition-colors"
-                  >
-                    <FiX className="w-5 h-5" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Status (for edit mode) */}
-          {editContract && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status <span className="text-red-500">*</span>
+            <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
+              Statut
               </label>
               <select
                 name="status"
                 value={formData.status}
                 onChange={handleChange}
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2.5 bg-[#fdfdfc] border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] text-sm text-[#1e4029] appearance-none cursor-pointer"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%237a8b7f' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                backgroundPosition: "right 0.5rem center",
+                backgroundRepeat: "no-repeat",
+                backgroundSize: "1.5em 1.5em",
+                paddingRight: "2.5rem"
+              }}
               >
                 {statusOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -290,28 +327,103 @@ const CreateContractModal = ({ isOpen, onClose, onContractCreated, editContract 
                 ))}
               </select>
             </div>
-          )}
+        </div>
 
-          {/* Buttons */}
-          <div className="flex gap-3 pt-4">
+        {/* Description */}
+        <div>
+          <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
+            Description
+          </label>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            placeholder="Description du contrat..."
+            rows={4}
+            className="w-full px-3 py-2.5 bg-[#fdfdfc] border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] text-sm text-[#1e4029] placeholder:text-[#7a8b7f] resize-none"
+          />
+        </div>
+
+        {/* Upload de fichier */}
+        <div>
+          <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
+            Fichier du contrat {!editContract && <span className="text-red-500">*</span>}
+          </label>
+          
+          {filePreview ? (
+            <div className="relative">
+              <img
+                src={filePreview}
+                alt="Preview"
+                className="w-full h-48 object-cover rounded-xl border border-[#dfe8e1]"
+              />
+              <button
+                type="button"
+                onClick={removeFile}
+                className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-lg hover:bg-[#f4f7f4]"
+              >
+                <FiX className="text-[#2d5f3f]" />
+              </button>
+            </div>
+          ) : fileName ? (
+            <div className="p-4 border border-[#dfe8e1] rounded-xl bg-[#f4f7f4] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white rounded-lg">
+                  <FiFile className="text-[#2d5f3f] text-xl" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-[#1e4029]">{fileName}</p>
+                  {formData.contractFile && (
+                    <p className="text-xs text-[#7a8b7f]">{formatFileSize(formData.contractFile.size)}</p>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={removeFile}
+                className="text-[#7a8b7f] hover:text-red-500"
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+          ) : (
+            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#dfe8e1] rounded-xl cursor-pointer bg-[#fdfdfc] hover:bg-[#f4f7f4] transition-colors">
+              <FiUpload className="w-8 h-8 text-[#7a8b7f] mb-2" />
+              <span className="text-sm text-[#7a8b7f] font-medium">
+                Cliquez pour téléverser un fichier
+              </span>
+              <span className="text-xs text-[#99aca2] mt-1">
+                PDF, Word, Images (max 10MB)
+              </span>
+              <input
+                type="file"
+                className="hidden"
+                onChange={handleFileChange}
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+              />
+            </label>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-end gap-3 pt-4 border-t border-[#dfe8e1]">
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-6 py-2.5 text-sm text-[#7a8b7f] bg-[#f4f7f4] rounded-xl hover:bg-[#e6f0ea] border border-[#dfe8e1]"
               disabled={loading}
             >
-              Cancel
+            Annuler
             </button>
             <button
               type="submit"
+            className="px-6 py-2.5 text-sm bg-[#2d5f3f] text-white rounded-xl hover:bg-[#1e4029] font-medium shadow-lg disabled:opacity-50"
               disabled={loading}
-              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Saving..." : editContract ? "Update" : "Add"}
+            {loading ? "Enregistrement..." : editContract ? "Modifier" : "Créer le contrat"}
             </button>
           </div>
         </form>
-      </div>
     </Modal>
   );
 };

@@ -1,7 +1,6 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
-import { UserContext } from "../../context/userContext";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
 import { 
@@ -16,67 +15,91 @@ import {
   FiClock,
   FiDollarSign,
   FiFile,
-  FiEdit,
-  FiTrash2,
-  FiSearch,
+  FiTrendingUp,
+  FiActivity,
+  FiAlertTriangle,
   FiPlus,
-  FiMapPin
+  FiShield,
+  FiEdit,
+  FiChevronDown,
+  FiChevronUp,
+  FiDownload
 } from "react-icons/fi";
 import toast from "react-hot-toast";
-import TaskCard from "../../components/Cards/TaskCard";
-import CreateProjectModal from "../../components/CreateProjectModal";
-import ProjectCalendar from "../../components/ProjectCalendar";
-import AddWeeklyUpdateModal from "../../components/AddWeeklyUpdateModal";
-import WeeklyUpdatesTimeline from "../../components/WeeklyUpdatesTimeline";
-import AddMilestoneModal from "../../components/AddMilestoneModal";
-import MilestonesList from "../../components/MilestonesList";
-import AddFileModal from "../../components/AddFileModal";
-import FilesList from "../../components/FilesList";
-import EditFileModal from "../../components/EditFileModal";
+import { UserContext } from "../../context/userContext";
+import ManageProjectTeamsModal from "../../components/ManageProjectTeamsModal";
+import CreateProjectTaskModal from "../../components/CreateProjectTaskModal";
+import CreateProjectDocumentModal from "../../components/CreateProjectDocumentModal";
 import CreateInvoiceModal from "../../components/CreateInvoiceModal";
-import InvoicesTable from "../../components/InvoicesTable";
-import AddInvoiceModal from "../../components/AddInvoiceModal";
-import CommentsSection from "../../components/CommentsSection";
-import AddTaskModal from "../../components/AddTaskModal";
+import CreateProjectUpdateModal from "../../components/CreateProjectUpdateModal";
+
+const tabs = [
+  { id: "overview", label: "Vue d'ensemble", icon: FiFolder },
+  { id: "tasks", label: "Tâches", icon: FiCheckCircle },
+  { id: "documents", label: "Documents", icon: FiFileText },
+  { id: "invoices", label: "Finances", icon: FiDollarSign },
+  { id: "updates", label: "Updates", icon: FiMessageSquare }
+];
+
+const getStatusBadgeClass = (status) => {
+  switch (status) {
+    case "in progress":
+      return "bg-[#fff6ea] text-[#b76a28]";
+    case "in review":
+      return "bg-[#e8f0ff] text-[#2a4fa2]";
+    case "done":
+      return "bg-[#dff5e7] text-[#1e4029]";
+    default:
+      return "bg-[#f4f7f4] text-[#7a8b7f]";
+  }
+};
+
+const MetricCard = ({ icon, label, value, subtext }) => (
+  <div className="bg-white p-4 rounded-2xl border border-[#dfe8e1] shadow-sm">
+    <div className="flex items-center gap-3">
+      <div className="p-2 rounded-xl bg-[#f4f7f4] text-[#2d5f3f] text-lg">
+        {icon}
+      </div>
+      <div>
+        <p className="text-xs uppercase tracking-wide text-[#7a8b7f]">
+          {label}
+        </p>
+        <p className="text-xl font-semibold text-[#1e4029]">{value}</p>
+        {subtext && (
+          <p className="text-xs text-[#99aca2] mt-0.5">{subtext}</p>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
+const EmptyState = ({ icon, title, subtitle }) => (
+  <div className="bg-white rounded-2xl border border-[#dfe8e1] p-12 text-center text-[#7a8b7f]">
+    <div className="text-5xl mb-4 opacity-40">{icon}</div>
+    <h3 className="text-lg font-semibold text-[#1e4029] mb-2">{title}</h3>
+    <p>{subtitle}</p>
+  </div>
+);
 
 const ProjectDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user: currentUser } = useContext(UserContext);
+  const { user } = useContext(UserContext);
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("members");
-  const [taskFilter, setTaskFilter] = useState("TO DO");
-  const [tasks, setTasks] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [weeklyUpdates, setWeeklyUpdates] = useState([]);
-  const [isAddUpdateModalOpen, setIsAddUpdateModalOpen] = useState(false);
-  const [milestones, setMilestones] = useState([]);
-  const [isAddMilestoneModalOpen, setIsAddMilestoneModalOpen] = useState(false);
-  const [documents, setDocuments] = useState([]);
-  const [isAddFileModalOpen, setIsAddFileModalOpen] = useState(false);
-  const [editingFile, setEditingFile] = useState(null);
-  const [invoices, setInvoices] = useState([]);
-  const [isAddInvoiceModalOpen, setIsAddInvoiceModalOpen] = useState(false);
-  const [editingInvoice, setEditingInvoice] = useState(null);
-  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [showTeamsModal, setShowTeamsModal] = useState(false);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [expandedTeams, setExpandedTeams] = useState(new Set());
 
   useEffect(() => {
     fetchProjectDetails();
-    fetchProjectTasks();
-    fetchWeeklyUpdates();
-    fetchMilestones();
-    fetchDocuments();
-    fetchInvoices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
-
-  useEffect(() => {
-    fetchProjectTasks();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taskFilter]);
 
   const fetchProjectDetails = async () => {
     try {
@@ -87,252 +110,118 @@ const ProjectDetails = () => {
       setProject(response.data?.project || null);
     } catch (error) {
       console.error("Error fetching project details:", error);
-      toast.error("Impossible de charger les détails du projet");
+      toast.error("Impossible de charger le projet");
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchProjectTasks = async () => {
-    try {
-      console.log("Fetching tasks for project:", id);
-      
-      // First, get all tasks for the project (without status filter)
-      const response = await axiosInstance.get(API_PATHS.TASKS.GET_ALL_TASKS, {
-        params: {
-          project: id, // Filter by project ID only
-        },
-      });
-      
-      console.log("API Response:", response.data);
-      
-      // Handle different response formats
-      const allTasks = response.data?.tasks || response.data || [];
-      console.log("All tasks received:", allTasks.length, allTasks);
-      
-      // Filter tasks by project ID (frontend filtering as backup)
-      let projectTasks = allTasks.filter(task => {
-        const taskProjectId = task.project?._id || task.project || task.projectId;
-        const matches = taskProjectId === id || taskProjectId?.toString() === id?.toString();
-        if (!matches && task.project) {
-          console.log("Task filtered out:", {
-            taskId: task._id,
-            taskTitle: task.title,
-            taskProject: taskProjectId,
-            taskProjectObj: task.project,
-            expectedProject: id
-          });
-        }
-        return matches;
-      });
-      
-      console.log("Project tasks after filtering:", projectTasks.length);
-      
-      // Now filter by status on the frontend
-      let statusParam = "";
-      if (taskFilter === "TO DO") {
-        statusParam = "Pending";
-      } else if (taskFilter === "IN PROGRESS") {
-        statusParam = "In Progress";
-      } else if (taskFilter === "IN REVIEW") {
-        // Note: "In Review" doesn't exist in backend yet, filtering by "In Progress" for now
-        statusParam = "In Progress";
-      } else if (taskFilter === "DONE") {
-        statusParam = "Completed";
+  const toggleTeam = (teamId) => {
+    setExpandedTeams(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(teamId)) {
+        newSet.delete(teamId);
+      } else {
+        newSet.add(teamId);
       }
-      
-      if (statusParam) {
-        projectTasks = projectTasks.filter(task => task.status === statusParam);
-        console.log("Tasks after status filter:", projectTasks.length, "status:", statusParam);
+      return newSet;
+    });
+  };
+
+  const calculateProjectMetrics = (data) => {
+    const totalTasks = data?.tasks?.length || 0;
+    const completedTasks =
+      data?.tasks?.filter((task) => task.status === "completed").length || 0;
+    const overdueTasks =
+      data?.tasks?.filter((task) => {
+        if (!task.dueDate || task.status === "completed") return false;
+        return new Date(task.dueDate) < new Date();
+      }).length || 0;
+
+    const totalTime =
+      data?.tasks?.reduce((sum, task) => sum + (task.timeSpent || 0), 0) || 0;
+
+    const budgetUsed =
+      data?.invoices?.reduce((sum, invoice) => sum + (invoice.amount || 0), 0) ||
+      0;
+
+    const daysRemaining = data?.endDate
+      ? Math.ceil((new Date(data.endDate) - new Date()) / (1000 * 60 * 60 * 24))
+      : null;
+
+    return {
+      totalTasks,
+      completedTasks,
+      overdueTasks,
+      totalTime,
+      budgetUsed,
+      completion: data?.completion || 0,
+      daysRemaining
+    };
+  };
+
+  const metrics = useMemo(
+    () => (project ? calculateProjectMetrics(project) : null),
+    [project]
+  );
+
+  const smartTags = useMemo(() => {
+    if (!metrics) return [];
+    const tags = [];
+
+    if (metrics.daysRemaining !== null) {
+      if (metrics.daysRemaining < 0) {
+        tags.push({ label: "En retard", color: "bg-red-100 text-red-600" });
+      } else if (metrics.daysRemaining <= 7) {
+        tags.push({ label: "Urgent", color: "bg-orange-100 text-orange-600" });
       }
-      
-      setTasks(projectTasks);
-    } catch (error) {
-      console.error("Error fetching tasks:", error);
-      toast.error("Erreur lors du chargement des tâches");
-    }
-  };
-
-  const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case "in progress":
-        return "bg-green-100 text-green-700";
-      case "in review":
-        return "bg-blue-100 text-blue-700";
-      case "done":
-        return "bg-gray-100 text-gray-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
-
-  const getStatusLabel = (status) => {
-    switch (status) {
-      case "in progress":
-        return "En cours";
-      case "in review":
-        return "En révision";
-      case "done":
-        return "Terminé";
-      default:
-        return status || "Non défini";
-    }
-  };
-
-  const handleEdit = () => {
-    setIsEditModalOpen(true);
-  };
-
-  const handleDelete = async () => {
-    if (!window.confirm(`Êtes-vous sûr de vouloir supprimer le projet "${project.name}" ? Cette action est irréversible.`)) {
-      return;
     }
 
-    try {
-      setIsDeleting(true);
-      await axiosInstance.delete(API_PATHS.PROJECTS.DELETE_PROJECT(id));
-      toast.success("Projet supprimé avec succès");
-      navigate("/admin/projects");
-    } catch (error) {
-      console.error("Error deleting project:", error);
-      toast.error(error.response?.data?.message || "Erreur lors de la suppression du projet");
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleProjectUpdated = async (updatedProject) => {
-    setIsEditModalOpen(false);
-    // Refresh project details from server to get populated fields
-    await fetchProjectDetails();
-    toast.success("Projet mis à jour avec succès");
-  };
-
-  const fetchWeeklyUpdates = async () => {
-    try {
-      const response = await axiosInstance.get(
-        API_PATHS.WEEKLY_UPDATES.GET_PROJECT_UPDATES(id)
-      );
-      setWeeklyUpdates(response.data?.updates || []);
-    } catch (error) {
-      console.error("Error fetching weekly updates:", error);
-    }
-  };
-
-  const handleUpdateCreated = (newUpdate) => {
-    setWeeklyUpdates((prev) => [newUpdate, ...prev]);
-    setIsAddUpdateModalOpen(false);
-  };
-
-  const fetchMilestones = async () => {
-    try {
-      const response = await axiosInstance.get(
-        API_PATHS.MILESTONES.GET_PROJECT_MILESTONES(id)
-      );
-      setMilestones(response.data?.milestones || []);
-    } catch (error) {
-      console.error("Error fetching milestones:", error);
-    }
-  };
-
-  const handleMilestoneCreated = (newMilestone) => {
-    setMilestones((prev) => [newMilestone, ...prev]);
-    setIsAddMilestoneModalOpen(false);
-  };
-
-  const fetchDocuments = async () => {
-    try {
-      const response = await axiosInstance.get(API_PATHS.DOCUMENTS.GET_ALL_DOCUMENTS, {
-        params: { project: id },
+    if (metrics.overdueTasks > 0) {
+      tags.push({
+        label: `${metrics.overdueTasks} tâche(s) en retard`,
+        color: "bg-red-100 text-red-600"
       });
-      setDocuments(response.data?.documents || []);
-    } catch (error) {
-      console.error("Error fetching documents:", error);
+    }
+
+    if (metrics.completedTasks === metrics.totalTasks && metrics.totalTasks > 0) {
+      tags.push({ label: "Prêt à livrer", color: "bg-green-100 text-green-600" });
+    }
+
+    return tags.slice(0, 3);
+  }, [metrics]);
+
+  const can = (permission) => {
+    if (!user || !project) return false;
+    if (user.role === "admin") return true;
+
+    const isLead = project.projectLead?._id === user._id;
+    const isAssigned = project.assignedUsers?.some(
+      (member) => member._id === user._id
+    );
+    const isClient = project.client?._id === user._id;
+
+    switch (permission) {
+      case "view":
+        return isLead || isAssigned || isClient;
+      case "edit":
+        return isLead || (isAssigned && project.status !== "done");
+      case "finance":
+        return isLead || user.role === "finance";
+      case "team":
+        return isLead;
+      default:
+        return false;
     }
   };
-
-  const handleFileCreated = (newFile) => {
-    setDocuments((prev) => [newFile, ...prev]);
-    setIsAddFileModalOpen(false);
-  };
-
-  const handleFileDeleted = (fileId) => {
-    setDocuments((prev) => prev.filter((file) => file._id !== fileId));
-  };
-
-  const handleFileUpdated = (updatedFile) => {
-    setDocuments((prev) =>
-      prev.map((file) => (file._id === updatedFile._id ? updatedFile : file))
-    );
-    setEditingFile(null);
-  };
-
-  const fetchInvoices = async () => {
-    try {
-      const response = await axiosInstance.get(API_PATHS.INVOICES.GET_ALL_INVOICES, {
-        params: { project: id },
-      });
-      setInvoices(response.data?.invoices || []);
-    } catch (error) {
-      console.error("Error fetching invoices:", error);
-    }
-  };
-
-  const handleInvoiceCreated = () => {
-    fetchInvoices();
-    setIsAddInvoiceModalOpen(false);
-  };
-
-  const handleInvoiceDeleted = () => {
-    fetchInvoices();
-  };
-
-  const handleInvoiceUpdated = () => {
-    fetchInvoices();
-  };
-
-  const handleTaskCreated = async () => {
-    setIsAddTaskModalOpen(false);
-    // Wait a bit for the backend to process
-    await new Promise(resolve => setTimeout(resolve, 500));
-    await fetchProjectTasks();
-    toast.success("Tâche créée et ajoutée au projet");
-  };
-
-  const tabs = [
-    { id: "members", label: "Membres du projet", icon: FiUsers },
-    { id: "plan", label: "Plan du projet", icon: FiFolder },
-    { id: "updates", label: "Notes hebdomadaires", icon: FiClock },
-    { id: "milestones", label: "Jalons", icon: FiMapPin },
-    { id: "files", label: "Fichiers", icon: FiFile },
-    { id: "invoices", label: "Factures", icon: FiDollarSign },
-    { id: "comments", label: "Commentaires", icon: FiMessageSquare },
-  ];
-
-  const taskFilters = ["TO DO", "IN PROGRESS", "IN REVIEW", "DONE"];
-  const taskFilterLabels = {
-    "TO DO": "À FAIRE",
-    "IN PROGRESS": "EN COURS",
-    "IN REVIEW": "EN REVUE",
-    "DONE": "TERMINÉES",
-  };
-
-  const filteredTasks = tasks.filter(task => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      task.title?.toLowerCase().includes(query) ||
-      task.description?.toLowerCase().includes(query)
-    );
-  });
 
   if (loading) {
     return (
-      <DashboardLayout activeMenu="Projets">
-        <div className="flex items-center justify-center h-96">
+      <DashboardLayout activeMenu="Projects">
+        <div className="flex items-center justify-center h-[80vh]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Chargement du projet...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2d5f3f] mx-auto"></div>
+            <p className="mt-4 text-[#7a8b7f]">Chargement du projet...</p>
           </div>
         </div>
       </DashboardLayout>
@@ -341,461 +230,1071 @@ const ProjectDetails = () => {
 
   if (!project) {
     return (
-      <DashboardLayout activeMenu="Projets">
-        <div className="flex flex-col items-center justify-center h-96">
+      <DashboardLayout activeMenu="Projects">
+        <div className="flex flex-col items-center justify-center h-[80vh]">
           <div className="text-6xl mb-4">📁</div>
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">
+          <h3 className="text-xl font-semibold text-[#1e4029] mb-2">
             Projet introuvable
           </h3>
           <button
             onClick={() => navigate("/admin/projects")}
-            className="mt-4 flex items-center gap-2 text-blue-600 hover:text-blue-700"
+            className="mt-4 flex items-center gap-2 text-[#2d5f3f] hover:text-[#1e4029]"
           >
-            <FiArrowLeft /> Retour aux projets
+            <FiArrowLeft /> Retour à la liste
           </button>
         </div>
       </DashboardLayout>
     );
   }
 
-  // Project Details Component (reusable section)
-  const ProjectDetailsSection = () => (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-      <div className="flex items-start gap-4 mb-4">
-        {project.imageUrl && (
-          <img
-            src={project.imageUrl}
-            alt={project.name}
-            className="w-20 h-20 object-cover rounded-lg"
-          />
-        )}
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <h2 className="text-2xl font-bold text-gray-900">{project.name}</h2>
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(project.status)}`}>
-              {getStatusLabel(project.status)}
+  return (
+    <DashboardLayout activeMenu="Projects">
+      <div className="my-5 space-y-6">
+        <div className="relative bg-gradient-to-br from-[#1e4029] via-[#2d5f3f] to-[#1e4029] rounded-2xl shadow-xl p-8 overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-48 translate-x-32"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-16 -translate-x-24"></div>
+          </div>
+
+          {/* Badge de statut en haut à droite */}
+          <div className="absolute top-6 right-6 z-10">
+            <span className={`px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg ${getStatusBadgeClass(project.status)}`}>
+              {project.status === "in progress"
+                ? "En cours"
+                : project.status === "in review"
+                ? "En revue"
+                : "Terminé"}
             </span>
           </div>
-          {project.client && (
-            <p className="text-gray-600 mb-2">
-              {project.client.companyName || project.client.contactName || project.client.fullName || project.client.email}
-            </p>
-          )}
-          {project.description && (
-            <p className="text-gray-700 text-sm mb-4">{project.description}</p>
-          )}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center justify-between">
             <div>
-              <p className="text-gray-500 mb-1">DATE DE DÉBUT</p>
-              <p className="font-medium text-gray-900">
-                {project.startDate
-                  ? new Date(project.startDate).toLocaleDateString('fr-FR')
-                  : "Non défini"}
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-500 mb-1">DATE DE FIN</p>
-              <p className="font-medium text-gray-900">
-                {project.endDate
-                  ? new Date(project.endDate).toLocaleDateString('fr-FR')
-                  : "Non défini"}
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-500 mb-1">CHEF DE PROJET</p>
-              <p className="font-medium text-gray-900">
-                {project.projectLead?.name ||
-                  project.projectLead?.fullName ||
-                  project.projectLead?.email ||
-                  "Non assigné"}
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-500 mb-1">CONTACT CLIENT</p>
-              <p className="font-medium text-gray-900">
-                {project.client?.name ||
-                  project.client?.fullName ||
-                  project.client?.email ||
-                  "Non défini"}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button 
-            onClick={handleEdit}
-            className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
-          >
-            <FiEdit size={16} />
-            Modifier
-          </button>
-          <button 
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <FiTrash2 size={16} />
-            {isDeleting ? "Suppression..." : "Supprimer"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Tasks Section Component (reusable section)
-  const TasksSection = () => (
-    <div className="mt-8">
-      <h3 className="text-xl font-bold text-gray-900 mb-4">Tâches</h3>
-      
-      {/* Search and Add Task */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="relative flex-1 max-w-md">
-          <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Rechercher"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <button
-          onClick={() => setIsAddTaskModalOpen(true)}
-          className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
-        >
-          <FiPlus size={16} />
-          Ajouter une tâche
-        </button>
-      </div>
-
-      {/* Task Status Filters */}
-      <div className="flex gap-2 mb-6 border-b border-gray-200">
-        {taskFilters.map((filter) => (
-          <button
-            key={filter}
-            onClick={() => setTaskFilter(filter)}
-            className={`px-4 py-2 text-sm font-medium transition-colors relative ${
-              taskFilter === filter
-                ? "text-gray-900 border-b-2 border-gray-900"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            {taskFilterLabels[filter] || filter}
-          </button>
-        ))}
-      </div>
-
-      {/* Tasks List */}
-      {filteredTasks.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {filteredTasks.map((task) => (
-            <TaskCard
-              key={task._id}
-              title={task.title}
-              description={task.description}
-              priority={task.priority}
-              status={task.status}
-              progress={task.progress}
-              createdAt={task.createdAt}
-              dueDate={task.dueDate}
-              assignedTo={task.assignedTo?.map((item) => item.profileImageUrl) || []}
-              attachmentCount={task.attachments?.length || 0}
-              completedTodoCount={task.completedTodoCount || 0}
-              todoChecklist={task.todoChecklist || []}
-              onClick={() => navigate(`/admin/task-details/${task._id}`)}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow-sm p-12 border border-gray-200 text-center">
-          <FiCheckCircle className="mx-auto text-gray-300 text-5xl mb-4" />
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">
-            Aucune tâche trouvée
-          </h3>
-          <p className="text-gray-500">
-            {searchQuery ? "Essayez une autre recherche" : "Aucune tâche pour ce statut"}
-          </p>
-        </div>
-      )}
-    </div>
-  );
-
-  // Tab Content Components
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "members":
-        return (
-          <div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Membres du projet</h3>
-            {project.assignedUsers && project.assignedUsers.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {project.assignedUsers.map((user) => (
-                  <div
-                    key={user._id}
-                    className="bg-white rounded-lg shadow-sm p-4 border border-gray-200"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-blue-600">
-                          {user.fullName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {user.name || user.fullName || "N/A"}
-                        </p>
-                        <p className="text-sm text-gray-500">{user.email}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500">Aucun membre assigné à ce projet</p>
-            )}
-          </div>
-        );
-
-      case "plan":
-        return (
-          <div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Plan du projet</h3>
-            {project.startDate && project.endDate ? (
-              <ProjectCalendar 
-                startDate={project.startDate} 
-                endDate={project.endDate} 
-              />
-            ) : (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-                <p className="text-gray-500">
-                  Les dates de début et de fin du projet doivent être définies pour afficher le calendrier.
-                </p>
-              </div>
-            )}
-          </div>
-        );
-
-      case "updates":
-        return (
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">Notes hebdomadaires</h3>
-              <button
-                onClick={() => setIsAddUpdateModalOpen(true)}
-                className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
-              >
-                <FiPlus size={16} />
-                Ajouter une note
-              </button>
-            </div>
-            <WeeklyUpdatesTimeline updates={weeklyUpdates} />
-          </div>
-        );
-
-      case "milestones":
-        return (
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">Jalons</h3>
-              <button
-                onClick={() => setIsAddMilestoneModalOpen(true)}
-                className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
-              >
-                <FiPlus size={16} />
-                Ajouter un jalon
-              </button>
-            </div>
-            <MilestonesList milestones={milestones} />
-          </div>
-        );
-
-      case "files":
-        return (
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">Fichiers</h3>
-              <button
-                onClick={() => setIsAddFileModalOpen(true)}
-                className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
-              >
-                <FiPlus size={16} />
-                Ajouter un fichier
-              </button>
-            </div>
-            <FilesList
-              files={documents}
-              onFileDeleted={handleFileDeleted}
-              onFileUpdated={handleFileUpdated}
-              onEditFile={setEditingFile}
-              projectId={id}
-            />
-          </div>
-        );
-
-      case "invoices":
-        return (
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">Factures</h3>
-              <button
-                onClick={() => {
-                  if (!project?.client && !project?.client?._id) {
-                    toast.error("Ce projet n'a pas de client assigné. Veuillez assigner un client au projet d'abord.");
-                    return;
-                  }
-                  setIsAddInvoiceModalOpen(true);
-                }}
-                className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!project?.client && !project?.client?._id}
-              >
-                <FiPlus size={16} />
-                Ajouter une facture
-              </button>
-            </div>
-            <InvoicesTable
-              invoices={invoices}
-              onInvoiceDeleted={handleInvoiceDeleted}
-              onInvoiceUpdated={handleInvoiceUpdated}
-              onEditInvoice={setEditingInvoice}
-            />
-          </div>
-        );
-
-      case "comments":
-        return (
-          <CommentsSection projectId={id} currentUser={currentUser} />
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <DashboardLayout activeMenu="Projets">
-      <div className="my-5">
-        {/* Header */}
-        <div className="mb-6">
           <button
             onClick={() => navigate("/admin/projects")}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+                className="inline-flex items-center gap-2 text-white/70 text-xs uppercase tracking-[0.2em]"
           >
-            <FiArrowLeft /> Retour aux projets
+                <FiArrowLeft /> Retour aux projets
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Détails du projet</h1>
+          
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <h1 className="text-3xl lg:text-4xl font-bold text-white">
+                  {project.name}
+                </h1>
+                {smartTags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${tag.color}`}
+                  >
+                    {tag.label}
+                </span>
+                ))}
+              </div>
+
+              <p className="text-white/80 mt-2">
+                {project.category || "Catégorie non définie"}
+              </p>
+
+              {project.description && (
+                <p className="text-white/70 mt-4 max-w-2xl">
+                  {project.description}
+                </p>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 text-white/80 text-sm">
+                <div>
+                  <p className="text-white/60 text-xs uppercase">Client</p>
+                  <p className="font-semibold">
+                    {project.client?.companyName || "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-white/60 text-xs uppercase">
+                    Chef de projet
+                  </p>
+                  <p className="font-semibold">
+                    {project.projectLead?.name || "—"}
+                  </p>
+            </div>
+          </div>
         </div>
 
-        {/* Project Details Section - Always visible at top */}
-        <ProjectDetailsSection />
+          </div>
+        </div>
 
-        {/* Tabs Navigation */}
-        <div className="border-b border-gray-200 mb-6">
-          <div className="flex gap-6 overflow-x-auto">
+        <div className="flex flex-wrap gap-3">
             {tabs.map((tab) => {
               const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 pb-3 px-1 border-b-2 transition-colors whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? "border-gray-900 text-gray-900 font-semibold"
-                      : "border-transparent text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  <Icon size={18} />
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  isActive
+                    ? "bg-[#e6f0ea] text-[#1e4029]"
+                    : "bg-white border border-[#dfe8e1] text-[#7a8b7f] hover:text-[#1e4029]"
+                }`}
+              >
+                <Icon size={16} />
                   {tab.label}
                 </button>
               );
             })}
+        </div>
+
+        <div className="grid xl:grid-cols-[2fr_1fr] gap-6">
+        <div className="space-y-6">
+          {activeTab === "overview" && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                  <MetricCard
+                    icon={<FiCheckCircle />}
+                    label="Tâches terminées"
+                    value={`${metrics?.completedTasks || 0}/${metrics?.totalTasks || 0}`}
+                  />
+                  <MetricCard
+                    icon={<FiClock />}
+                    label="Jours restants"
+                    value={
+                      metrics?.daysRemaining !== null
+                        ? metrics.daysRemaining
+                        : "—"
+                    }
+                    subtext={
+                      metrics?.daysRemaining !== null
+                        ? metrics.daysRemaining < 0
+                          ? "En retard"
+                          : "Avant échéance"
+                        : undefined
+                    }
+                  />
+                  <MetricCard
+                    icon={<FiTrendingUp />}
+                    label="Progression"
+                    value={`${metrics?.completion || 0}%`}
+                  />
+                  <MetricCard
+                    icon={<FiAlertTriangle />}
+                    label="Tâches en retard"
+                    value={metrics?.overdueTasks || 0}
+                  />
+                      </div>
+
+                <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm">
+                  <div className="flex flex-col gap-6 lg:flex-row">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-[#1e4029] mb-3">
+                        Description
+                      </h3>
+                      <p className="text-[#4a5c52] whitespace-pre-wrap">
+                        {project.description || "Aucune description fournie."}
+                      </p>
+                      </div>
+                    <div className="lg:w-64 space-y-3">
+                      <div className="p-4 rounded-xl bg-[#f4f7f4]">
+                        <p className="text-xs text-[#7a8b7f] uppercase">
+                          Dates clés
+                        </p>
+                        <div className="mt-3 space-y-2 text-sm">
+                          <div className="flex items-center gap-2">
+                            <FiCalendar className="text-[#2d5f3f]" />
+                            <span>
+                              Début : {" "}
+                              {project.startDate
+                                ? new Date(project.startDate).toLocaleDateString()
+                                : "—"}
+                            </span>
+                    </div>
+                          <div className="flex items-center gap-2">
+                            <FiClock className="text-[#b76a28]" />
+                            <span>
+                              Fin : {" "}
+                              {project.endDate
+                                ? new Date(project.endDate).toLocaleDateString()
+                                : "—"}
+                            </span>
+                  </div>
+                      </div>
+                      </div>
+                      <div className="p-4 rounded-xl border border-dashed border-[#dfe8e1] text-xs text-[#7a8b7f]">
+                        Utilisez les updates pour documenter les décisions,
+                        jalons ou blocages.
+                    </div>
+                  </div>
+                      </div>
+                      </div>
+                    </div>
+            )}
+
+            {activeTab === "tasks" && (
+              <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                      <div>
+                    <h3 className="text-xl font-semibold text-[#1e4029]">
+                      Tâches du projet
+                    </h3>
+                    <p className="text-sm text-[#7a8b7f]">
+                      {project.tasks?.length || 0} tâches au total
+                        </p>
+                      </div>
+                  {can("edit") && (
+                    <button
+                      onClick={() => setShowTaskModal(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-[#2d5f3f] text-white rounded-xl text-sm font-medium hover:bg-[#1e4029] transition-colors"
+                    >
+                      <FiPlus /> Nouvelle tâche
+                    </button>
+                  )}
+                </div>
+
+                {project.tasks?.length ? (
+                  <div className="space-y-4">
+                    {project.tasks.map((task) => {
+                      const assignedUsers = Array.isArray(task.assignedTo) ? task.assignedTo : (task.assignedTo ? [task.assignedTo] : []);
+                      const dueDate = task.dueDate ? new Date(task.dueDate) : null;
+                      const isOverdue = dueDate && dueDate < new Date() && task.status !== "Completed";
+                      
+                      return (
+                        <div
+                          key={task._id}
+                          className="p-4 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 transition-colors bg-white"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h4 className="text-[#1e4029] font-semibold text-base">
+                                  {task.title || "Tâche sans titre"}
+                                </h4>
+                                <span
+                                  className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                    task.priority === "Urgent"
+                                      ? "bg-red-100 text-red-700"
+                                      : task.priority === "High"
+                                      ? "bg-orange-100 text-orange-700"
+                                      : task.priority === "Medium"
+                                      ? "bg-yellow-100 text-yellow-700"
+                                      : "bg-blue-100 text-blue-700"
+                                  }`}
+                                >
+                                  {task.priority === "Urgent"
+                                    ? "Urgente"
+                                    : task.priority === "High"
+                                    ? "Haute"
+                                    : task.priority === "Medium"
+                                    ? "Moyenne"
+                                    : "Basse"}
+                      </span>
+                  </div>
+
+                              {task.description && (
+                                <p className="text-sm text-[#7a8b7f] mt-1 mb-3">
+                                  {task.description}
+                                </p>
+                              )}
+
+                              {/* Assignés et date d'échéance */}
+                              <div className="flex flex-wrap items-center gap-4 mt-3">
+                                {/* Assignés */}
+                                {assignedUsers.length > 0 && (
+                                  <div className="flex items-center gap-2">
+                                    <FiUser className="text-[#7a8b7f] text-sm" />
+                                    <div className="flex items-center gap-1">
+                                      {assignedUsers.slice(0, 3).map((user, idx) => (
+                                        <div key={user._id || idx} className="flex items-center -ml-2 first:ml-0">
+                                          {user.profileImageUrl ? (
+                                            <img
+                                              src={user.profileImageUrl}
+                                              alt={user.name || "Avatar"}
+                                              className="w-6 h-6 rounded-full object-cover border-2 border-white"
+                                              title={user.name || user.email}
+                                            />
+                                          ) : (
+                                            <div className="w-6 h-6 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-xs font-semibold border-2 border-white" title={user.name || user.email}>
+                                              {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
+                      </div>
+                      )}
+                    </div>
+                                      ))}
+                                      {assignedUsers.length > 3 && (
+                                        <span className="text-xs text-[#7a8b7f] ml-1">
+                                          +{assignedUsers.length - 3}
+                                        </span>
+                                      )}
+                      </div>
+                                    <span className="text-xs text-[#7a8b7f]">
+                                      {assignedUsers.length === 1 
+                                        ? assignedUsers[0].name || assignedUsers[0].email
+                                        : `${assignedUsers.length} personnes`
+                                      }
+                                    </span>
+                      </div>
+                )}
+
+                                {/* Date d'échéance */}
+                                {dueDate && (
+                                  <div className={`flex items-center gap-2 ${isOverdue ? 'text-red-600' : 'text-[#7a8b7f]'}`}>
+                                    <FiCalendar className="text-sm" />
+                                    <span className="text-xs font-medium">
+                                      {isOverdue ? 'En retard - ' : 'Échéance: '}
+                                      {dueDate.toLocaleDateString('fr-FR', { 
+                                        day: 'numeric', 
+                                        month: 'short', 
+                                        year: 'numeric' 
+                                      })}
+                        </span>
+                    </div>
+                                )}
+                </div>
+              </div>
+
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
+                                task.status === "Completed"
+                                  ? "bg-[#dff5e7] text-[#1e4029]"
+                                  : task.status === "In Progress"
+                                  ? "bg-[#fff6ea] text-[#b76a28]"
+                                  : "bg-[#f4f7f4] text-[#7a8b7f]"
+                              }`}
+                            >
+                              {task.status === "Completed" 
+                                ? "Terminée" 
+                                : task.status === "In Progress"
+                                ? "En cours"
+                                : "En attente"}
+                      </span>
+                      </div>
+                      </div>
+                      );
+                    })}
+                        </div>
+                ) : (
+                  <EmptyState
+                    icon="✅"
+                    title="Aucune tâche"
+                    subtitle="Créez votre première tâche pour ce projet."
+                  />
+                )}
+                  </div>
+                )}
+
+            {activeTab === "documents" && (
+              <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                      <div>
+                    <h3 className="text-xl font-semibold text-[#1e4029]">
+                      Documents
+                </h3>
+                    <p className="text-sm text-[#7a8b7f]">
+                      {project.documents?.length || 0} fichiers
+                        </p>
+                      </div>
+                  {can("edit") && (
+                    <button
+                      onClick={() => setShowDocumentModal(true)}
+                      className="px-4 py-2 text-sm bg-[#2d5f3f] text-white rounded-xl hover:bg-[#1e4029] transition-colors font-medium flex items-center gap-2"
+                    >
+                      <FiPlus /> Ajouter un document
+                    </button>
+                  )}
+                    </div>
+
+                {project.documents?.length ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {project.documents.map((doc) => {
+                      const getTypeLabel = (type) => {
+                        switch (type) {
+                          case "contract": return "Contrat";
+                          case "livrable": return "Livrable";
+                          case "personal_data": return "Données personnelles";
+                          default: return "Autre";
+                        }
+                      };
+
+                      const getFileIcon = (fileType) => {
+                        if (!fileType) return <FiFile />;
+                        const ext = fileType.toLowerCase();
+                        if (ext.includes('pdf')) return "📄";
+                        if (ext.includes('image') || ['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return "🖼️";
+                        if (['doc', 'docx'].includes(ext)) return "📝";
+                        if (['xls', 'xlsx'].includes(ext)) return "📊";
+                        return "📎";
+                      };
+
+                      return (
+                        <div
+                          key={doc._id}
+                          className="p-4 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 transition-colors bg-white"
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="p-3 bg-[#f4f7f4] rounded-xl text-2xl flex-shrink-0">
+                              {getFileIcon(doc.fileType)}
+                      </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-[#1e4029] mb-1 truncate">
+                                {doc.name || "Document"}
+                              </h4>
+                              <div className="flex flex-wrap items-center gap-2 mb-2">
+                                <span className="px-2 py-0.5 bg-[#e6f0ea] text-[#2d5f3f] rounded text-xs font-medium">
+                                  {getTypeLabel(doc.type)}
+                            </span>
+                                {doc.category && (
+                                  <span className="text-xs text-[#7a8b7f]">
+                                    {doc.category}
+                                  </span>
+                                )}
+                          </div>
+                              {doc.description && (
+                                <p className="text-sm text-[#7a8b7f] mb-2 line-clamp-2">
+                                  {doc.description}
+                                </p>
+                              )}
+                              <div className="flex items-center justify-between mt-3">
+                                <span className="text-xs text-[#7a8b7f]">
+                                  {doc.createdAt
+                                    ? new Date(doc.createdAt).toLocaleDateString('fr-FR', {
+                                        day: 'numeric',
+                                        month: 'short',
+                                        year: 'numeric'
+                                      })
+                                    : "Date inconnue"}
+                                </span>
+                                {doc.fileUrl && (() => {
+                                  const handleDownload = async (e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    try {
+                                      // Utiliser l'endpoint de téléchargement avec authentification
+                                      const response = await axiosInstance.get(
+                                        `${API_PATHS.DOCUMENTS.GET_DOCUMENT_BY_ID(doc._id)}/download`,
+                                        {
+                                          responseType: 'blob'
+                                        }
+                                      );
+                                      
+                                      // Déterminer le type MIME à partir du type de fichier ou du Content-Type de la réponse
+                                      const contentType = response.headers['content-type'] || doc.fileType || 'application/octet-stream';
+                                      
+                                      // Créer un blob avec le bon type MIME
+                                      const blob = new Blob([response.data], { type: contentType });
+                                      const url = window.URL.createObjectURL(blob);
+                                      
+                                      // Préserver l'extension du fichier dans le nom
+                                      let fileName = doc.name || 'document';
+                                      
+                                      // S'assurer que le nom a la bonne extension
+                                      if (doc.fileType) {
+                                        const mimeToExt = {
+                                          'application/pdf': '.pdf',
+                                          'application/msword': '.doc',
+                                          'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+                                          'application/vnd.ms-excel': '.xls',
+                                          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+                                          'application/vnd.ms-powerpoint': '.ppt',
+                                          'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+                                          'image/jpeg': '.jpg',
+                                          'image/png': '.png',
+                                          'image/gif': '.gif',
+                                          'text/plain': '.txt',
+                                          'text/csv': '.csv'
+                                        };
+                                        
+                                        // Vérifier si le nom a déjà une extension
+                                        const hasExtension = /\.\w+$/.test(fileName);
+                                        if (!hasExtension && mimeToExt[doc.fileType]) {
+                                          fileName += mimeToExt[doc.fileType];
+                                        } else if (!hasExtension) {
+                                          // Essayer d'extraire l'extension du type MIME
+                                          const extMatch = doc.fileType.match(/\/(\w+)$/);
+                                          if (extMatch) {
+                                            fileName += '.' + extMatch[1];
+                                          }
+                                        }
+                                      }
+                                      
+                                      const link = document.createElement('a');
+                                      link.href = url;
+                                      link.download = fileName;
+                                      document.body.appendChild(link);
+                                      link.click();
+                                      document.body.removeChild(link);
+                                      window.URL.revokeObjectURL(url);
+                                    } catch (error) {
+                                      console.error('Erreur lors du téléchargement:', error);
+                                      toast.error('Erreur lors du téléchargement du fichier');
+                                    }
+                                  };
+
+                                  return (
+                                    <button
+                                      onClick={handleDownload}
+                                      className="px-3 py-1.5 bg-[#2d5f3f] text-white rounded-lg text-xs font-medium hover:bg-[#1e4029] transition-colors flex items-center gap-1.5"
+                                    >
+                                      <FiDownload size={14} /> Télécharger
+                                    </button>
+                                  );
+                                })()}
+                          </div>
+                        </div>
+                    </div>
+                  </div>
+                      );
+                    })}
+                      </div>
+                ) : (
+                  <EmptyState
+                    icon="📄"
+                    title="Aucun document"
+                    subtitle="Ajoutez des contrats, rapports ou pièces jointes."
+                  />
+              )}
+            </div>
+          )}
+
+          {activeTab === "invoices" && (
+              <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-semibold text-[#1e4029]">
+                      Factures & paiements
+                    </h3>
+                    <p className="text-sm text-[#7a8b7f]">
+                      {project.invoices?.length || 0} factures
+                    </p>
+                  </div>
+                  {can("finance") && (
+                    <button
+                      onClick={() => {
+                        setSelectedInvoice(null);
+                        setShowInvoiceModal(true);
+                      }}
+                      className="px-4 py-2 bg-[#2d5f3f] text-white rounded-xl hover:bg-[#1e4029] transition-colors font-medium flex items-center gap-2"
+                    >
+                      <FiPlus /> Créer une facture
+                    </button>
+                  )}
+                </div>
+
+                {project.invoices?.length ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {project.invoices.map((invoice) => {
+                      const getStatusLabel = (status) => {
+                        const statusMap = {
+                          'payée': 'Payée',
+                          'en attente': 'En attente',
+                          'à envoyer': 'À envoyer',
+                          'partiellement payée': 'Partiellement payée',
+                          'paiement reçu': 'Paiement reçu',
+                          'non payée': 'Non payée'
+                        };
+                        return statusMap[status] || status;
+                      };
+
+                      const getStatusColor = (status) => {
+                        switch (status) {
+                          case 'payée':
+                          case 'paiement reçu':
+                            return 'bg-[#dff5e7] text-[#1e4029]';
+                          case 'partiellement payée':
+                            return 'bg-[#fff6ea] text-[#b76a28]';
+                          case 'non payée':
+                            return 'bg-[#ffe5e5] text-[#c34242]';
+                          case 'en attente':
+                            return 'bg-[#e8f0ff] text-[#2a4fa2]';
+                          default:
+                            return 'bg-[#f4f7f4] text-[#7a8b7f]';
+                        }
+                      };
+
+                      return (
+                        <div
+                          key={invoice._id}
+                          className="p-4 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 transition-colors bg-white"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-[#1e4029] mb-1">
+                                {invoice.invoiceNumber || `Facture #${invoice._id.slice(-6)}`}
+                              </h4>
+                              {invoice.service && (
+                                <p className="text-sm text-[#7a8b7f] mb-2">
+                                  {invoice.service}
+                                </p>
+                              )}
+                            </div>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getStatusColor(invoice.status)}`}
+                            >
+                              {getStatusLabel(invoice.status)}
+                            </span>
+                          </div>
+
+                          {invoice.description && (
+                            <p className="text-sm text-[#7a8b7f] mb-3 line-clamp-2">
+                              {invoice.description}
+                            </p>
+                          )}
+
+                          <div className="space-y-2 mb-4">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-[#7a8b7f]">Montant:</span>
+                              <span className="font-semibold text-[#1e4029]">
+                                {invoice.amount
+                                  ? `${invoice.amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} CHF`
+                                  : "—"}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-[#7a8b7f]">Émission:</span>
+                              <span className="text-[#1e4029]">
+                                {invoice.issueDate
+                                  ? new Date(invoice.issueDate).toLocaleDateString('fr-FR', {
+                                      day: 'numeric',
+                                      month: 'short',
+                                      year: 'numeric'
+                                    })
+                                  : "—"}
+                              </span>
+                            </div>
+                            {invoice.paidDate && (
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-[#7a8b7f]">Payée le:</span>
+                                <span className="text-[#1e4029]">
+                                  {new Date(invoice.paidDate).toLocaleDateString('fr-FR', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {can("finance") && (
+                            <div className="flex items-center gap-2 pt-3 border-t border-[#dfe8e1]">
+                              <button
+                                onClick={() => {
+                                  setSelectedInvoice(invoice);
+                                  setShowInvoiceModal(true);
+                                }}
+                                className="flex-1 px-3 py-1.5 text-xs bg-[#f4f7f4] text-[#2d5f3f] rounded-lg hover:bg-[#e6f0ea] transition-colors font-medium"
+                              >
+                                Modifier
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  if (window.confirm('Êtes-vous sûr de vouloir supprimer cette facture ?')) {
+                                    try {
+                                      await axiosInstance.delete(API_PATHS.INVOICES.DELETE_INVOICE(invoice._id));
+                                      toast.success('Facture supprimée avec succès');
+                                      fetchProjectDetails();
+                                    } catch (error) {
+                                      toast.error(error.response?.data?.message || 'Erreur lors de la suppression');
+                                    }
+                                  }
+                                }}
+                                className="px-3 py-1.5 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium"
+                              >
+                                Supprimer
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon="💶"
+                    title="Aucune facture"
+                    subtitle="Créez votre première facture pour ce projet."
+                  />
+                )}
+              </div>
+            )}
+
+            {activeTab === "updates" && (
+              <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-semibold text-[#1e4029]">
+                      Journal & updates
+                    </h3>
+                    <p className="text-sm text-[#7a8b7f]">
+                      {project.messages?.length || 0} note{project.messages?.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  {can("edit") && (
+                    <button
+                      onClick={() => setShowUpdateModal(true)}
+                      className="px-4 py-2 bg-[#2d5f3f] text-white rounded-xl hover:bg-[#1e4029] transition-colors font-medium flex items-center gap-2"
+                    >
+                      <FiPlus /> Ajouter une note
+                    </button>
+                  )}
+                </div>
+
+                {project.messages?.length ? (
+                  <div className="space-y-4">
+                    {project.messages.map((message) => {
+                      const getTimeAgo = (date) => {
+                        const now = new Date();
+                        const messageDate = new Date(date);
+                        const diffInSeconds = Math.floor((now - messageDate) / 1000);
+                        
+                        if (diffInSeconds < 60) return "À l'instant";
+                        if (diffInSeconds < 3600) return `Il y a ${Math.floor(diffInSeconds / 60)} min`;
+                        if (diffInSeconds < 86400) return `Il y a ${Math.floor(diffInSeconds / 3600)} h`;
+                        if (diffInSeconds < 604800) return `Il y a ${Math.floor(diffInSeconds / 86400)} j`;
+                        
+                        return messageDate.toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: messageDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+                        });
+                      };
+
+                      return (
+                        <div
+                          key={message._id}
+                          className="p-4 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 transition-colors bg-white"
+                        >
+                          <div className="flex gap-4">
+                            {/* Avatar */}
+                            <div className="flex-shrink-0">
+                              {message.sender?.profileImageUrl ? (
+                                <img
+                                  src={message.sender.profileImageUrl}
+                                  alt={message.sender.name || "Avatar"}
+                                  className="w-10 h-10 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#5a8f6f] to-[#2d5f3f] flex items-center justify-center text-white font-semibold">
+                                  {(message.sender?.name || message.sender?.fullName || "U")?.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Contenu */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-semibold text-[#1e4029]">
+                                    {message.sender?.name || message.sender?.fullName || "Utilisateur"}
+                                  </p>
+                                  {message.sender?.email && (
+                                    <span className="text-xs text-[#7a8b7f]">
+                                      ({message.sender.email})
+                                    </span>
+                                  )}
+                                </div>
+                                {message.createdAt && (
+                                  <span className="text-xs text-[#7a8b7f] whitespace-nowrap">
+                                    {getTimeAgo(message.createdAt)}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              <p className="text-sm text-[#4a5c52] whitespace-pre-wrap break-words">
+                                {message.content || message.text || "—"}
+                              </p>
+
+                              {/* Date complète au survol */}
+                              {message.createdAt && (
+                                <p className="text-xs text-[#7a8b7f] mt-2">
+                                  {new Date(message.createdAt).toLocaleDateString('fr-FR', {
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon="💬"
+                    title="Aucune note"
+                    subtitle="Ajoutez des notes pour suivre l'avancement et documenter les décisions du projet."
+                  />
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-[#1e4029] flex items-center gap-2 mb-4">
+                <FiUser /> Client
+                  </h3>
+              {project.client ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="text-[#7a8b7f] text-xs uppercase mb-1">Entreprise</p>
+                    <p className="font-semibold text-[#1e4029]">{project.client.companyName}</p>
+              </div>
+                  <div>
+                    <p className="text-[#7a8b7f] text-xs uppercase mb-1">Contact</p>
+                    <p className="text-[#4a5c52]">{project.client.contactName}</p>
+                        </div>
+                  {project.client.industry && (
+                    <div>
+                      <p className="text-[#7a8b7f] text-xs uppercase mb-1">Secteur</p>
+                      <p className="text-[#4a5c52]">{project.client.industry}</p>
+                </div>
+              )}
+                  <div>
+                    <p className="text-[#7a8b7f] text-xs uppercase mb-1">Email</p>
+                    <p className="text-[#4a5c52] break-words">{project.client.email}</p>
+                  </div>
+                  {project.client.phoneNumber && (
+                    <div>
+                      <p className="text-[#7a8b7f] text-xs uppercase mb-1">Téléphone</p>
+                      <p className="text-[#4a5c52]">{project.client.phoneNumber}</p>
+            </div>
+          )}
+                          </div>
+              ) : (
+                <p className="text-sm text-[#7a8b7f]">Aucun client assigné.</p>
+              )}
+                        </div>
+
+            <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-[#1e4029] flex items-center gap-2">
+                  <FiUsers /> Équipe ({project.teams?.length || 0} équipe{project.teams?.length > 1 ? 's' : ''})
+                </h3>
+                {can("team") && (
+                  <button
+                    onClick={() => setShowTeamsModal(true)}
+                    className="text-sm text-[#2d5f3f] hover:text-[#1e4029] font-medium"
+                  >
+                    Gérer
+                  </button>
+                        )}
+              </div>
+              <div className="space-y-4">
+                {/* Chef de projet */}
+                {project.projectLead && (
+                  <div className="p-3 border border-[#dfe8e1] rounded-xl flex items-center gap-3 bg-[#f4f7f4]">
+                    {project.projectLead.profileImageUrl ? (
+                      <img
+                        src={project.projectLead.profileImageUrl}
+                        alt={project.projectLead.name || "Avatar"}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#2d5f3f] font-semibold">
+                        {project.projectLead.name?.charAt(0).toUpperCase() || "P"}
+                </div>
+              )}
+                    <div>
+                      <p className="text-sm font-semibold text-[#1e4029]">
+                        {project.projectLead.name || "Chef de projet"}
+                      </p>
+                      <p className="text-xs text-[#7a8b7f]">Chef de projet</p>
+                    </div>
+            </div>
+          )}
+
+                {/* Équipes assignées */}
+                {project.teams && project.teams.length > 0 ? (
+                  project.teams.map((team) => {
+                    const isExpanded = expandedTeams.has(team._id);
+                    return (
+                      <div
+                        key={team._id}
+                        className="border border-[#dfe8e1] rounded-xl bg-white overflow-hidden"
+                      >
+                        {/* Header cliquable */}
+                        <button
+                          onClick={() => toggleTeam(team._id)}
+                          className="w-full p-4 flex items-center justify-between hover:bg-[#f4f7f4] transition-colors"
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <div
+                              className="w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0"
+                              style={{ backgroundColor: team.color || "#5a8f6f" }}
+                            >
+                              <FiUsers />
+                          </div>
+                            <div className="flex-1 text-left">
+                              <h4 className="font-semibold text-[#1e4029]">{team.name}</h4>
+                              {team.department && (
+                                <p className="text-xs text-[#7a8b7f] uppercase">{team.department}</p>
+                              )}
+                              {team.members && (
+                                <p className="text-xs text-[#7a8b7f] mt-1">
+                                  {team.members.length} membre{team.members.length > 1 ? 's' : ''}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex-shrink-0 ml-3">
+                            {isExpanded ? (
+                              <FiChevronUp className="text-[#7a8b7f] w-5 h-5" />
+                            ) : (
+                              <FiChevronDown className="text-[#7a8b7f] w-5 h-5" />
+                        )}
+                      </div>
+                        </button>
+
+                        {/* Contenu déroulant */}
+                        {isExpanded && (
+                          <div className="px-4 pb-4 pt-2 border-t border-[#dfe8e1] bg-[#fafafa]">
+                            {/* Chef d'équipe */}
+                            {team.leader && (
+                              <div className="mb-4 p-3 bg-white rounded-lg border border-[#dfe8e1]">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <FiUser className="text-[#5a8f6f] text-sm" />
+                                  <span className="text-xs text-[#7a8b7f] font-medium uppercase">Chef d'équipe</span>
+                    </div>
+                                <div className="flex items-center gap-3">
+                                  {team.leader.profileImageUrl ? (
+                                    <img
+                                      src={team.leader.profileImageUrl}
+                                      alt={team.leader.name || "Avatar"}
+                                      className="w-8 h-8 rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                                      {team.leader.name?.charAt(0).toUpperCase() || "L"}
+                </div>
+              )}
+                                  <div>
+                                    <p className="text-sm font-semibold text-[#1e4029]">
+                                      {team.leader.name || team.leader.email}
+                                    </p>
+                                    <p className="text-xs text-[#7a8b7f]">{team.leader.email}</p>
+                                  </div>
+                                </div>
+            </div>
+          )}
+
+                            {/* Membres de l'équipe */}
+                            {team.members && team.members.length > 0 && (
+                              <div>
+                                <div className="flex items-center gap-2 mb-3">
+                                  <FiUsers className="text-[#5a8f6f] text-sm" />
+                                  <span className="text-xs text-[#7a8b7f] font-medium uppercase">
+                                    Membres ({team.members.length})
+                                  </span>
+              </div>
+                                <div className="space-y-2">
+                                  {team.members.map((member) => (
+                                    <div
+                                      key={member._id}
+                                      className="flex items-center gap-3 p-2 bg-white rounded-lg border border-[#dfe8e1] hover:border-[#5a8f6f]/30 transition-colors"
+                                    >
+                                      {member.profileImageUrl ? (
+                                        <img
+                                          src={member.profileImageUrl}
+                                          alt={member.name || "Avatar"}
+                                          className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                                        />
+                                      ) : (
+                                        <div className="w-8 h-8 bg-[#f4f7f4] rounded-full flex items-center justify-center text-[#2d5f3f] text-xs font-semibold flex-shrink-0">
+                                          {member.name?.charAt(0).toUpperCase() || "U"}
+                        </div>
+                                      )}
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-[#1e4029] truncate">
+                                          {member.name || "Membre"}
+                                        </p>
+                                        <p className="text-xs text-[#7a8b7f] truncate">{member.email}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-sm text-[#7a8b7f] text-center py-4">
+                    Aucune équipe assignée. Cliquez sur "Gérer" pour ajouter des équipes.
+                  </p>
+                )}
+      </div>
+            </div>
+
           </div>
         </div>
-
-        {/* Tab Content */}
-        <div className="space-y-6">
-          {renderTabContent()}
-        </div>
-
-        {/* Tasks Section - Always visible at bottom */}
-        <TasksSection />
       </div>
 
-      {/* Edit Project Modal */}
+      {/* Manage Teams Modal */}
       {project && (
-        <CreateProjectModal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          onProjectCreated={handleProjectUpdated}
-          editProject={project}
+        <ManageProjectTeamsModal
+          isOpen={showTeamsModal}
+          onClose={() => setShowTeamsModal(false)}
+          project={project}
+          onUpdate={fetchProjectDetails}
         />
       )}
 
-      {/* Add Weekly Update Modal */}
-      <AddWeeklyUpdateModal
-        isOpen={isAddUpdateModalOpen}
-        onClose={() => setIsAddUpdateModalOpen(false)}
-        onUpdateCreated={handleUpdateCreated}
-        projectId={id}
-      />
-
-      {/* Add Milestone Modal */}
-      <AddMilestoneModal
-        isOpen={isAddMilestoneModalOpen}
-        onClose={() => setIsAddMilestoneModalOpen(false)}
-        onMilestoneCreated={handleMilestoneCreated}
-        projectId={id}
-      />
-
-      {/* Add File Modal */}
-      <AddFileModal
-        isOpen={isAddFileModalOpen}
-        onClose={() => setIsAddFileModalOpen(false)}
-        onFileCreated={handleFileCreated}
-        projectId={id}
-      />
-
-      {/* Edit File Modal */}
-      {editingFile && (
-        <EditFileModal
-          isOpen={!!editingFile}
-          onClose={() => setEditingFile(null)}
-          onFileUpdated={handleFileUpdated}
-          file={editingFile}
-        />
-      )}
-
-      {/* Add Invoice Modal */}
+      {/* Create Task Modal */}
       {project && (
-        <AddInvoiceModal
-          isOpen={isAddInvoiceModalOpen}
-          onClose={() => setIsAddInvoiceModalOpen(false)}
-          onInvoiceCreated={handleInvoiceCreated}
-          projectId={id}
-          clientId={
-            project.client?._id || 
-            project.client || 
-            (typeof project.client === 'string' ? project.client : null)
-          }
+        <CreateProjectTaskModal
+          isOpen={showTaskModal}
+          onClose={() => setShowTaskModal(false)}
+          project={project}
+          onTaskCreated={(newTask) => {
+            fetchProjectDetails(); // Refresh project data
+            setActiveTab("tasks"); // Switch to tasks tab
+          }}
         />
       )}
 
-      {/* Edit Invoice Modal */}
-      {editingInvoice && (
+      {/* Create Document Modal */}
+      {project && (
+        <CreateProjectDocumentModal
+          isOpen={showDocumentModal}
+          onClose={() => setShowDocumentModal(false)}
+          project={project}
+          onDocumentCreated={(newDocument) => {
+            fetchProjectDetails(); // Refresh project data
+            setActiveTab("documents"); // Switch to documents tab
+          }}
+        />
+      )}
+
+      {/* Create/Edit Invoice Modal */}
+      {project && (
         <CreateInvoiceModal
-          isOpen={!!editingInvoice}
-          onClose={() => setEditingInvoice(null)}
-          onInvoiceCreated={handleInvoiceCreated}
-          editInvoice={editingInvoice}
+          isOpen={showInvoiceModal}
+          onClose={() => {
+            setShowInvoiceModal(false);
+            setSelectedInvoice(null);
+          }}
+          project={project}
+          invoice={selectedInvoice}
+          onInvoiceCreated={(newInvoice) => {
+            fetchProjectDetails(); // Refresh project data
+            setActiveTab("invoices"); // Switch to invoices tab
+          }}
         />
       )}
 
-      {/* Add Task Modal */}
-      <AddTaskModal
-        isOpen={isAddTaskModalOpen}
-        onClose={() => setIsAddTaskModalOpen(false)}
-        onTaskCreated={handleTaskCreated}
-        projectId={id}
-      />
+      {/* Create Update Modal */}
+      {project && (
+        <CreateProjectUpdateModal
+          isOpen={showUpdateModal}
+          onClose={() => setShowUpdateModal(false)}
+          project={project}
+          onUpdateCreated={(newUpdate) => {
+            fetchProjectDetails(); // Refresh project data
+            setActiveTab("updates"); // Switch to updates tab
+          }}
+        />
+      )}
     </DashboardLayout>
   );
 };

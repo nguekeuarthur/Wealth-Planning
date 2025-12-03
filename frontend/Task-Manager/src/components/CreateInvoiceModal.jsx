@@ -1,412 +1,337 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import Modal from "./Modal";
-import { FiUpload, FiX, FiFile, FiCalendar } from "react-icons/fi";
-import toast from "react-hot-toast";
+import { FiX } from "react-icons/fi";
 import axiosInstance from "../utils/axiosInstance";
 import { API_PATHS } from "../utils/apiPaths";
+import toast from "react-hot-toast";
 
-const CreateInvoiceModal = ({ isOpen, onClose, onInvoiceCreated, editInvoice = null }) => {
+const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, onInvoiceCreated }) => {
   const [formData, setFormData] = useState({
-    project: "",
-    invoiceFile: null,
+    invoiceNumber: "",
     amount: "",
-    dueDate: "",
-    paymentLink: "",
     service: "",
     description: "",
     status: "en attente",
-    issueDate: new Date().toISOString().split('T')[0]
+    issueDate: new Date().toISOString().split('T')[0],
+    dueDate: "",
+    client: project?.client?._id || ""
   });
-
-  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [fileName, setFileName] = useState("");
+
+  const invoiceStatuses = [
+    { value: "en attente", label: "En attente" },
+    { value: "payée", label: "Payée" },
+    { value: "partiellement payée", label: "Partiellement payée" },
+    { value: "paiement reçu", label: "Paiement reçu" },
+    { value: "non payée", label: "Non payée" }
+  ];
 
   useEffect(() => {
-    if (isOpen) {
-      fetchProjects();
-      if (editInvoice) {
-        setFormData({
-          project: editInvoice.project?._id || "",
-          invoiceFile: null,
-          amount: editInvoice.amount || "",
-          dueDate: editInvoice.dueDate ? new Date(editInvoice.dueDate).toISOString().split('T')[0] : "",
-          paymentLink: editInvoice.paymentLink || "",
-          service: editInvoice.service || "",
-          description: editInvoice.description || "",
-          status: editInvoice.status || "en attente",
-          issueDate: editInvoice.issueDate ? new Date(editInvoice.issueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
-        });
-        setFileName(editInvoice.pdfPath ? editInvoice.pdfPath.split('/').pop() : "");
-      } else {
-        resetForm();
-      }
+    if (invoice) {
+      // Mode édition
+      const invoiceStatus = invoice.status || "en attente";
+      setFormData({
+        invoiceNumber: invoice.invoiceNumber || "",
+        amount: invoice.amount || "",
+        service: invoice.service || "",
+        description: invoice.description || "",
+        status: invoiceStatus,
+        issueDate: invoice.issueDate 
+          ? new Date(invoice.issueDate).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0],
+        // Ne charger la date d'échéance que si le statut est "en attente" ou "partiellement payée"
+        dueDate: (invoiceStatus === 'en attente' || invoiceStatus === 'partiellement payée') && invoice.dueDate
+          ? new Date(invoice.dueDate).toISOString().split('T')[0]
+          : "",
+        client: invoice.client?._id || project?.client?._id || ""
+      });
+    } else {
+      // Mode création - le numéro sera généré automatiquement par le backend
+      setFormData({
+        invoiceNumber: "",
+        amount: "",
+        service: "",
+        description: "",
+        status: "en attente",
+        issueDate: new Date().toISOString().split('T')[0],
+        dueDate: "",
+        client: project?.client?._id || ""
+      });
     }
-  }, [isOpen, editInvoice]);
+  }, [invoice, project]);
 
-  const fetchProjects = async () => {
-    try {
-      const response = await axiosInstance.get(API_PATHS.PROJECTS.GET_ALL_PROJECTS);
-      const projectsData = response.data?.projects || [];
-      setProjects(projectsData);
-    } catch (error) {
-      console.error("Error fetching projects:", error);
-      toast.error("Failed to load projects");
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      project: "",
-      invoiceFile: null,
-      amount: "",
-      dueDate: "",
-      paymentLink: "",
-      service: "",
-      description: "",
-      status: "en attente",
-      issueDate: new Date().toISOString().split('T')[0]
-    });
-    setFileName("");
-  };
-
-  const handleChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.type !== "application/pdf" && !file.type.startsWith("image/")) {
-        toast.error("Please upload a PDF or image file");
-        return;
-      }
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error("File size must be less than 10MB");
-        return;
-      }
-      setFormData((prev) => ({
-        ...prev,
-        invoiceFile: file,
-      }));
-      setFileName(file.name);
+    
+    // Si le statut change et n'est plus "en attente" ou "partiellement payée", vider la date d'échéance
+    if (name === 'status' && value !== 'en attente' && value !== 'partiellement payée') {
+      setFormData(prev => ({ ...prev, [name]: value, dueDate: '' }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
-  };
-
-  const removeFile = () => {
-    setFormData((prev) => ({
-      ...prev,
-      invoiceFile: null,
-    }));
-    setFileName("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation
-    if (!formData.project) {
-      toast.error("Please select a project");
-      return;
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+      return toast.error("Le montant doit être supérieur à 0");
     }
-    if (!formData.amount || formData.amount <= 0) {
-      toast.error("Please enter a valid amount");
-      return;
+
+    if (!formData.service.trim()) {
+      return toast.error("Le service est obligatoire");
     }
-    if (!formData.dueDate) {
-      toast.error("Please select a due date");
-      return;
+
+    // Si le statut est "en attente" ou "partiellement payée", la date d'échéance est obligatoire
+    if ((formData.status === 'en attente' || formData.status === 'partiellement payée') && !formData.dueDate) {
+      return toast.error("La date d'échéance est obligatoire pour les factures en attente ou partiellement payées");
     }
-    if (!formData.service) {
-      toast.error("Please enter a service description");
-      return;
+
+    if (!formData.client) {
+      return toast.error("Le client est obligatoire");
     }
 
     setLoading(true);
-
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append("project", formData.project);
-      formDataToSend.append("amount", formData.amount);
-      formDataToSend.append("dueDate", formData.dueDate);
-      formDataToSend.append("service", formData.service);
-      formDataToSend.append("description", formData.description);
-      formDataToSend.append("status", formData.status);
-      formDataToSend.append("issueDate", formData.issueDate);
+      let payload;
       
-      if (formData.paymentLink) {
-        formDataToSend.append("paymentLink", formData.paymentLink);
-      }
-      
-      if (formData.invoiceFile) {
-        formDataToSend.append("invoiceFile", formData.invoiceFile);
+      if (invoice) {
+        // Mise à jour : inclure le numéro de facture (ne peut pas être modifié mais on le garde)
+        payload = {
+          ...formData,
+          amount: parseFloat(formData.amount),
+          project: project?._id,
+          client: formData.client,
+          // Ne pas envoyer la date d'échéance si le statut n'est pas "en attente" ou "partiellement payée"
+          dueDate: (formData.status === 'en attente' || formData.status === 'partiellement payée') 
+            ? formData.dueDate 
+            : null
+        };
+      } else {
+        // Création : ne pas envoyer invoiceNumber, il sera généré automatiquement par le backend
+        const { invoiceNumber, ...restFormData } = formData;
+        payload = {
+          ...restFormData,
+          amount: parseFloat(formData.amount),
+          project: project?._id,
+          client: formData.client,
+          // Ne pas envoyer la date d'échéance si le statut n'est pas "en attente" ou "partiellement payée"
+          dueDate: (formData.status === 'en attente' || formData.status === 'partiellement payée') 
+            ? formData.dueDate 
+            : null
+        };
       }
 
       let response;
-      if (editInvoice) {
+      if (invoice) {
+        // Mise à jour
         response = await axiosInstance.put(
-          API_PATHS.INVOICES.UPDATE_INVOICE(editInvoice._id),
-          formDataToSend,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
+          API_PATHS.INVOICES.UPDATE_INVOICE(invoice._id),
+          payload
         );
-        toast.success("Invoice updated successfully");
+        toast.success("Facture mise à jour avec succès !");
       } else {
+        // Création
         response = await axiosInstance.post(
           API_PATHS.INVOICES.CREATE_INVOICE,
-          formDataToSend,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
+          payload
         );
-        toast.success("Invoice created successfully");
+        toast.success("Facture créée avec succès !");
       }
 
-      onInvoiceCreated();
+      onInvoiceCreated(response.data.invoice);
       handleClose();
     } catch (error) {
       console.error("Error saving invoice:", error);
-      toast.error(error.response?.data?.message || "Failed to save invoice");
+      toast.error(error.response?.data?.message || "Erreur lors de la sauvegarde de la facture");
     } finally {
       setLoading(false);
     }
   };
 
   const handleClose = () => {
-    resetForm();
+    setFormData({
+      invoiceNumber: "",
+      amount: "",
+      service: "",
+      description: "",
+      status: "en attente",
+      issueDate: new Date().toISOString().split('T')[0],
+      dueDate: "",
+      client: project?.client?._id || ""
+    });
     onClose();
   };
 
-  const statusOptions = [
-    { value: "payée", label: "Payment Received" },
-    { value: "en attente", label: "Payment Sent" },
-    { value: "à envoyer", label: "To Send" },
-    { value: "non payée", label: "Unpaid" },
-    { value: "partiellement payée", label: "Partially Paid" },
-    { value: "paiement reçu", label: "Payment Received" }
-  ];
-
   return (
-    <Modal isOpen={isOpen} onClose={handleClose}>
-      <div className="p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">
-          {editInvoice ? "Edit Invoice" : "Add invoice"}
-        </h2>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Project Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Project name <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="project"
-              value={formData.project}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select a project</option>
-              {projects.map((project) => (
-                <option key={project._id} value={project._id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Invoice File Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Invoice file
-            </label>
-            <div className="flex items-center gap-3">
-              <label className="flex-1 cursor-pointer">
-                <div className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">
-                  <FiUpload className="w-5 h-5 text-gray-600" />
-                  <span className="text-sm text-gray-700">
-                    {fileName || "Choose file"}
-                  </span>
-                </div>
-                <input
-                  type="file"
-                  accept=".pdf,image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-              </label>
-              {fileName && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg">
-                  <FiFile className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm text-blue-700 truncate max-w-[150px]">
-                    {fileName}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={removeFile}
-                    className="text-blue-600 hover:text-blue-800"
-                  >
-                    <FiX className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
+    <Modal isOpen={isOpen} onClose={handleClose} title={invoice ? "Modifier la facture" : "Créer une facture"}>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Numéro de facture */}
+        <div>
+          <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
+            Numéro de facture
+          </label>
+          {invoice ? (
+            // Mode édition : afficher en lecture seule
+            <input
+              type="text"
+              value={formData.invoiceNumber}
+              disabled
+              className="w-full px-3 py-2.5 bg-[#f4f7f4] border border-[#dfe8e1] rounded-xl text-sm text-[#7a8b7f] cursor-not-allowed"
+            />
+          ) : (
+            // Mode création : afficher un message indiquant qu'il sera généré automatiquement
+            <div className="w-full px-3 py-2.5 bg-[#f4f7f4] border border-[#dfe8e1] rounded-xl text-sm text-[#7a8b7f] flex items-center gap-2">
+              <span className="text-xs italic">Généré automatiquement lors de la création</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">PDF or image file (max 10MB)</p>
+          )}
+        </div>
+
+        {/* Montant et Service */}
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
+              Montant (CHF) <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              name="amount"
+              value={formData.amount}
+              onChange={handleInputChange}
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+              className="w-full px-3 py-2.5 bg-[#fdfdfc] border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] text-sm text-[#1e4029] placeholder:text-[#7a8b7f]"
+              required
+            />
           </div>
 
-          {/* Service Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
               Service <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="service"
               value={formData.service}
-              onChange={handleChange}
-              placeholder="e.g., Web Development"
+              onChange={handleInputChange}
+              placeholder="Ex: Consultation, Création entreprise..."
+              className="w-full px-3 py-2.5 bg-[#fdfdfc] border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] text-sm text-[#1e4029] placeholder:text-[#7a8b7f]"
               required
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+        </div>
 
-          {/* Amount */}
+        {/* Description */}
+        <div>
+          <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
+            Description
+          </label>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            placeholder="Description détaillée de la facture..."
+            rows={3}
+            className="w-full px-3 py-2.5 bg-[#fdfdfc] border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] text-sm text-[#1e4029] placeholder:text-[#7a8b7f]"
+          />
+        </div>
+
+        {/* Dates */}
+        <div className={formData.status === 'en attente' || formData.status === 'partiellement payée' 
+          ? "grid sm:grid-cols-2 gap-4" 
+          : ""}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Amount <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">$</span>
-              <input
-                type="number"
-                name="amount"
-                value={formData.amount}
-                onChange={handleChange}
-                placeholder="0.00"
-                step="0.01"
-                min="0"
-                required
-                className="w-full pl-8 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          {/* Dates Row */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Issue Date */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Issue Date
-              </label>
-              <div className="relative">
-                <FiCalendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
-                <input
-                  type="date"
-                  name="issueDate"
-                  value={formData.issueDate}
-                  onChange={handleChange}
-                  className="w-full pl-11 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            {/* Due Date */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Due date <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <FiCalendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
-                <input
-                  type="date"
-                  name="dueDate"
-                  value={formData.dueDate}
-                  onChange={handleChange}
-                  required
-                  className="w-full pl-11 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Status */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Status
-            </label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {statusOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Payment Link */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Payment link
+            <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
+              Date d'émission
             </label>
             <input
-              type="url"
-              name="paymentLink"
-              value={formData.paymentLink}
-              onChange={handleChange}
-              placeholder="https://..."
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              type="date"
+              name="issueDate"
+              value={formData.issueDate}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2.5 bg-[#fdfdfc] border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] text-sm text-[#1e4029]"
             />
           </div>
 
-          {/* Notes */}
+          {(formData.status === 'en attente' || formData.status === 'partiellement payée') && (
+            <div>
+              <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
+                Date d'échéance <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                name="dueDate"
+                value={formData.dueDate}
+                onChange={handleInputChange}
+                min={formData.issueDate}
+                className="w-full px-3 py-2.5 bg-[#fdfdfc] border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] text-sm text-[#1e4029]"
+                required
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Statut */}
+        <div>
+          <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
+            Statut
+          </label>
+          <select
+            name="status"
+            value={formData.status}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2.5 bg-[#fdfdfc] border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] text-sm text-[#1e4029] appearance-none cursor-pointer"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%237a8b7f' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+              backgroundPosition: "right 0.5rem center",
+              backgroundRepeat: "no-repeat",
+              backgroundSize: "1.5em 1.5em",
+              paddingRight: "2.5rem"
+            }}
+          >
+            {invoiceStatuses.map(status => (
+              <option key={status.value} value={status.value}>
+                {status.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Client (affiché en lecture seule si un projet est sélectionné) */}
+        {project?.client && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Notes
+            <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
+              Client
             </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Additional notes..."
-              rows={3}
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            <input
+              type="text"
+              value={project.client.companyName || project.client.contactName || "Client du projet"}
+              disabled
+              className="w-full px-3 py-2.5 bg-[#f4f7f4] border border-[#dfe8e1] rounded-xl text-sm text-[#7a8b7f] cursor-not-allowed"
             />
           </div>
+        )}
 
-          {/* Buttons */}
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "Saving..." : editInvoice ? "Update" : "Create"}
-            </button>
-          </div>
-        </form>
-      </div>
+        {/* Actions */}
+        <div className="flex justify-end gap-3 pt-4 border-t border-[#dfe8e1]">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="px-6 py-2.5 text-sm text-[#7a8b7f] bg-[#f4f7f4] rounded-xl hover:bg-[#e6f0ea] border border-[#dfe8e1]"
+            disabled={loading}
+          >
+            Annuler
+          </button>
+          <button
+            type="submit"
+            className="px-6 py-2.5 text-sm bg-[#2d5f3f] text-white rounded-xl hover:bg-[#1e4029] font-medium shadow-lg disabled:opacity-50"
+            disabled={loading}
+          >
+            {loading ? "Enregistrement..." : invoice ? "Modifier" : "Créer la facture"}
+          </button>
+        </div>
+      </form>
     </Modal>
   );
 };

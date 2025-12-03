@@ -16,8 +16,8 @@ router.get('/:id', documentController.getDocumentById);
 // Upload document
 router.post('/', uploadMiddleware.single('file'), documentController.uploadDocument);
 
-// Update document metadata
-router.put('/:id', documentController.updateDocument);
+// Update document (with optional file)
+router.put('/:id', uploadMiddleware.single('file'), documentController.updateDocument);
 
 // Update document version
 router.put('/:id/version', uploadMiddleware.single('file'), documentController.updateDocumentVersion);

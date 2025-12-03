@@ -106,6 +106,8 @@ const createTask = async (req, res) => {
       assignedTo,
       attachments,
       todoChecklist,
+      project,
+      status
     } = req.body;
 
     if (!Array.isArray(assignedTo)) {
@@ -123,7 +125,17 @@ const createTask = async (req, res) => {
       createdBy: req.user._id,
       todoChecklist,
       attachments,
+      project,
+      status: status || "Pending"
     });
+
+    // Si la tâche est associée à un projet, l'ajouter au projet
+    if (project) {
+      const Project = require("../models/Project");
+      await Project.findByIdAndUpdate(project, {
+        $addToSet: { tasks: task._id }
+      });
+    }
 
     res.status(201).json({ message: "Task created successfully", task });
   } catch (error) {

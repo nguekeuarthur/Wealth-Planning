@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
-import { FiSearch, FiPlus, FiFolder } from "react-icons/fi";
+import { FiSearch, FiPlus, FiFolder, FiFilter, FiCheckSquare, FiSquare, FiArchive, FiSettings, FiCalendar, FiClock, FiUser } from "react-icons/fi";
+import toast from "react-hot-toast";
 import CreateProjectModal from "../../components/CreateProjectModal";
+import { UserContext } from "../../context/userContext";
 
 const brandPalette = {
   primary: "#1e4029",
@@ -20,13 +22,81 @@ const AllProjects = () => {
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    status: 'all',
+    category: 'all',
+    projectLead: 'all'
+  });
+  const [sortBy, setSortBy] = useState({
+    field: 'createdAt',
+    order: 'desc'
+  });
+  const [selectedProjects, setSelectedProjects] = useState([]);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const { user } = useContext(UserContext);
   const navigate = useNavigate();
+
+  // Fonction pour calculer la progression automatique d'un projet
+  const calculateProjectCompletion = (project) => {
+    if (!project.tasks || project.tasks.length === 0) {
+      return project.completion || 0;
+    }
+
+    const totalTasks = project.tasks.length;
+    const completedTasks = project.tasks.filter(task => task.status === 'completed').length;
+    const calculatedCompletion = Math.round((completedTasks / totalTasks) * 100);
+
+    // Si la progression calculée diffère de celle stockée, on peut la mettre à jour automatiquement
+    if (calculatedCompletion !== (project.completion || 0)) {
+      // Mise à jour automatique côté backend (optionnel)
+      updateProjectCompletion(project._id, calculatedCompletion);
+    }
+
+    return calculatedCompletion;
+  };
+
+  // Fonction pour mettre à jour la progression côté backend
+  const updateProjectCompletion = async (projectId, completion) => {
+    try {
+      await axiosInstance.put(API_PATHS.PROJECTS.UPDATE_PROJECT(projectId), {
+        completion: completion
+      });
+    } catch (error) {
+      console.error("Error updating project completion:", error);
+    }
+  };
+
+  // Fonction pour déterminer automatiquement le statut basé sur la progression
+  const calculateProjectStatus = (project, completion) => {
+    if (completion === 100) {
+      return 'done';
+    } else if (completion >= 75) {
+      return 'in review';
+    } else {
+      return project.status || 'in progress';
+    }
+  };
 
   const getAllProjects = async () => {
     try {
       const response = await axiosInstance.get(API_PATHS.PROJECTS.GET_ALL_PROJECTS);
-      setAllProjects(response.data?.projects || []);
-      setFilteredProjects(response.data?.projects || []);
+      let projects = response.data?.projects || [];
+
+      // Calculer automatiquement la progression et le statut pour chaque projet
+      projects = projects.map(project => {
+        const calculatedCompletion = calculateProjectCompletion(project);
+        const calculatedStatus = calculateProjectStatus(project, calculatedCompletion);
+
+        return {
+          ...project,
+          completion: calculatedCompletion,
+          status: calculatedStatus
+        };
+      });
+
+      setAllProjects(projects);
     } catch (error) {
       console.error("Error fetching projects:", error);
     }
@@ -36,17 +106,106 @@ const AllProjects = () => {
     getAllProjects();
   }, []);
 
+  // Hook pour recalculer automatiquement la progression quand les tâches changent
   useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setFilteredProjects(allProjects);
-    } else {
-      const filtered = allProjects.filter((project) =>
-        project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        project.category.toLowerCase().includes(searchQuery.toLowerCase())
+    const interval = setInterval(() => {
+      // Vérifier si les tâches ont changé et recalculer si nécessaire
+      setAllProjects(prevProjects =>
+        prevProjects.map(project => {
+          const currentCompletion = calculateProjectCompletion(project);
+          if (currentCompletion !== project.completion) {
+            const newStatus = calculateProjectStatus(project, currentCompletion);
+            return {
+              ...project,
+              completion: currentCompletion,
+              status: newStatus
+            };
+          }
+          return project;
+        })
       );
-      setFilteredProjects(filtered);
+    }, 5000); // Vérifier toutes les 5 secondes
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Fonction de filtrage avancé
+  const applyFilters = (projects, search, filterOptions) => {
+    let filtered = [...projects];
+
+    // Recherche textuelle avancée
+    if (search.trim() !== "") {
+      const query = search.toLowerCase();
+      filtered = filtered.filter((project) =>
+        project.name.toLowerCase().includes(query) ||
+        project.category.toLowerCase().includes(query) ||
+        project.description?.toLowerCase().includes(query) ||
+        project.client?.companyName?.toLowerCase().includes(query) ||
+        project.projectLead?.name?.toLowerCase().includes(query) ||
+        project.tasks?.some(task => task.title?.toLowerCase().includes(query)) ||
+        project.messages?.some(msg => msg.content?.toLowerCase().includes(query))
+      );
     }
-  }, [searchQuery, allProjects]);
+
+    // Filtres par statut
+    if (filterOptions.status !== 'all') {
+      filtered = filtered.filter(project => project.status === filterOptions.status);
+    }
+
+    // Filtres par catégorie
+    if (filterOptions.category !== 'all') {
+      filtered = filtered.filter(project => project.category === filterOptions.category);
+    }
+
+
+    // Filtres par chef de projet
+    if (filterOptions.projectLead !== 'all') {
+      filtered = filtered.filter(project => project.projectLead?._id === filterOptions.projectLead);
+    }
+
+
+
+    return filtered;
+  };
+
+  // Fonction de tri
+  const applySorting = (projects, sortOptions) => {
+    return [...projects].sort((a, b) => {
+      let aValue, bValue;
+
+      switch (sortOptions.field) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'completion':
+          aValue = a.completion || 0;
+          bValue = b.completion || 0;
+          break;
+        case 'endDate':
+          aValue = a.endDate ? new Date(a.endDate) : new Date(9999, 12, 31);
+          bValue = b.endDate ? new Date(b.endDate) : new Date(9999, 12, 31);
+          break;
+        case 'createdAt':
+        default:
+          aValue = new Date(a.createdAt);
+          bValue = new Date(b.createdAt);
+          break;
+      }
+
+      if (sortOptions.order === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+  };
+
+  useEffect(() => {
+    let filtered = applyFilters(allProjects, searchQuery, filters);
+    filtered = applySorting(filtered, sortBy);
+    setFilteredProjects(filtered);
+  }, [searchQuery, filters, sortBy, allProjects]);
 
   const handleProjectClick = (projectId) => {
     navigate(`/admin/project/${projectId}`);
@@ -57,9 +216,255 @@ const AllProjects = () => {
   };
 
   const handleProjectCreated = (newProject) => {
-    setAllProjects([newProject, ...allProjects]);
-    setFilteredProjects([newProject, ...filteredProjects]);
+    const calculatedCompletion = calculateProjectCompletion(newProject);
+    const calculatedStatus = calculateProjectStatus(newProject, calculatedCompletion);
+
+    const updatedProject = {
+      ...newProject,
+      completion: calculatedCompletion,
+      status: calculatedStatus
+    };
+
+    setAllProjects([updatedProject, ...allProjects]);
   };
+
+  // Fonction pour recalculer la progression d'un projet spécifique
+  const recalculateProjectProgress = (projectId) => {
+    setAllProjects(prevProjects =>
+      prevProjects.map(project => {
+        if (project._id === projectId) {
+          const calculatedCompletion = calculateProjectCompletion(project);
+          const calculatedStatus = calculateProjectStatus(project, calculatedCompletion);
+
+          return {
+            ...project,
+            completion: calculatedCompletion,
+            status: calculatedStatus
+          };
+        }
+        return project;
+      })
+    );
+  };
+
+  // Fonction exposée pour les autres composants
+  window.recalculateProjectProgress = recalculateProjectProgress;
+
+  // Système de permissions pour les projets
+  const checkProjectPermissions = (currentUser, project, action) => {
+    if (!currentUser) return false;
+    if (currentUser.role === 'admin') return true;
+    if (!project) {
+      // Actions globales (ex: créer un projet) réservées aux admins
+      return action === 'edit' ? currentUser.role === 'admin' : false;
+    }
+    switch (action) {
+      case 'view':
+        return project.client === currentUser._id ||
+               project.projectLead === currentUser._id ||
+               project.assignedUsers?.includes(currentUser._id);
+
+      case 'edit':
+        return project.projectLead === currentUser._id ||
+               (project.assignedUsers?.includes(currentUser._id) && action !== 'delete');
+
+      case 'delete':
+        return project.projectLead === currentUser._id;
+
+      case 'assign_users':
+        return project.projectLead === currentUser._id;
+
+      case 'change_status':
+        return project.projectLead === currentUser._id ||
+               project.assignedUsers?.includes(currentUser._id);
+
+      default:
+        return false;
+    }
+  };
+
+  // Wrapper pour les actions nécessitant des permissions
+  const withPermission = (action, project, callback) => {
+    if (checkProjectPermissions(user, project, action)) {
+      callback();
+    } else {
+      toast.error("Vous n'avez pas les permissions nécessaires pour cette action");
+    }
+  };
+
+  // Fonction pour calculer les métriques d'un projet
+  const calculateProjectMetrics = (project) => {
+    const totalTasks = project.tasks?.length || 0;
+    const completedTasks = project.tasks?.filter(task => task.status === 'completed').length || 0;
+    const overdueTasks = project.tasks?.filter(task => {
+      if (!task.dueDate || task.status === 'completed') return false;
+      return new Date(task.dueDate) < new Date();
+    }).length || 0;
+
+    // Calcul du temps total passé (supposé stocké dans chaque tâche)
+    const totalTimeSpent = project.tasks?.reduce((sum, task) => sum + (task.timeSpent || 0), 0) || 0;
+
+    // Calcul du budget (basé sur les factures)
+    const budgetUsed = project.invoices?.reduce((sum, invoice) => sum + (invoice.amount || 0), 0) || 0;
+    const budgetRemaining = (project.budget || 0) - budgetUsed;
+
+    // Calcul des jours restants
+    const daysRemaining = project.endDate ?
+      Math.ceil((new Date(project.endDate) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+
+    return {
+      totalTasks,
+      completedTasks,
+      overdueTasks,
+      completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+      totalTimeSpent,
+      budgetUsed,
+      budgetRemaining,
+      daysRemaining,
+      isOverdue: daysRemaining !== null && daysRemaining < 0,
+      isUrgent: daysRemaining !== null && daysRemaining <= 7 && daysRemaining > 0
+    };
+  };
+
+  const handleFilterChange = (filterType, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterType]: value
+    }));
+  };
+
+  const handleSortChange = (field, order) => {
+    setSortBy({ field, order });
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      status: 'all',
+      category: 'all',
+      projectLead: 'all'
+    });
+    setSearchQuery("");
+  };
+
+  // Gestion de la sélection
+  const handleProjectSelect = (projectId, checked) => {
+    if (checked) {
+      setSelectedProjects(prev => [...prev, projectId]);
+    } else {
+      setSelectedProjects(prev => prev.filter(id => id !== projectId));
+    }
+  };
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedProjects(filteredProjects.map(p => p._id));
+    } else {
+      setSelectedProjects([]);
+    }
+  };
+
+  const isProjectSelected = (projectId) => selectedProjects.includes(projectId);
+
+  // Actions groupées
+  const handleBulkStatusChange = async (newStatus) => {
+    if (selectedProjects.length === 0) return;
+
+    setBulkActionLoading(true);
+    try {
+      // Mettre à jour le statut de tous les projets sélectionnés
+      const updatePromises = selectedProjects.map(projectId =>
+        axiosInstance.put(API_PATHS.PROJECTS.UPDATE_PROJECT(projectId), { status: newStatus })
+      );
+
+      await Promise.all(updatePromises);
+
+      // Mettre à jour l'état local avec recalcul automatique
+      setAllProjects(prev =>
+        prev.map(project =>
+          selectedProjects.includes(project._id)
+            ? (() => {
+                const updatedProject = { ...project, status: newStatus };
+                const calculatedCompletion = calculateProjectCompletion(updatedProject);
+                return {
+                  ...updatedProject,
+                  completion: calculatedCompletion,
+                  status: calculateProjectStatus(updatedProject, calculatedCompletion)
+                };
+              })()
+            : project
+        )
+      );
+
+      setSelectedProjects([]);
+      toast.success(`${selectedProjects.length} projet(s) mis à jour`);
+    } catch (error) {
+      console.error("Error updating projects:", error);
+      toast.error("Erreur lors de la mise à jour des projets");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkArchive = async () => {
+    if (selectedProjects.length === 0) return;
+
+    setBulkActionLoading(true);
+    try {
+      // Archiver tous les projets sélectionnés (soft delete)
+      const archivePromises = selectedProjects.map(projectId =>
+        axiosInstance.delete(API_PATHS.PROJECTS.DELETE_PROJECT(projectId))
+      );
+
+      await Promise.all(archivePromises);
+
+      // Supprimer des projets de l'état local
+      setAllProjects(prev => prev.filter(project => !selectedProjects.includes(project._id)));
+      setSelectedProjects([]);
+      toast.success(`${selectedProjects.length} projet(s) archivé(s)`);
+    } catch (error) {
+      console.error("Error archiving projects:", error);
+      toast.error("Erreur lors de l'archivage des projets");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  // Effets pour gérer l'affichage des actions groupées
+  useEffect(() => {
+    setShowBulkActions(selectedProjects.length > 0);
+  }, [selectedProjects]);
+
+  // Options pour les filtres
+  const statusOptions = [
+    { value: 'all', label: 'Tous les statuts' },
+    { value: 'in progress', label: 'En cours' },
+    { value: 'in review', label: 'À revoir' },
+    { value: 'done', label: 'Terminé' }
+  ];
+
+  const categoryOptions = [
+    { value: 'all', label: 'Toutes les catégories' },
+    { value: 'Création entreprise onshore', label: 'Création entreprise onshore' },
+    { value: 'Création entreprise offshore', label: 'Création entreprise offshore' },
+    { value: 'Ouverture compte bancaire onshore', label: 'Ouverture compte bancaire onshore' },
+    { value: 'Ouverture compte bancaire offshore', label: 'Ouverture compte bancaire offshore' },
+    { value: 'Domiciliation', label: 'Domiciliation' },
+    { value: 'Réception courrier', label: 'Réception courrier' },
+    { value: 'Proposition structuration patrimoniale', label: 'Proposition structuration patrimoniale' },
+    { value: 'Proposition structuration patrimoniale:Reviewed', label: 'Proposition structuration patrimoniale:Reviewed' },
+    { value: 'Exécution structuration patrimoniale', label: 'Exécution structuration patrimoniale' },
+    { value: 'Proposition stratégie fiscale', label: 'Proposition stratégie fiscale' },
+    { value: 'Proposition stratégie fiscale:Reviewed', label: 'Proposition stratégie fiscale:Reviewed' }
+  ];
+
+
+
+  const sortOptions = [
+    { value: 'createdAt', label: 'Date de création' },
+    { value: 'name', label: 'Nom' },
+    { value: 'completion', label: 'Progression' },
+    { value: 'endDate', label: 'Échéance' }
+  ];
 
   const getStatusBadgeClass = (status) => {
     switch (status) {
@@ -111,8 +516,17 @@ const AllProjects = () => {
             </p>
           </div>
 
-          {/* Action Button */}
+          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
+            {user?.role === 'admin' && (
+              <>
+                <button
+                  onClick={() => navigate("/admin/projects/archived")}
+                  className="group bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:bg-white/30 border border-white/20"
+                >
+                  <FiArchive className="text-lg" />
+                  Projets archivés
+                </button>
           <button
             onClick={handleAddProject}
               className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
@@ -122,6 +536,8 @@ const AllProjects = () => {
               </div>
               Nouveau projet
           </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -140,13 +556,191 @@ const AllProjects = () => {
           />
         </div>
 
+        {/* Advanced Filters */}
+        <div className="bg-white border border-[#dfe8e1] rounded-xl p-4">
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2 text-[#2d5f3f] font-medium"
+            >
+              <FiFilter className="text-lg" />
+              Filtres avancés
+              <span className={`transform transition-transform ${showFilters ? 'rotate-180' : ''}`}>
+                ▼
+              </span>
+            </button>
+            {(Object.values(filters).some(v => v !== 'all') || searchQuery) && (
+              <button
+                onClick={resetFilters}
+                className="text-sm text-[#7a8b7f] hover:text-[#2d5f3f] underline"
+              >
+                Réinitialiser
+              </button>
+            )}
+          </div>
+
+          {showFilters && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+              {/* Status Filter */}
+              <div>
+                <label className="block text-sm font-medium text-[#2d5f3f] mb-2">Statut</label>
+                <select
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  className="w-full px-3 py-2 bg-[#f4f7f4] border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f]"
+                >
+                  {statusOptions.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Category Filter */}
+              <div>
+                <label className="block text-sm font-medium text-[#2d5f3f] mb-2">Catégorie</label>
+                <select
+                  value={filters.category}
+                  onChange={(e) => handleFilterChange('category', e.target.value)}
+                  className="w-full px-3 py-2 bg-[#f4f7f4] border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f]"
+                >
+                  {categoryOptions.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+
+
+
+              {/* Sort Options */}
+              <div>
+                <label className="block text-sm font-medium text-[#2d5f3f] mb-2">Trier par</label>
+                <select
+                  value={sortBy.field}
+                  onChange={(e) => handleSortChange(e.target.value, sortBy.order)}
+                  className="w-full px-3 py-2 bg-[#f4f7f4] border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f]"
+                >
+                  {sortOptions.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sort Order */}
+              <div>
+                <label className="block text-sm font-medium text-[#2d5f3f] mb-2">Ordre</label>
+                <select
+                  value={sortBy.order}
+                  onChange={(e) => handleSortChange(sortBy.field, e.target.value)}
+                  className="w-full px-3 py-2 bg-[#f4f7f4] border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f]"
+                >
+                  <option value="desc">Décroissant</option>
+                  <option value="asc">Croissant</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Bulk Actions Bar */}
+        {showBulkActions && (
+          <div className="bg-[#e6f0ea] border border-[#5a8f6f]/30 rounded-xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-[#2d5f3f] font-medium">
+                {selectedProjects.length} projet(s) sélectionné(s)
+              </span>
+              <button
+                onClick={() => setSelectedProjects([])}
+                className="text-sm text-[#7a8b7f] hover:text-[#2d5f3f] underline"
+              >
+                Désélectionner tout
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-[#2d5f3f] mr-2">Actions :</span>
+
+              {/* Change Status - Seulement si permissions */}
+            {user && selectedProjects.some(projectId => {
+                const project = filteredProjects.find(p => p._id === projectId);
+                return project && checkProjectPermissions(user, project, 'change_status');
+              }) && (
+                <select
+                  onChange={(e) => e.target.value && handleBulkStatusChange(e.target.value)}
+                  disabled={bulkActionLoading}
+                  className="px-3 py-1 bg-white border border-[#dfe8e1] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] disabled:opacity-50"
+                  defaultValue=""
+                >
+                  <option value="">Changer statut</option>
+                  <option value="in progress">En cours</option>
+                  <option value="in review">À revoir</option>
+                  <option value="done">Terminé</option>
+                </select>
+              )}
+
+              {/* Archive - Seulement si permissions */}
+              {user && selectedProjects.some(projectId => {
+                const project = filteredProjects.find(p => p._id === projectId);
+                return project && checkProjectPermissions(user, project, 'delete');
+              }) && (
+                <button
+                  onClick={handleBulkArchive}
+                  disabled={bulkActionLoading}
+                  className="flex items-center gap-2 px-3 py-1 bg-white border border-[#dfe8e1] rounded-lg text-sm hover:bg-[#f4f7f4] transition-colors disabled:opacity-50"
+                >
+                  <FiArchive className="text-sm" />
+                  Archiver
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Projects Grid Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => handleSelectAll(selectedProjects.length !== filteredProjects.length)}
+              className="flex items-center gap-2 text-[#2d5f3f] hover:text-[#1e4029] transition-colors"
+            >
+              {selectedProjects.length === filteredProjects.length && filteredProjects.length > 0 ? (
+                <FiCheckSquare className="text-lg" />
+              ) : (
+                <FiSquare className="text-lg" />
+              )}
+              <span className="text-sm font-medium">
+                {selectedProjects.length === filteredProjects.length && filteredProjects.length > 0
+                  ? 'Tout désélectionner'
+                  : 'Tout sélectionner'
+                }
+              </span>
+            </button>
+            <span className="text-[#7a8b7f] text-sm">
+              {filteredProjects.length} projet(s) affiché(s)
+            </span>
+          </div>
+        </div>
+
         {/* Projects Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProjects.map((project) => (
             <div
               key={project._id}
-              onClick={() => handleProjectClick(project._id)}
-              className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer border border-[#dfe8e1] hover:border-[#5a8f6f]/30"
+              onClick={(e) => {
+                // Prevent navigation if clicking on checkbox or its container
+                if (e.target.type === 'checkbox' || e.target.closest('input[type="checkbox"]')) {
+                  return;
+                }
+                if (showBulkActions) return;
+                if (!user || !checkProjectPermissions(user, project, 'view')) {
+                  return toast.error("Vous n'avez pas accès à ce projet");
+                }
+                handleProjectClick(project._id);
+              }}
+              className={`bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer border ${
+                isProjectSelected(project._id)
+                  ? 'border-[#5a8f6f] bg-[#f4f7f4]/50'
+                  : 'border-[#dfe8e1] hover:border-[#5a8f6f]/30'
+              }`}
             >
               {/* Project Image */}
               <div className="relative h-48 bg-gradient-to-br from-[#f4f7f4] to-[#e8f0e8]">
@@ -169,6 +763,57 @@ const AllProjects = () => {
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(project.status)}`}>
                     {getStatusLabel(project.status)}
                   </span>
+                </div>
+
+                {/* Smart Tags */}
+                {(() => {
+                  const metrics = calculateProjectMetrics(project);
+                  const tags = [];
+
+                  if (metrics.isOverdue) {
+                    tags.push({ label: 'En retard', color: 'bg-red-100 text-red-700' });
+                  } else if (metrics.isUrgent) {
+                    tags.push({ label: 'Urgent', color: 'bg-orange-100 text-orange-700' });
+                  }
+
+                  if (metrics.overdueTasks > 0) {
+                    tags.push({ label: `${metrics.overdueTasks} tâche(s) en retard`, color: 'bg-red-100 text-red-700' });
+                  }
+
+                  if (project.completion === 100) {
+                    tags.push({ label: 'Terminé', color: 'bg-green-100 text-green-700' });
+                  }
+
+                  return tags.length > 0 ? (
+                    <div className="absolute top-3 right-12 flex flex-col gap-1">
+                      {tags.slice(0, 2).map((tag, index) => (
+                        <span
+                          key={index}
+                          className={`px-2 py-1 rounded text-xs font-medium ${tag.color} whitespace-nowrap`}
+                        >
+                          {tag.label}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null;
+                })()}
+
+                {/* Selection Checkbox */}
+                <div className="absolute top-3 right-3">
+                  <input
+                    type="checkbox"
+                    checked={isProjectSelected(project._id)}
+                    onChange={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleProjectSelect(project._id, e.target.checked);
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    className="w-5 h-5 text-[#5a8f6f] bg-white border-2 border-[#dfe8e1] rounded focus:ring-[#5a8f6f] focus:ring-2 cursor-pointer"
+                  />
                 </div>
               </div>
 
@@ -202,17 +847,77 @@ const AllProjects = () => {
                   </div>
                 )}
 
-                {/* Client Info */}
-                {project.client && (
-                  <div className="mt-4 flex items-center gap-2">
-                    <div className="w-6 h-6 bg-[#f4f7f4] rounded-full flex items-center justify-center text-xs font-medium text-[#7a8b7f]">
-                      {project.client.fullName?.charAt(0).toUpperCase() || "C"}
+                {/* Project Metrics */}
+                {(() => {
+                  const metrics = calculateProjectMetrics(project);
+                  return (
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      <div className="flex items-center gap-2">
+                        <FiFolder className="text-[#7a8b7f] text-sm" />
+                        <span className="text-xs text-[#7a8b7f]">
+                          {metrics.completedTasks}/{metrics.totalTasks} tâches
+                        </span>
+                      </div>
+
+                      {metrics.daysRemaining !== null && (
+                        <div className={`flex items-center gap-2 ${metrics.isOverdue ? 'text-red-500' : metrics.isUrgent ? 'text-orange-500' : 'text-[#7a8b7f]'}`}>
+                          <FiCalendar className="text-sm" />
+                          <span className="text-xs">
+                            {metrics.isOverdue
+                              ? `${Math.abs(metrics.daysRemaining)}j en retard`
+                              : metrics.daysRemaining === 0
+                                ? 'Échéance aujourd\'hui'
+                                : `${metrics.daysRemaining}j restants`
+                            }
+                          </span>
+                        </div>
+                      )}
+
+                      {metrics.overdueTasks > 0 && (
+                        <div className="flex items-center gap-2 text-red-500">
+                          <FiClock className="text-sm" />
+                          <span className="text-xs">
+                            {metrics.overdueTasks} tâche(s) en retard
+                          </span>
+                        </div>
+                      )}
+
+                      {metrics.totalTimeSpent > 0 && (
+                        <div className="flex items-center gap-2 text-[#7a8b7f]">
+                          <FiUser className="text-sm" />
+                          <span className="text-xs">
+                            {Math.round(metrics.totalTimeSpent)}h travaillées
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <span className="text-xs text-[#7a8b7f] truncate">
-                      {project.client.fullName || "Client"}
+                  );
+                })()}
+
+                {/* Client and Project Lead Info */}
+                <div className="mt-4 space-y-2">
+                {project.client && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-[#f4f7f4] rounded-full flex items-center justify-center text-xs font-medium text-[#7a8b7f]">
+                        {project.client.companyName?.charAt(0).toUpperCase() || "C"}
+                      </div>
+                      <span className="text-xs text-[#7a8b7f] truncate">
+                        Client: {project.client.companyName || "Client"}
+                      </span>
+                    </div>
+                  )}
+
+                  {project.projectLead && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-[#2d5f3f] rounded-full flex items-center justify-center text-xs font-medium text-white">
+                        {project.projectLead.name?.charAt(0).toUpperCase() || "P"}
+                      </div>
+                      <span className="text-xs text-[#2d5f3f] truncate font-medium">
+                        Chef: {project.projectLead.name || project.projectLead.email}
                     </span>
                   </div>
                 )}
+                </div>
               </div>
             </div>
           ))}
@@ -232,7 +937,7 @@ const AllProjects = () => {
                 ? "Essayez d'ajuster votre recherche"
                 : "Commencez par créer votre premier projet"}
             </p>
-            {!searchQuery && (
+            {!searchQuery && user?.role === 'admin' && (
               <button
                 onClick={handleAddProject}
                 className="inline-flex items-center gap-2 bg-[#2d5f3f] text-white px-6 py-3 rounded-xl hover:bg-[#1e4029] transition-colors font-medium"

@@ -15,8 +15,20 @@ exports.getAllInvoices = async (req, res) => {
       filter.client = req.user._id;
     }
 
+    // Mettre à jour automatiquement les factures en retard
+    const now = new Date();
+    await Invoice.updateMany(
+      {
+        dueDate: { $lt: now },
+        status: { $in: ['en attente', 'partiellement payée'] }
+      },
+      {
+        $set: { status: 'non payée' }
+      }
+    );
+
     const invoices = await Invoice.find(filter)
-      .populate('client', 'fullName email')
+      .populate('client', 'companyName contactName email industry')
       .populate('project', 'name category')
       .sort({ issueDate: -1 });
 
@@ -29,12 +41,24 @@ exports.getAllInvoices = async (req, res) => {
 // Get single invoice
 exports.getInvoiceById = async (req, res) => {
   try {
-    const invoice = await Invoice.findById(req.params.id)
-      .populate('client', 'fullName email')
+    let invoice = await Invoice.findById(req.params.id)
+      .populate('client', 'companyName contactName email industry')
       .populate('project', 'name category');
 
     if (!invoice) {
       return res.status(404).json({ message: 'Facture non trouvée' });
+    }
+
+    // Vérifier et mettre à jour automatiquement si la date d'échéance est passée
+    if (invoice.dueDate && 
+        new Date(invoice.dueDate) < new Date() && 
+        (invoice.status === 'en attente' || invoice.status === 'partiellement payée')) {
+      invoice.status = 'non payée';
+      await invoice.save();
+      // Recharger pour avoir les données à jour
+      invoice = await Invoice.findById(req.params.id)
+        .populate('client', 'companyName contactName email industry')
+        .populate('project', 'name category');
     }
 
     // Check permissions
@@ -48,6 +72,37 @@ exports.getInvoiceById = async (req, res) => {
   }
 };
 
+// Fonction pour générer un numéro de facture unique
+const generateUniqueInvoiceNumber = async () => {
+  const year = new Date().getFullYear();
+  const month = String(new Date().getMonth() + 1).padStart(2, '0');
+  
+  // Chercher le dernier numéro de facture de ce mois
+  const lastInvoice = await Invoice.findOne({
+    invoiceNumber: new RegExp(`^INV-${year}${month}-`)
+  }).sort({ invoiceNumber: -1 });
+
+  let sequence = 1;
+  if (lastInvoice) {
+    // Extraire le numéro de séquence du dernier numéro
+    const lastSequence = parseInt(lastInvoice.invoiceNumber.split('-')[2]) || 0;
+    sequence = lastSequence + 1;
+  }
+
+  // Formater avec 4 chiffres (0001, 0002, etc.)
+  const sequenceStr = String(sequence).padStart(4, '0');
+  const invoiceNumber = `INV-${year}${month}-${sequenceStr}`;
+
+  // Vérifier que le numéro est vraiment unique (au cas où)
+  const exists = await Invoice.findOne({ invoiceNumber });
+  if (exists) {
+    // Si le numéro existe déjà, incrémenter
+    return generateUniqueInvoiceNumber();
+  }
+
+  return invoiceNumber;
+};
+
 // Create invoice (Admin only)
 exports.createInvoice = async (req, res) => {
   try {
@@ -55,24 +110,15 @@ exports.createInvoice = async (req, res) => {
       return res.status(403).json({ message: 'Accès refusé - Admin uniquement' });
     }
 
-    // Validate required fields
-    if (!req.body.amount || req.body.amount <= 0) {
-      return res.status(400).json({ message: 'Le montant est requis et doit être supérieur à 0' });
-    }
-
-    if (!req.body.client) {
-      return res.status(400).json({ message: 'Le client est requis' });
-    }
-
-    if (!req.body.dueDate) {
-      return res.status(400).json({ message: 'La date d\'échéance est requise' });
-    }
-
-    // Generate invoice number if not provided
+    // Générer automatiquement un numéro de facture unique si non fourni
     if (!req.body.invoiceNumber) {
-      const timestamp = Date.now();
-      const random = Math.floor(Math.random() * 1000);
-      req.body.invoiceNumber = `INV-${timestamp}-${random}`;
+      req.body.invoiceNumber = await generateUniqueInvoiceNumber();
+    } else {
+      // Vérifier que le numéro fourni est unique
+      const existingInvoice = await Invoice.findOne({ invoiceNumber: req.body.invoiceNumber });
+      if (existingInvoice) {
+        return res.status(400).json({ message: 'Ce numéro de facture existe déjà' });
+      }
     }
 
     const invoice = new Invoice(req.body);
@@ -85,13 +131,8 @@ exports.createInvoice = async (req, res) => {
       });
     }
 
-    const populatedInvoice = await Invoice.findById(invoice._id)
-      .populate('client', 'fullName email')
-      .populate('project', 'name category');
-
-    res.status(201).json({ message: 'Facture créée avec succès', invoice: populatedInvoice });
+    res.status(201).json({ message: 'Facture créée avec succès', invoice });
   } catch (error) {
-    console.error('Error creating invoice:', error);
     res.status(500).json({ message: 'Erreur lors de la création', error: error.message });
   }
 };
@@ -109,6 +150,9 @@ exports.updateInvoice = async (req, res) => {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Accès refusé - Admin uniquement' });
     }
+
+    // Ne pas permettre la modification du numéro de facture
+    delete req.body.invoiceNumber;
 
     // Update paidDate if status changes to payée
     if (req.body.status === 'payée' && invoice.status !== 'payée') {

@@ -35,7 +35,7 @@ const projectSchema = new mongoose.Schema({
   },
   client: { 
     type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User', 
+    ref: 'Client', 
     required: true 
   },
   projectLead: { 
@@ -45,6 +45,10 @@ const projectSchema = new mongoose.Schema({
   assignedUsers: [{ 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User' 
+  }],
+  teams: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Team'
   }],
   startDate: { 
     type: Date, 
@@ -69,14 +73,15 @@ const projectSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'WeeklyUpdate' 
   }],
-  milestones: [{ 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Milestone' 
+  messages: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Message'
   }],
-  messages: [{ 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Message' 
-  }]
+  archived: {
+    type: Boolean,
+    default: false
+  },
+  archivedAt: Date
 }, { timestamps: true });
 
 module.exports = mongoose.model('Project', projectSchema);

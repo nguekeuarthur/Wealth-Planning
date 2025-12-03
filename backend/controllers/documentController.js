@@ -107,7 +107,7 @@ exports.uploadDocument = async (req, res) => {
   }
 };
 
-// Update document metadata
+// Update document
 exports.updateDocument = async (req, res) => {
   try {
     const document = await Document.findById(req.params.id).populate('project');
@@ -117,22 +117,31 @@ exports.updateDocument = async (req, res) => {
     }
 
     // Check permissions
-    if (req.user.role !== 'admin' && document.project.client.toString() !== req.user._id.toString()) {
+    if (req.user.role !== 'admin' && document.project?.client?.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Accès refusé' });
     }
 
+    // Update metadata
     if (req.body.name) document.name = req.body.name;
     if (req.body.description !== undefined) document.description = req.body.description;
-    if (req.body.type) document.type = req.body.type;
     if (req.body.category !== undefined) document.category = req.body.category;
+    if (req.body.type) document.type = req.body.type;
+
+    // If a new file is provided, update it
+    if (req.file) {
+      document.filePath = req.file.path;
+      document.fileUrl = `/uploads/${req.file.filename}`;
+      document.fileType = req.file.mimetype;
+      document.fileSize = req.file.size;
+    }
 
     await document.save();
 
-    const populatedDocument = await Document.findById(document._id)
-      .populate('uploadedBy', 'fullName email')
-      .populate('project', 'name category');
+    const updatedDocument = await Document.findById(document._id)
+      .populate('project', 'name category')
+      .populate('uploadedBy', 'name email');
 
-    res.json({ message: 'Document mis à jour', document: populatedDocument });
+    res.json({ message: 'Document mis à jour', document: updatedDocument });
   } catch (error) {
     res.status(500).json({ message: 'Erreur lors de la mise à jour', error: error.message });
   }
@@ -224,7 +233,16 @@ exports.downloadDocument = async (req, res) => {
       return res.status(403).json({ message: 'Accès refusé' });
     }
 
-    res.download(document.filePath, document.name);
+    // Définir le Content-Type basé sur le type de fichier
+    if (document.fileType) {
+      res.setHeader('Content-Type', document.fileType);
+    }
+    
+    // Définir le Content-Disposition pour forcer le téléchargement avec le bon nom
+    const fileName = document.name || 'document';
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
+
+    res.download(document.filePath, fileName);
   } catch (error) {
     res.status(500).json({ message: 'Erreur lors du téléchargement', error: error.message });
   }

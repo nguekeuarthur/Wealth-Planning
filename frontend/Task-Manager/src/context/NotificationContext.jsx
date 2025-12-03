@@ -31,10 +31,15 @@ export const NotificationProvider = ({ children }) => {
     }
   }, []);
 
-  // Sauvegarder les notifications dans le localStorage
+  // Sauvegarder les notifications dans le localStorage et recalculer le compteur
   useEffect(() => {
     if (notifications.length > 0) {
       localStorage.setItem('wealth-planning-notifications', JSON.stringify(notifications));
+      // Recalculer le compteur de non lus
+      const unread = notifications.filter(n => !n.read).length;
+      setUnreadCount(unread);
+    } else {
+      setUnreadCount(0);
     }
   }, [notifications]);
 
