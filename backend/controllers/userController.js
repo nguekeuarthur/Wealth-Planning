@@ -7,7 +7,7 @@ const bcrypt = require("bcryptjs");
 // @access  Private (Admin)
 const getUsers = async (req, res) => {
   try {
-    const users = await User.find({ role: "member" })
+    const users = await User.find({})
       .select("-password")
       .populate('teams', 'name color department');
     

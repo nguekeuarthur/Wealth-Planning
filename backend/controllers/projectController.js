@@ -1,5 +1,6 @@
 const Project = require('../models/Project');
 const Task = require('../models/Task');
+const Invoice = require('../models/Invoice');
 
 // Get all projects
 exports.getAllProjects = async (req, res) => {
@@ -10,16 +11,22 @@ exports.getAllProjects = async (req, res) => {
     if (status) filter.status = status;
     if (category) filter.category = category;
 
-    // Admin sees all, clients see only their projects
+    // Admin sees all active projects, clients see only their active projects
     if (req.user.role !== 'admin') {
       filter.client = req.user._id;
     }
+    // Exclude archived projects by default
+    filter.archived = { $ne: true };
 
     const projects = await Project.find(filter)
-      .populate('client', 'fullName email')
-      .populate('projectLead', 'fullName email')
-      .populate('assignedUsers', 'fullName email')
-      .populate('tasks')
+      .populate('client', 'companyName contactName email industry logoUrl')
+      .populate('projectLead', 'name email')
+      .populate('assignedUsers', 'name email')
+      .populate('teams', 'name leader members color department')
+      .populate({
+        path: 'tasks',
+        populate: { path: 'assignedTo', select: 'name email profileImageUrl' }
+      })
       .sort({ createdAt: -1 });
 
     res.json({ projects });
@@ -31,17 +38,40 @@ exports.getAllProjects = async (req, res) => {
 // Get single project
 exports.getProjectById = async (req, res) => {
   try {
+    // Mettre à jour automatiquement les factures en retard avant de récupérer le projet
+    const now = new Date();
+    await Invoice.updateMany(
+      {
+        project: req.params.id,
+        dueDate: { $lt: now },
+        status: { $in: ['en attente', 'partiellement payée'] }
+      },
+      {
+        $set: { status: 'non payée' }
+      }
+    );
+
     const project = await Project.findById(req.params.id)
-      .populate('client', 'fullName email profilePic phoneNumber')
-      .populate('projectLead', 'fullName email')
-      .populate('assignedUsers', 'fullName email')
-      .populate('tasks')
+      .populate('client', 'companyName contactName email industry logoUrl phoneNumber')
+      .populate('projectLead', 'name email')
+      .populate('assignedUsers', 'name email')
+      .populate({
+        path: 'teams',
+        populate: [
+          { path: 'leader', select: 'name email' },
+          { path: 'members', select: 'name email' }
+        ]
+      })
+      .populate({
+        path: 'tasks',
+        populate: { path: 'assignedTo', select: 'name email profileImageUrl' }
+      })
       .populate('documents')
       .populate('invoices')
       .populate('weeklyUpdates')
       .populate({
         path: 'messages',
-        populate: { path: 'sender receiver', select: 'fullName email' }
+        populate: { path: 'sender receiver', select: 'name email profileImageUrl' }
       });
 
     if (!project) {
@@ -108,22 +138,74 @@ exports.updateProject = async (req, res) => {
   }
 };
 
-// Delete project (Admin only)
+// Archive project (Admin only)
 exports.deleteProject = async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Accès refusé - Admin uniquement' });
     }
 
-    const project = await Project.findByIdAndDelete(req.params.id);
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      {
+        archived: true,
+        archivedAt: new Date()
+      },
+      { new: true }
+    );
 
     if (!project) {
       return res.status(404).json({ message: 'Projet non trouvé' });
     }
 
-    res.json({ message: 'Projet supprimé avec succès' });
+    res.json({ message: 'Projet archivé avec succès' });
   } catch (error) {
-    res.status(500).json({ message: 'Erreur lors de la suppression', error: error.message });
+    res.status(500).json({ message: 'Erreur lors de l\'archivage', error: error.message });
+  }
+};
+
+// Get archived projects (Admin only)
+exports.getArchivedProjects = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Accès refusé - Admin uniquement' });
+    }
+
+    const projects = await Project.find({ archived: true })
+      .populate('client', 'name email')
+      .populate('projectLead', 'name email')
+      .populate('assignedUsers', 'name email')
+      .sort({ archivedAt: -1 });
+
+    res.json({ projects });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+// Restore archived project (Admin only)
+exports.restoreProject = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Accès refusé - Admin uniquement' });
+    }
+
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      {
+        archived: false,
+        $unset: { archivedAt: 1 }
+      },
+      { new: true }
+    );
+
+    if (!project) {
+      return res.status(404).json({ message: 'Projet non trouvé' });
+    }
+
+    res.json({ message: 'Projet restauré avec succès', project });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur lors de la restauration', error: error.message });
   }
 };
 
@@ -131,6 +213,8 @@ exports.deleteProject = async (req, res) => {
 exports.getProjectStats = async (req, res) => {
   try {
     const filter = req.user.role !== 'admin' ? { client: req.user._id } : {};
+    // Exclude archived projects from stats
+    filter.archived = { $ne: true };
 
     const stats = await Project.aggregate([
       { $match: filter },
