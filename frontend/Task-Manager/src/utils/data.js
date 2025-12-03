@@ -55,12 +55,6 @@ import {
       path: "/admin/contracts",
     },
     {
-      id: "07",
-      label: "Créer une tâche",
-      icon: LuSquarePlus,
-      path: "/admin/create-task",
-    },
-    {
       id: "08",
       label: "Notifications",
       icon: LuBell,

@@ -73,10 +73,12 @@ export const API_PATHS = {
 
   PROJECTS: {
     GET_ALL_PROJECTS: "/api/projects",
+    GET_ARCHIVED_PROJECTS: "/api/projects/archived",
     GET_PROJECT_BY_ID: (projectId) => `/api/projects/${projectId}`,
     GET_PROJECT_DETAILS: "/api/projects/:id",
     CREATE_PROJECT: "/api/projects",
     UPDATE_PROJECT: (projectId) => `/api/projects/${projectId}`,
+    RESTORE_PROJECT: (projectId) => `/api/projects/${projectId}/restore`,
     DELETE_PROJECT: (projectId) => `/api/projects/${projectId}`,
     GET_STATS: "/api/projects/stats",
   },
@@ -96,5 +98,14 @@ export const API_PATHS = {
     UPLOAD_DOCUMENT: "/api/documents",
     UPDATE_DOCUMENT: (documentId) => `/api/documents/${documentId}`,
     DELETE_DOCUMENT: (documentId) => `/api/documents/${documentId}`,
+  },
+  MESSAGES: {
+    GET_ALL_MESSAGES: "/api/messages",
+    GET_PROJECT_MESSAGES: (projectId) => `/api/messages/project/${projectId}`,
+    SEND_MESSAGE: "/api/messages",
+    MARK_AS_READ: (messageId) => `/api/messages/${messageId}/read`,
+    DELETE_MESSAGE: (messageId) => `/api/messages/${messageId}`,
+    GET_UNREAD_COUNT: "/api/messages/unread/count",
+    GET_RECENT_MESSAGES: "/api/messages/recent",
   },
 };
