@@ -253,7 +253,7 @@ const CreateProjectModal = ({
                 <option value="">Sélectionner un client</option>
                 {clients.map(client => (
                   <option key={client._id} value={client._id}>
-                    {client.fullName || client.email}
+                    {client.companyName} - {client.industry || 'Industrie non spécifiée'}
                   </option>
                 ))}
               </select>
@@ -261,11 +261,12 @@ const CreateProjectModal = ({
               <div className="rounded-xl border border-dashed border-[#dfe8e1] p-3 text-sm text-[#7a8b7f] min-h-[48px] flex items-center">
                 {selectedClient ? (
                   <div>
-                    <p className="text-[#2d5f3f] font-medium">{selectedClient.fullName}</p>
-                    <p className="text-xs">{selectedClient.email}</p>
+                    <p className="text-[#2d5f3f] font-medium">{selectedClient.companyName}</p>
+                    <p className="text-xs">{selectedClient.industry || 'Industrie non spécifiée'}</p>
+                    <p className="text-xs text-[#99aca2] mt-1">{selectedClient.contactName} - {selectedClient.email}</p>
                   </div>
                 ) : (
-                  <span>Sélectionnez un client pour afficher ses coordonnées</span>
+                  <span>Sélectionnez un client pour afficher ses informations</span>
                 )}
               </div>
             </div>
@@ -285,15 +286,23 @@ const CreateProjectModal = ({
                   <p className="text-xs text-[#7a8b7f] mb-1">Chef de projet</p>
                   {selectedLead ? (
                     <div className="flex items-center justify-between p-3 bg-[#f4f7f4] border border-[#dfe8e1] rounded-xl">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                          {selectedLead.fullName?.charAt(0).toUpperCase() || "?"}
+                        <div className="flex items-center gap-2">
+                          {selectedLead.profileImageUrl ? (
+                            <img
+                              src={selectedLead.profileImageUrl}
+                              alt={selectedLead.name || "Avatar"}
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                              {selectedLead.name?.charAt(0).toUpperCase() || "?"}
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-sm text-[#1e4029] font-medium">{selectedLead.name || selectedLead.email}</p>
+                            <p className="text-xs text-[#7a8b7f]">{selectedLead.email}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm text-[#1e4029] font-medium">{selectedLead.fullName || selectedLead.email}</p>
-                          <p className="text-xs text-[#7a8b7f]">{selectedLead.email}</p>
-                        </div>
-                      </div>
                       <button
                         type="button"
                         onClick={() => setFormData(prev => ({ ...prev, projectLead: "" }))}
@@ -320,9 +329,9 @@ const CreateProjectModal = ({
                         <>
                         <div className="absolute left-0 right-0 z-40 mt-2 bg-white border border-[#dfe8e1] rounded-xl shadow-xl max-h-56 overflow-y-auto">
                           {users
-                            .filter(u => u.role === 'admin')
+                            .filter(u => u.role !== 'admin')
                             .filter(u =>
-                              u.fullName?.toLowerCase().includes(leadSearch.toLowerCase()) ||
+                              u.name?.toLowerCase().includes(leadSearch.toLowerCase()) ||
                               u.email?.toLowerCase().includes(leadSearch.toLowerCase())
                             )
                             .map(user => (
@@ -336,17 +345,25 @@ const CreateProjectModal = ({
                                 }}
                                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f4f7f4] text-left"
                               >
-                                <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                                  {user.fullName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
-                                </div>
+                                {user.profileImageUrl ? (
+                                  <img
+                                    src={user.profileImageUrl}
+                                    alt={user.name || "Avatar"}
+                                    className="w-8 h-8 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                                    {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
+                                  </div>
+                                )}
                                 <div>
-                                  <p className="text-sm font-medium text-[#1e4029]">{user.fullName || "Sans nom"}</p>
+                                  <p className="text-sm font-medium text-[#1e4029]">{user.name || "Sans nom"}</p>
                                   <p className="text-xs text-[#7a8b7f]">{user.email}</p>
                                 </div>
                               </button>
                             ))}
-                          {users.filter(u => u.role === 'admin').filter(u =>
-                            u.fullName?.toLowerCase().includes(leadSearch.toLowerCase()) ||
+                          {users.filter(u => u.role !== 'admin').filter(u =>
+                            u.name?.toLowerCase().includes(leadSearch.toLowerCase()) ||
                             u.email?.toLowerCase().includes(leadSearch.toLowerCase())
                           ).length === 0 && (
                             <div className="px-4 py-3 text-sm text-[#7a8b7f] text-center">
@@ -381,9 +398,10 @@ const CreateProjectModal = ({
                     <>
                     <div className="absolute left-0 right-0 z-40 mt-2 bg-white border border-[#dfe8e1] rounded-xl shadow-xl max-h-56 overflow-y-auto">
                       {users
+                        .filter(u => u.role !== 'admin')
                         .filter(u => !formData.assignedUsers.includes(u._id))
                         .filter(u =>
-                          u.fullName?.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                          u.name?.toLowerCase().includes(memberSearch.toLowerCase()) ||
                           u.email?.toLowerCase().includes(memberSearch.toLowerCase())
                         )
                         .map(user => (
@@ -400,20 +418,29 @@ const CreateProjectModal = ({
                             }}
                             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f4f7f4] text-left"
                           >
-                            <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                              {user.fullName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
-                            </div>
+                            {user.profileImageUrl ? (
+                              <img
+                                src={user.profileImageUrl}
+                                alt={user.name || "Avatar"}
+                                className="w-8 h-8 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                                {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
+                              </div>
+                            )}
                             <div>
-                              <p className="text-sm font-medium text-[#1e4029]">{user.fullName || "Sans nom"}</p>
+                              <p className="text-sm font-medium text-[#1e4029]">{user.name || "Sans nom"}</p>
                               <p className="text-xs text-[#7a8b7f]">{user.email}</p>
                             </div>
                             <FiUser className="ml-auto text-[#7a8b7f] w-4 h-4" />
                           </button>
                         ))}
                       {users
+                        .filter(u => u.role !== 'admin')
                         .filter(u => !formData.assignedUsers.includes(u._id))
                         .filter(u =>
-                          u.fullName?.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                          u.name?.toLowerCase().includes(memberSearch.toLowerCase()) ||
                           u.email?.toLowerCase().includes(memberSearch.toLowerCase())
                         ).length === 0 && (
                         <div className="px-4 py-3 text-sm text-[#7a8b7f] text-center">
@@ -432,10 +459,18 @@ const CreateProjectModal = ({
                           key={member._id}
                           className="inline-flex items-center gap-2 px-3 py-2 bg-[#f4f7f4] border border-[#dfe8e1] rounded-xl text-sm"
                         >
-                          <div className="w-6 h-6 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-xs font-semibold">
-                            {member.fullName?.charAt(0).toUpperCase() || member.email?.charAt(0).toUpperCase()}
-                          </div>
-                          <span className="text-[#2d5f3f] font-medium">{member.fullName || member.email}</span>
+                          {member.profileImageUrl ? (
+                            <img
+                              src={member.profileImageUrl}
+                              alt={member.name || "Avatar"}
+                              className="w-6 h-6 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-6 h-6 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-xs font-semibold">
+                              {member.name?.charAt(0).toUpperCase() || member.email?.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <span className="text-[#2d5f3f] font-medium">{member.name || member.email}</span>
                           <button
                             type="button"
                             onClick={() =>
