@@ -5,7 +5,6 @@ import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
 import { 
   FiSearch, 
-  FiPlus, 
   FiEdit2, 
   FiTrash2, 
   FiCalendar,
@@ -98,11 +97,6 @@ const AllInvoices = () => {
     setFilteredInvoices(filtered);
   }, [searchQuery, selectedStatus, allInvoices]);
 
-  const handleAddInvoice = () => {
-    setEditingInvoice(null);
-    setIsModalOpen(true);
-  };
-
   const handleEditInvoice = (invoice) => {
     setEditingInvoice(invoice);
     setIsModalOpen(true);
@@ -188,18 +182,6 @@ const AllInvoices = () => {
             </p>
           </div>
 
-          {/* Action Button */}
-          <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
-          <button
-            onClick={handleAddInvoice}
-              className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
-            >
-              <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-                <FiPlus className="text-lg" />
-              </div>
-              Nouvelle facture
-          </button>
-          </div>
         </div>
       </div>
 
@@ -365,17 +347,8 @@ const AllInvoices = () => {
             <p className="text-[#7a8b7f] mb-6">
               {searchQuery || selectedStatus !== "all"
                 ? "Essayez d'ajuster votre recherche ou votre filtre"
-                : "Commencez par créer votre première facture"}
+                : "Aucune facture disponible"}
             </p>
-            {!searchQuery && selectedStatus === "all" && (
-              <button
-                onClick={handleAddInvoice}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[#2d5f3f] text-white rounded-xl hover:bg-[#1e4029] transition-colors font-medium"
-              >
-                <FiPlus className="w-5 h-5" />
-                Créer votre première facture
-              </button>
-            )}
           </div>
         )}
       </div>

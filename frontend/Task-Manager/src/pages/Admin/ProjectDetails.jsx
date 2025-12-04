@@ -45,7 +45,7 @@ const tabs = [
   { id: "milestones", label: "Jalons", icon: FiFlag },
   { id: "documents", label: "Documents", icon: FiFileText },
   { id: "invoices", label: "Finances", icon: FiDollarSign },
-  { id: "updates", label: "Updates", icon: FiMessageSquare }
+  { id: "updates", label: "Messages", icon: FiMessageSquare }
 ];
 
 const getStatusBadgeClass = (status) => {
@@ -626,7 +626,7 @@ const ProjectDetails = () => {
                       </div>
                       </div>
                       <div className="p-4 rounded-xl border border-dashed border-[#dfe8e1] text-xs text-[#7a8b7f]">
-                        Utilisez les updates pour documenter les décisions,
+                        Utilisez les messages pour documenter les décisions,
                         jalons ou blocages.
                     </div>
                   </div>
@@ -1239,7 +1239,7 @@ const ProjectDetails = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-xl font-semibold text-[#1e4029]">
-                      Journal & updates
+                      Messages
                     </h3>
                     <p className="text-sm text-[#7a8b7f]">
                       {project.messages?.length || 0} note{project.messages?.length !== 1 ? 's' : ''}

@@ -5,7 +5,12 @@ import axiosInstance from "../utils/axiosInstance";
 import { API_PATHS, BASE_URL } from "../utils/apiPaths";
 import toast from "react-hot-toast";
 
-const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, onInvoiceCreated }) => {
+const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, editInvoice, onInvoiceCreated }) => {
+  // Support both 'invoice' and 'editInvoice' props for compatibility
+  const invoiceToEdit = invoice || editInvoice;
+  // Use project from prop or from invoice
+  const projectData = project || invoiceToEdit?.project;
+  
   const [formData, setFormData] = useState({
     invoiceNumber: "",
     amount: "",
@@ -14,7 +19,7 @@ const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, onInvoiceCreate
     status: "en attente",
     issueDate: new Date().toISOString().split('T')[0],
     dueDate: "",
-    client: project?.client?._id || ""
+    client: projectData?.client?._id || invoiceToEdit?.client?._id || ""
   });
   const [loading, setLoading] = useState(false);
   const [attachmentFile, setAttachmentFile] = useState(null);
@@ -29,25 +34,27 @@ const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, onInvoiceCreate
   ];
 
   useEffect(() => {
-    if (invoice) {
+    if (!isOpen) return;
+
+    if (invoiceToEdit && invoiceToEdit._id) {
       // Mode édition
-      const invoiceStatus = invoice.status || "en attente";
+      const invoiceStatus = invoiceToEdit.status || "en attente";
       setFormData({
-        invoiceNumber: invoice.invoiceNumber || "",
-        amount: invoice.amount || "",
-        service: invoice.service || "",
-        description: invoice.description || "",
+        invoiceNumber: invoiceToEdit.invoiceNumber || "",
+        amount: invoiceToEdit.amount || "",
+        service: invoiceToEdit.service || "",
+        description: invoiceToEdit.description || "",
         status: invoiceStatus,
-        issueDate: invoice.issueDate 
-          ? new Date(invoice.issueDate).toISOString().split('T')[0]
+        issueDate: invoiceToEdit.issueDate 
+          ? new Date(invoiceToEdit.issueDate).toISOString().split('T')[0]
           : new Date().toISOString().split('T')[0],
         // Ne charger la date d'échéance que si le statut est "en attente" ou "partiellement payée"
-        dueDate: (invoiceStatus === 'en attente' || invoiceStatus === 'partiellement payée') && invoice.dueDate
-          ? new Date(invoice.dueDate).toISOString().split('T')[0]
+        dueDate: (invoiceStatus === 'en attente' || invoiceStatus === 'partiellement payée') && invoiceToEdit.dueDate
+          ? new Date(invoiceToEdit.dueDate).toISOString().split('T')[0]
           : "",
-        client: invoice.client?._id || project?.client?._id || ""
+        client: invoiceToEdit.client?._id || projectData?.client?._id || ""
       });
-      setExistingAttachment(invoice.attachment || null);
+      setExistingAttachment(invoiceToEdit.attachment || null);
       setAttachmentFile(null);
     } else {
       // Mode création - le numéro sera généré automatiquement par le backend
@@ -59,12 +66,12 @@ const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, onInvoiceCreate
         status: "en attente",
         issueDate: new Date().toISOString().split('T')[0],
         dueDate: "",
-        client: project?.client?._id || ""
+        client: projectData?.client?._id || ""
       });
       setExistingAttachment(null);
       setAttachmentFile(null);
     }
-  }, [invoice, project]);
+  }, [isOpen, invoice, editInvoice, project]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -106,12 +113,12 @@ const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, onInvoiceCreate
     try {
       let payload;
       
-      if (invoice) {
+      if (invoiceToEdit) {
         // Mise à jour : inclure le numéro de facture (ne peut pas être modifié mais on le garde)
         payload = {
           ...formData,
           amount: parseFloat(formData.amount),
-          project: project?._id,
+          project: projectData?._id || invoiceToEdit?.project?._id || invoiceToEdit?.project,
           client: formData.client,
           // Ne pas envoyer la date d'échéance si le statut n'est pas "en attente" ou "partiellement payée"
           dueDate: (formData.status === 'en attente' || formData.status === 'partiellement payée') 
@@ -124,7 +131,7 @@ const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, onInvoiceCreate
         payload = {
           ...restFormData,
           amount: parseFloat(formData.amount),
-          project: project?._id,
+          project: projectData?._id || invoiceToEdit?.project?._id || invoiceToEdit?.project,
           client: formData.client,
           // Ne pas envoyer la date d'échéance si le statut n'est pas "en attente" ou "partiellement payée"
           dueDate: (formData.status === 'en attente' || formData.status === 'partiellement payée') 
@@ -149,10 +156,10 @@ const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, onInvoiceCreate
       };
 
       let response;
-      if (invoice) {
+      if (invoiceToEdit) {
         // Mise à jour
         response = await axiosInstance.put(
-          API_PATHS.INVOICES.UPDATE_INVOICE(invoice._id),
+          API_PATHS.INVOICES.UPDATE_INVOICE(invoiceToEdit._id),
           formPayload,
           config
         );
@@ -186,22 +193,22 @@ const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, onInvoiceCreate
       status: "en attente",
       issueDate: new Date().toISOString().split('T')[0],
       dueDate: "",
-      client: project?.client?._id || ""
-    });
-    setAttachmentFile(null);
-    setExistingAttachment(null);
-    onClose();
-  };
+        client: projectData?.client?._id || ""
+      });
+      setAttachmentFile(null);
+      setExistingAttachment(null);
+      onClose();
+    };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title={invoice ? "Modifier la facture" : "Créer une facture"}>
+    <Modal isOpen={isOpen} onClose={handleClose} title={invoiceToEdit ? "Modifier la facture" : "Créer une facture"}>
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Numéro de facture */}
         <div>
           <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
             Numéro de facture
           </label>
-          {invoice ? (
+          {invoiceToEdit ? (
             // Mode édition : afficher en lecture seule
             <input
               type="text"
@@ -329,14 +336,14 @@ const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, onInvoiceCreate
         </div>
 
         {/* Client (affiché en lecture seule si un projet est sélectionné) */}
-        {project?.client && (
+        {projectData?.client && (
           <div>
             <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
               Client
             </label>
             <input
               type="text"
-              value={project.client.companyName || project.client.contactName || "Client du projet"}
+              value={projectData.client.companyName || projectData.client.contactName || projectData.client.name || "Client du projet"}
               disabled
               className="w-full px-3 py-2.5 bg-[#f4f7f4] border border-[#dfe8e1] rounded-xl text-sm text-[#7a8b7f] cursor-not-allowed"
             />
@@ -389,7 +396,7 @@ const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, onInvoiceCreate
             className="px-6 py-2.5 text-sm bg-[#2d5f3f] text-white rounded-xl hover:bg-[#1e4029] font-medium shadow-lg disabled:opacity-50"
             disabled={loading}
           >
-            {loading ? "Enregistrement..." : invoice ? "Modifier" : "Créer la facture"}
+            {loading ? "Enregistrement..." : invoiceToEdit ? "Modifier" : "Créer la facture"}
           </button>
         </div>
       </form>
