@@ -1,8 +1,8 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
-import { API_PATHS } from "../../utils/apiPaths";
+import { API_PATHS, BASE_URL } from "../../utils/apiPaths";
 import { 
   FiArrowLeft, 
   FiCalendar, 
@@ -23,7 +23,8 @@ import {
   FiEdit,
   FiChevronDown,
   FiChevronUp,
-  FiDownload
+  FiDownload,
+  FiFlag
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { UserContext } from "../../context/userContext";
@@ -32,10 +33,16 @@ import CreateProjectTaskModal from "../../components/CreateProjectTaskModal";
 import CreateProjectDocumentModal from "../../components/CreateProjectDocumentModal";
 import CreateInvoiceModal from "../../components/CreateInvoiceModal";
 import CreateProjectUpdateModal from "../../components/CreateProjectUpdateModal";
+import AddWeeklyUpdateModal from "../../components/AddWeeklyUpdateModal";
+import WeeklyUpdatesTimeline from "../../components/WeeklyUpdatesTimeline";
+import AddMilestoneModal from "../../components/AddMilestoneModal";
+import MilestonesList from "../../components/MilestonesList";
 
 const tabs = [
   { id: "overview", label: "Vue d'ensemble", icon: FiFolder },
   { id: "tasks", label: "Tâches", icon: FiCheckCircle },
+  { id: "weeklyUpdates", label: "Mises à jour hebdomadaires", icon: FiActivity },
+  { id: "milestones", label: "Jalons", icon: FiFlag },
   { id: "documents", label: "Documents", icon: FiFileText },
   { id: "invoices", label: "Finances", icon: FiDollarSign },
   { id: "updates", label: "Updates", icon: FiMessageSquare }
@@ -93,13 +100,215 @@ const ProjectDetails = () => {
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showWeeklyUpdateModal, setShowWeeklyUpdateModal] = useState(false);
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [expandedTeams, setExpandedTeams] = useState(new Set());
+  const [draggedTaskId, setDraggedTaskId] = useState(null);
+  const [milestones, setMilestones] = useState([]);
+  const [loadingMilestones, setLoadingMilestones] = useState(false);
+  const [milestonesLoaded, setMilestonesLoaded] = useState(false);
+
+  const handleTaskDragStart = (task) => {
+    setDraggedTaskId(task._id);
+  };
+
+  const handleTaskDragEnd = () => {
+    setDraggedTaskId(null);
+  };
+
+  const handleStatusDrop = async (event, newStatus) => {
+    event.preventDefault();
+    if (!draggedTaskId) return;
+
+    try {
+      await axiosInstance.put(
+        API_PATHS.TASKS.UPDATE_TASK_STATUS(draggedTaskId),
+        { status: newStatus }
+      );
+      toast.success("Statut de la tâche mis à jour");
+      fetchProjectDetails();
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour du statut de la tâche:", error);
+      toast.error(
+        error.response?.data?.message ||
+          "Impossible de mettre à jour le statut de la tâche"
+      );
+    } finally {
+      setDraggedTaskId(null);
+    }
+  };
+
+  // Helper pour rendre une carte de tâche, réutilisée dans les 3 colonnes
+  const renderTaskCard = (task, { onDragStart, onDragEnd } = {}) => {
+    const assignedUsers = Array.isArray(task.assignedTo)
+      ? task.assignedTo
+      : task.assignedTo
+      ? [task.assignedTo]
+      : [];
+
+    const dueDate = task.dueDate ? new Date(task.dueDate) : null;
+    const isOverdue =
+      dueDate && dueDate < new Date() && task.status !== "Completed";
+
+    return (
+      <div
+        key={task._id}
+        draggable={!!onDragStart}
+        onDragStart={(e) => {
+          e.dataTransfer.effectAllowed = "move";
+          onDragStart && onDragStart(task);
+        }}
+        onDragEnd={() => {
+          onDragEnd && onDragEnd();
+        }}
+        className="p-4 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 transition-colors bg-white cursor-move"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <h4 className="text-[#1e4029] font-semibold text-base">
+                {task.title || "Tâche sans titre"}
+              </h4>
+              <span
+                className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                  task.priority === "Urgent"
+                    ? "bg-red-100 text-red-700"
+                    : task.priority === "High"
+                    ? "bg-orange-100 text-orange-700"
+                    : task.priority === "Medium"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-blue-100 text-blue-700"
+                }`}
+              >
+                {task.priority === "Urgent"
+                  ? "Urgente"
+                  : task.priority === "High"
+                  ? "Haute"
+                  : task.priority === "Medium"
+                  ? "Moyenne"
+                  : "Basse"}
+              </span>
+            </div>
+
+            {task.description && (
+              <p className="text-sm text-[#7a8b7f] mt-1 mb-3">
+                {task.description}
+              </p>
+            )}
+
+            {/* Assignés et date d'échéance */}
+            <div className="flex flex-wrap items-center gap-4 mt-3">
+              {/* Assignés */}
+              {assignedUsers.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <FiUser className="text-[#7a8b7f] text-sm" />
+                  <div className="flex items-center gap-1">
+                    {assignedUsers.slice(0, 3).map((user, idx) => (
+                      <div
+                        key={user._id || idx}
+                        className="flex items-center -ml-2 first:ml-0"
+                      >
+                        {user.profileImageUrl ? (
+                          <img
+                            src={user.profileImageUrl}
+                            alt={user.name || "Avatar"}
+                            className="w-6 h-6 rounded-full object-cover border-2 border-white"
+                            title={user.name || user.email}
+                          />
+                        ) : (
+                          <div
+                            className="w-6 h-6 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-xs font-semibold border-2 border-white"
+                            title={user.name || user.email}
+                          >
+                            {user.name?.charAt(0).toUpperCase() ||
+                              user.email?.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {assignedUsers.length > 3 && (
+                      <span className="text-xs text-[#7a8b7f] ml-1">
+                        +{assignedUsers.length - 3}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-[#7a8b7f]">
+                    {assignedUsers.length === 1
+                      ? assignedUsers[0].name || assignedUsers[0].email
+                      : `${assignedUsers.length} personnes`}
+                  </span>
+                </div>
+              )}
+
+              {/* Date d'échéance */}
+              {dueDate && (
+                <div
+                  className={`flex items-center gap-2 ${
+                    isOverdue ? "text-red-600" : "text-[#7a8b7f]"
+                  }`}
+                >
+                  <FiCalendar className="text-sm" />
+                  <span className="text-xs font-medium">
+                    {isOverdue ? "En retard - " : "Échéance: "}
+                    {dueDate.toLocaleDateString("fr-FR", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
+              task.status === "Completed"
+                ? "bg-[#dff5e7] text-[#1e4029]"
+                : task.status === "In Progress"
+                ? "bg-[#fff6ea] text-[#b76a28]"
+                : "bg-[#f4f7f4] text-[#7a8b7f]"
+            }`}
+          >
+            {task.status === "Completed"
+              ? "Terminée"
+              : task.status === "In Progress"
+              ? "En cours"
+              : "En attente"}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  const fetchMilestones = useCallback(async () => {
+    if (!id) return;
+    try {
+      setLoadingMilestones(true);
+      const response = await axiosInstance.get(
+        API_PATHS.MILESTONES.GET_BY_PROJECT(id)
+      );
+      setMilestones(response.data?.milestones || []);
+      setMilestonesLoaded(true);
+    } catch (error) {
+      console.error("Error fetching milestones:", error);
+      toast.error("Impossible de charger les jalons");
+    } finally {
+      setLoadingMilestones(false);
+    }
+  }, [id]);
 
   useEffect(() => {
     fetchProjectDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  useEffect(() => {
+    if (activeTab === "milestones" && !milestonesLoaded) {
+      fetchMilestones();
+    }
+  }, [activeTab, milestonesLoaded, fetchMilestones]);
 
   const fetchProjectDetails = async () => {
     try {
@@ -428,15 +637,16 @@ const ProjectDetails = () => {
 
             {activeTab === "tasks" && (
               <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-6">
-                      <div>
-                    <h3 className="text-xl font-semibold text-[#1e4029]">
-                      Tâches du projet
-                    </h3>
+                {/* En-tête en haut, comptage global */}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#7a8b7f]">
+                      Vue par statut
+                    </p>
                     <p className="text-sm text-[#7a8b7f]">
                       {project.tasks?.length || 0} tâches au total
-                        </p>
-                      </div>
+                    </p>
+                  </div>
                   {can("edit") && (
                     <button
                       onClick={() => setShowTaskModal(true)}
@@ -448,125 +658,149 @@ const ProjectDetails = () => {
                 </div>
 
                 {project.tasks?.length ? (
-                  <div className="space-y-4">
-                    {project.tasks.map((task) => {
-                      const assignedUsers = Array.isArray(task.assignedTo) ? task.assignedTo : (task.assignedTo ? [task.assignedTo] : []);
-                      const dueDate = task.dueDate ? new Date(task.dueDate) : null;
-                      const isOverdue = dueDate && dueDate < new Date() && task.status !== "Completed";
-                      
-                      return (
-                        <div
-                          key={task._id}
-                          className="p-4 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 transition-colors bg-white"
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <h4 className="text-[#1e4029] font-semibold text-base">
-                                  {task.title || "Tâche sans titre"}
-                                </h4>
-                                <span
-                                  className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                    task.priority === "Urgent"
-                                      ? "bg-red-100 text-red-700"
-                                      : task.priority === "High"
-                                      ? "bg-orange-100 text-orange-700"
-                                      : task.priority === "Medium"
-                                      ? "bg-yellow-100 text-yellow-700"
-                                      : "bg-blue-100 text-blue-700"
-                                  }`}
-                                >
-                                  {task.priority === "Urgent"
-                                    ? "Urgente"
-                                    : task.priority === "High"
-                                    ? "Haute"
-                                    : task.priority === "Medium"
-                                    ? "Moyenne"
-                                    : "Basse"}
-                      </span>
-                  </div>
-
-                              {task.description && (
-                                <p className="text-sm text-[#7a8b7f] mt-1 mb-3">
-                                  {task.description}
-                                </p>
-                              )}
-
-                              {/* Assignés et date d'échéance */}
-                              <div className="flex flex-wrap items-center gap-4 mt-3">
-                                {/* Assignés */}
-                                {assignedUsers.length > 0 && (
-                                  <div className="flex items-center gap-2">
-                                    <FiUser className="text-[#7a8b7f] text-sm" />
-                                    <div className="flex items-center gap-1">
-                                      {assignedUsers.slice(0, 3).map((user, idx) => (
-                                        <div key={user._id || idx} className="flex items-center -ml-2 first:ml-0">
-                                          {user.profileImageUrl ? (
-                                            <img
-                                              src={user.profileImageUrl}
-                                              alt={user.name || "Avatar"}
-                                              className="w-6 h-6 rounded-full object-cover border-2 border-white"
-                                              title={user.name || user.email}
-                                            />
-                                          ) : (
-                                            <div className="w-6 h-6 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-xs font-semibold border-2 border-white" title={user.name || user.email}>
-                                              {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
-                      </div>
-                      )}
-                    </div>
-                                      ))}
-                                      {assignedUsers.length > 3 && (
-                                        <span className="text-xs text-[#7a8b7f] ml-1">
-                                          +{assignedUsers.length - 3}
-                                        </span>
-                                      )}
-                      </div>
-                                    <span className="text-xs text-[#7a8b7f]">
-                                      {assignedUsers.length === 1 
-                                        ? assignedUsers[0].name || assignedUsers[0].email
-                                        : `${assignedUsers.length} personnes`
-                                      }
-                                    </span>
-                      </div>
-                )}
-
-                                {/* Date d'échéance */}
-                                {dueDate && (
-                                  <div className={`flex items-center gap-2 ${isOverdue ? 'text-red-600' : 'text-[#7a8b7f]'}`}>
-                                    <FiCalendar className="text-sm" />
-                                    <span className="text-xs font-medium">
-                                      {isOverdue ? 'En retard - ' : 'Échéance: '}
-                                      {dueDate.toLocaleDateString('fr-FR', { 
-                                        day: 'numeric', 
-                                        month: 'short', 
-                                        year: 'numeric' 
-                                      })}
-                        </span>
-                    </div>
-                                )}
-                </div>
-              </div>
-
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
-                                task.status === "Completed"
-                                  ? "bg-[#dff5e7] text-[#1e4029]"
-                                  : task.status === "In Progress"
-                                  ? "bg-[#fff6ea] text-[#b76a28]"
-                                  : "bg-[#f4f7f4] text-[#7a8b7f]"
-                              }`}
-                            >
-                              {task.status === "Completed" 
-                                ? "Terminée" 
-                                : task.status === "In Progress"
-                                ? "En cours"
-                                : "En attente"}
-                      </span>
-                      </div>
-                      </div>
-                      );
-                    })}
+                  <>
+                    {/* Colonnes par catégorie */}
+                    <div className="mt-4 grid gap-4 md:grid-cols-3">
+                      {/* En attente */}
+                      <div
+                        className="bg-[#f9fbf9] rounded-2xl border border-[#e1ebe4] p-4 flex flex-col gap-3 min-h-[160px]"
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => handleStatusDrop(e, "Pending")}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="text-sm font-semibold text-[#1e4029]">
+                            En attente
+                          </h3>
+                          <span className="text-xs text-[#7a8b7f]">
+                            {
+                              (project.tasks || []).filter(
+                                (task) =>
+                                  !task.status ||
+                                  task.status === "Pending" ||
+                                  task.status === "Todo" ||
+                                  (task.status !== "Completed" &&
+                                    task.status !== "In Progress")
+                              ).length
+                            }{" "}
+                            tâche(s)
+                          </span>
                         </div>
+                        <div className="space-y-3">
+                          {(project.tasks || [])
+                            .filter(
+                              (task) =>
+                                !task.status ||
+                                task.status === "Pending" ||
+                                task.status === "Todo" ||
+                                (task.status !== "Completed" &&
+                                  task.status !== "In Progress")
+                            )
+                            .map((task) =>
+                              renderTaskCard(task, {
+                                onDragStart: handleTaskDragStart,
+                                onDragEnd: handleTaskDragEnd,
+                              })
+                            )}
+                        </div>
+                      </div>
+
+                      {/* En cours */}
+                      <div
+                        className="bg-[#fffaf2] rounded-2xl border border-[#f3e0c8] p-4 flex flex-col gap-3 min-h-[160px]"
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => handleStatusDrop(e, "In Progress")}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="text-sm font-semibold text-[#8a5a24]">
+                            En cours
+                          </h3>
+                          <span className="text-xs text-[#b76a28]">
+                            {
+                              (project.tasks || []).filter(
+                                (task) =>
+                                  task.status === "In Progress" ||
+                                  task.status === "in progress"
+                              ).length
+                            }{" "}
+                            tâche(s)
+                          </span>
+                        </div>
+                        <div className="space-y-3">
+                          {(project.tasks || [])
+                            .filter(
+                              (task) =>
+                                task.status === "In Progress" ||
+                                task.status === "in progress"
+                            )
+                            .map((task) =>
+                              renderTaskCard(task, {
+                                onDragStart: handleTaskDragStart,
+                                onDragEnd: handleTaskDragEnd,
+                              })
+                            )}
+                        </div>
+                      </div>
+
+                      {/* Terminée */}
+                      <div
+                        className="bg-[#f4faf6] rounded-2xl border border-[#d5ecde] p-4 flex flex-col gap-3 min-h-[160px]"
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => handleStatusDrop(e, "Completed")}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="text-sm font-semibold text-[#1e4029]">
+                            Terminée
+                          </h3>
+                          <span className="text-xs text-[#4e7c59]">
+                            {
+                              (project.tasks || []).filter(
+                                (task) =>
+                                  task.status === "Completed" ||
+                                  task.status === "completed"
+                              ).length
+                            }{" "}
+                            tâche(s)
+                          </span>
+                        </div>
+                        <div className="space-y-3">
+                          {(project.tasks || [])
+                            .filter(
+                              (task) =>
+                                task.status === "Completed" ||
+                                task.status === "completed"
+                            )
+                            .map((task) =>
+                              renderTaskCard(task, {
+                                onDragStart: handleTaskDragStart,
+                                onDragEnd: handleTaskDragEnd,
+                              })
+                            )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Titre global en bas comme demandé */}
+                    <div className="mt-6 pt-4 border-t border-dashed border-[#dfe8e1]">
+                      <h3 className="text-xl font-semibold text-[#1e4029]">
+                        Tâches du projet
+                      </h3>
+                      <p className="text-sm text-[#7a8b7f] mt-1">
+                        Regroupez et suivez toutes les tâches par statut :{" "}
+                        <span className="font-medium text-[#1e4029]">
+                          En attente
+                        </span>
+                        ,{" "}
+                        <span className="font-medium text-[#1e4029]">
+                          En cours
+                        </span>{" "}
+                        et{" "}
+                        <span className="font-medium text-[#1e4029]">
+                          Terminée
+                        </span>
+                        .
+                      </p>
+                    </div>
+                  </>
                 ) : (
                   <EmptyState
                     icon="✅"
@@ -574,8 +808,80 @@ const ProjectDetails = () => {
                     subtitle="Créez votre première tâche pour ce projet."
                   />
                 )}
+              </div>
+            )}
+
+            {activeTab === "weeklyUpdates" && (
+              <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm space-y-6">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <h3 className="text-xl font-semibold text-[#1e4029]">
+                      Mises à jour hebdomadaires
+                    </h3>
+                    <p className="text-sm text-[#7a8b7f]">
+                      {project.weeklyUpdates?.length || 0} note(s)
+                    </p>
                   </div>
+                  {can("edit") && (
+                    <button
+                      onClick={() => setShowWeeklyUpdateModal(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-[#2d5f3f] text-white rounded-xl text-sm font-medium hover:bg-[#1e4029] transition-colors"
+                    >
+                      <FiPlus /> Ajouter une note
+                    </button>
+                  )}
+                </div>
+
+                {project.weeklyUpdates?.length ? (
+                  <WeeklyUpdatesTimeline updates={project.weeklyUpdates} />
+                ) : (
+                  <EmptyState
+                    icon="🗒️"
+                    title="Aucune mise à jour"
+                    subtitle="Ajoutez votre première note hebdomadaire pour informer les parties prenantes."
+                  />
                 )}
+              </div>
+            )}
+
+            {activeTab === "milestones" && (
+              <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm space-y-6">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <h3 className="text-xl font-semibold text-[#1e4029]">
+                      Jalons du projet
+                    </h3>
+                    <p className="text-sm text-[#7a8b7f]">
+                      {loadingMilestones
+                        ? "Chargement..."
+                        : `${milestones.length} jalon(s)`}
+                    </p>
+                  </div>
+                  {can("edit") && (
+                    <button
+                      onClick={() => setShowMilestoneModal(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-[#2d5f3f] text-white rounded-xl text-sm font-medium hover:bg-[#1e4029] transition-colors"
+                    >
+                      <FiPlus /> Ajouter un jalon
+                    </button>
+                  )}
+                </div>
+
+                {loadingMilestones ? (
+                  <div className="py-12 text-center text-[#7a8b7f]">
+                    Chargement des jalons...
+                  </div>
+                ) : milestones.length ? (
+                  <MilestonesList milestones={milestones} />
+                ) : (
+                  <EmptyState
+                    icon="📌"
+                    title="Aucun jalon"
+                    subtitle="Ajoutez un jalon pour structurer l'avancement du projet."
+                  />
+                )}
+              </div>
+            )}
 
             {activeTab === "documents" && (
               <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm space-y-4">
@@ -832,6 +1138,22 @@ const ProjectDetails = () => {
                             <p className="text-sm text-[#7a8b7f] mb-3 line-clamp-2">
                               {invoice.description}
                             </p>
+                          )}
+
+                          {invoice.attachment?.path && (
+                            <div className="flex items-center justify-between mb-4">
+                              <span className="text-xs text-[#7a8b7f] italic">
+                                Pièce jointe disponible
+                              </span>
+                              <a
+                                href={`${BASE_URL}${invoice.attachment.path}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-3 py-1.5 text-xs bg-[#2d5f3f] text-white rounded-lg hover:bg-[#1e4029] transition-colors font-medium flex items-center gap-1.5"
+                              >
+                                <FiDownload size={14} /> Télécharger
+                              </a>
+                            </div>
                           )}
 
                           <div className="space-y-2 mb-4">
@@ -1262,6 +1584,32 @@ const ProjectDetails = () => {
           onDocumentCreated={(newDocument) => {
             fetchProjectDetails(); // Refresh project data
             setActiveTab("documents"); // Switch to documents tab
+          }}
+        />
+      )}
+
+      {/* Add Weekly Update Modal */}
+      {project && (
+        <AddWeeklyUpdateModal
+          isOpen={showWeeklyUpdateModal}
+          onClose={() => setShowWeeklyUpdateModal(false)}
+          projectId={project._id}
+          onUpdateCreated={() => {
+            fetchProjectDetails();
+            setActiveTab("weeklyUpdates");
+          }}
+        />
+      )}
+
+      {/* Add Milestone Modal */}
+      {project && (
+        <AddMilestoneModal
+          isOpen={showMilestoneModal}
+          onClose={() => setShowMilestoneModal(false)}
+          projectId={project._id}
+          onMilestoneCreated={() => {
+            fetchMilestones();
+            setActiveTab("milestones");
           }}
         />
       )}

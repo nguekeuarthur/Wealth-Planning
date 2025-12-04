@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const invoiceController = require('../controllers/invoiceController');
 const { protect } = require('../middlewares/authMiddleware');
+const upload = require('../middlewares/uploadMiddleware');
 
 // Apply auth middleware to all routes
 router.use(protect);
@@ -16,10 +17,10 @@ router.get('/', invoiceController.getAllInvoices);
 router.get('/:id', invoiceController.getInvoiceById);
 
 // Create invoice (Admin only)
-router.post('/', invoiceController.createInvoice);
+router.post('/', upload.single('attachment'), invoiceController.createInvoice);
 
 // Update invoice (Admin only)
-router.put('/:id', invoiceController.updateInvoice);
+router.put('/:id', upload.single('attachment'), invoiceController.updateInvoice);
 
 // Delete invoice (Admin only)
 router.delete('/:id', invoiceController.deleteInvoice);

@@ -1,5 +1,29 @@
 const Invoice = require('../models/Invoice');
 const Project = require('../models/Project');
+const path = require('path');
+const fs = require('fs');
+
+const buildAttachmentPayload = (file) => {
+  if (!file) return undefined;
+  return {
+    path: `/uploads/${file.filename}`,
+    originalName: file.originalname,
+    mimeType: file.mimetype,
+    size: file.size
+  };
+};
+
+const deleteAttachmentFile = (attachment) => {
+  if (!attachment?.path) return;
+  const absolutePath = path.join(__dirname, '..', attachment.path.replace(/^\//, ''));
+  if (fs.existsSync(absolutePath)) {
+    fs.unlink(absolutePath, (err) => {
+      if (err) {
+        console.error('Failed to delete attachment file:', err);
+      }
+    });
+  }
+};
 
 // Get all invoices
 exports.getAllInvoices = async (req, res) => {
@@ -121,7 +145,21 @@ exports.createInvoice = async (req, res) => {
       }
     }
 
-    const invoice = new Invoice(req.body);
+    const invoiceData = { ...req.body };
+    if (typeof invoiceData.amount !== 'undefined') {
+      invoiceData.amount = parseFloat(invoiceData.amount);
+    }
+    if (invoiceData.dueDate === '' || invoiceData.dueDate === null) {
+      delete invoiceData.dueDate;
+    }
+    if (invoiceData.issueDate === '' || invoiceData.issueDate === null) {
+      delete invoiceData.issueDate;
+    }
+    if (req.file) {
+      invoiceData.attachment = buildAttachmentPayload(req.file);
+    }
+
+    const invoice = new Invoice(invoiceData);
     await invoice.save();
 
     // Add invoice to project
@@ -159,7 +197,23 @@ exports.updateInvoice = async (req, res) => {
       req.body.paidDate = new Date();
     }
 
+    if (typeof req.body.amount !== 'undefined') {
+      req.body.amount = parseFloat(req.body.amount);
+    }
+    if (req.body.dueDate === '' || req.body.dueDate === null) {
+      req.body.dueDate = undefined;
+    }
+    if (req.body.issueDate === '' || req.body.issueDate === null) {
+      req.body.issueDate = undefined;
+    }
+
+    const previousAttachment = invoice.attachment;
     Object.assign(invoice, req.body);
+
+    if (req.file) {
+      deleteAttachmentFile(previousAttachment);
+      invoice.attachment = buildAttachmentPayload(req.file);
+    }
     await invoice.save();
 
     res.json({ message: 'Facture mise à jour', invoice });
@@ -180,6 +234,8 @@ exports.deleteInvoice = async (req, res) => {
     if (!invoice) {
       return res.status(404).json({ message: 'Facture non trouvée' });
     }
+
+    deleteAttachmentFile(invoice.attachment);
 
     res.json({ message: 'Facture supprimée avec succès' });
   } catch (error) {

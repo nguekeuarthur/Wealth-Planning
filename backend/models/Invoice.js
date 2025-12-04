@@ -37,7 +37,12 @@ const invoiceSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Project' 
   },
-  pdfPath: String
+  attachment: {
+    path: String,
+    originalName: String,
+    mimeType: String,
+    size: Number
+  }
 }, { timestamps: true });
 
 // Middleware pre-save : Mettre automatiquement le statut à "non payée" si la date d'échéance est passée

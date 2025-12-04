@@ -16,6 +16,7 @@ const invoiceRoutes = require("./routes/invoiceRoutes")
 const messageRoutes = require("./routes/messageRoutes")
 const appointmentRoutes = require("./routes/appointmentRoutes")
 const weeklyUpdateRoutes = require("./routes/weeklyUpdateRoutes")
+const milestoneRoutes = require("./routes/milestoneRoutes")
 const formRoutes = require("./routes/formRoutes")
 const dashboardRoutes = require("./routes/dashboardRoutes")
 
@@ -49,6 +50,7 @@ app.use("/api/invoices", invoiceRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/weekly-updates", weeklyUpdateRoutes);
+app.use("/api/milestones", milestoneRoutes);
 app.use("/api/forms", formRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 

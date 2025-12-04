@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Modal from "./Modal";
-import { FiX } from "react-icons/fi";
+import { FiPaperclip } from "react-icons/fi";
 import axiosInstance from "../utils/axiosInstance";
-import { API_PATHS } from "../utils/apiPaths";
+import { API_PATHS, BASE_URL } from "../utils/apiPaths";
 import toast from "react-hot-toast";
 
 const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, onInvoiceCreated }) => {
@@ -17,6 +17,8 @@ const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, onInvoiceCreate
     client: project?.client?._id || ""
   });
   const [loading, setLoading] = useState(false);
+  const [attachmentFile, setAttachmentFile] = useState(null);
+  const [existingAttachment, setExistingAttachment] = useState(null);
 
   const invoiceStatuses = [
     { value: "en attente", label: "En attente" },
@@ -45,6 +47,8 @@ const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, onInvoiceCreate
           : "",
         client: invoice.client?._id || project?.client?._id || ""
       });
+      setExistingAttachment(invoice.attachment || null);
+      setAttachmentFile(null);
     } else {
       // Mode création - le numéro sera généré automatiquement par le backend
       setFormData({
@@ -57,6 +61,8 @@ const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, onInvoiceCreate
         dueDate: "",
         client: project?.client?._id || ""
       });
+      setExistingAttachment(null);
+      setAttachmentFile(null);
     }
   }, [invoice, project]);
 
@@ -69,6 +75,11 @@ const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, onInvoiceCreate
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
+  };
+
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
+    setAttachmentFile(file || null);
   };
 
   const handleSubmit = async (e) => {
@@ -122,19 +133,36 @@ const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, onInvoiceCreate
         };
       }
 
+      const formPayload = new FormData();
+      Object.entries(payload).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === "") return;
+        formPayload.append(key, value);
+      });
+      if (attachmentFile) {
+        formPayload.append("attachment", attachmentFile);
+      }
+
+      const config = {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      };
+
       let response;
       if (invoice) {
         // Mise à jour
         response = await axiosInstance.put(
           API_PATHS.INVOICES.UPDATE_INVOICE(invoice._id),
-          payload
+          formPayload,
+          config
         );
         toast.success("Facture mise à jour avec succès !");
       } else {
         // Création
         response = await axiosInstance.post(
           API_PATHS.INVOICES.CREATE_INVOICE,
-          payload
+          formPayload,
+          config
         );
         toast.success("Facture créée avec succès !");
       }
@@ -160,6 +188,8 @@ const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, onInvoiceCreate
       dueDate: "",
       client: project?.client?._id || ""
     });
+    setAttachmentFile(null);
+    setExistingAttachment(null);
     onClose();
   };
 
@@ -312,6 +342,37 @@ const CreateInvoiceModal = ({ isOpen, onClose, project, invoice, onInvoiceCreate
             />
           </div>
         )}
+
+        {/* Pièce jointe */}
+        <div>
+          <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
+            Pièce jointe
+          </label>
+          <div className="flex flex-col gap-2">
+            <label className="flex items-center gap-2 px-3 py-2 bg-[#fdfdfc] border border-dashed border-[#dfe8e1] rounded-xl cursor-pointer text-sm text-[#1e4029] hover:border-[#5a8f6f] transition-colors">
+              <FiPaperclip className="text-[#5a8f6f]" />
+              <span className="flex-1">
+                {attachmentFile ? attachmentFile.name : "Importer une image, un PDF ou un document"}
+              </span>
+              <input
+                type="file"
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </label>
+            {!attachmentFile && existingAttachment?.path && (
+              <a
+                href={`${BASE_URL}${existingAttachment.path}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-[#2d5f3f] underline"
+              >
+                Télécharger la pièce jointe actuelle
+              </a>
+            )}
+          </div>
+        </div>
 
         {/* Actions */}
         <div className="flex justify-end gap-3 pt-4 border-t border-[#dfe8e1]">

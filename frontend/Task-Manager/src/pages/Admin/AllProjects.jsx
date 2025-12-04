@@ -493,7 +493,7 @@ const AllProjects = () => {
   };
 
   return (
-    <DashboardLayout activeMenu="Projects">
+    <DashboardLayout activeMenu="Projets">
       {/* Header Section with Enhanced Design */}
       <div className="relative bg-gradient-to-br from-[#1e4029] via-[#2d5f3f] to-[#1e4029] rounded-2xl shadow-xl p-8 my-6 overflow-hidden">
         {/* Background Pattern */}

@@ -93,7 +93,7 @@ const ClientDetails = () => {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <DashboardLayout activeMenu="Équipe">
         <div className="flex items-center justify-center h-96">
           <div className="text-gray-500">Loading...</div>
         </div>
@@ -103,7 +103,7 @@ const ClientDetails = () => {
 
   if (!client) {
     return (
-      <DashboardLayout>
+      <DashboardLayout activeMenu="Équipe">
         <div className="flex items-center justify-center h-96">
           <div className="text-gray-500">Client not found</div>
         </div>
@@ -112,7 +112,7 @@ const ClientDetails = () => {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout activeMenu="Équipe">
       <div className="space-y-6">
         {/* Header with back button */}
         <div className="flex items-center justify-between">
