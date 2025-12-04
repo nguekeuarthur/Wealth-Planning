@@ -41,7 +41,7 @@ const AddWeeklyUpdateModal = ({ isOpen, onClose, onUpdateCreated, projectId }) =
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Add new record">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Ajouter une note">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -64,14 +64,14 @@ const AddWeeklyUpdateModal = ({ isOpen, onClose, onUpdateCreated, projectId }) =
             className="px-6 py-2.5 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
             disabled={loading}
           >
-            Cancel
+            Annuler
           </button>
           <button
             type="submit"
             className="px-6 py-2.5 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             disabled={loading}
           >
-            {loading ? "Ajout..." : "Add"}
+            {loading ? "Ajout..." : "Ajouter"}
           </button>
         </div>
       </form>

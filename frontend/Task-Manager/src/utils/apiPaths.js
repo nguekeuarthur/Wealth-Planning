@@ -99,6 +99,20 @@ export const API_PATHS = {
     UPDATE_DOCUMENT: (documentId) => `/api/documents/${documentId}`,
     DELETE_DOCUMENT: (documentId) => `/api/documents/${documentId}`,
   },
+  WEEKLY_UPDATES: {
+    GET_ALL: "/api/weekly-updates",
+    GET_BY_PROJECT: (projectId) => `/api/weekly-updates/project/${projectId}`,
+    CREATE_UPDATE: "/api/weekly-updates",
+    UPDATE_UPDATE: (updateId) => `/api/weekly-updates/${updateId}`,
+    DELETE_UPDATE: (updateId) => `/api/weekly-updates/${updateId}`,
+  },
+  MILESTONES: {
+    GET_ALL: "/api/milestones",
+    GET_BY_PROJECT: (projectId) => `/api/milestones/project/${projectId}`,
+    CREATE_MILESTONE: "/api/milestones",
+    UPDATE_MILESTONE: (milestoneId) => `/api/milestones/${milestoneId}`,
+    DELETE_MILESTONE: (milestoneId) => `/api/milestones/${milestoneId}`,
+  },
   MESSAGES: {
     GET_ALL_MESSAGES: "/api/messages",
     GET_PROJECT_MESSAGES: (projectId) => `/api/messages/project/${projectId}`,
