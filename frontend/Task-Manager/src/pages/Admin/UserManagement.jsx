@@ -99,6 +99,9 @@ const UserManagement = () => {
     total: allUsers.length,
     admins: allUsers.filter(u => u.role === 'admin').length,
     members: allUsers.filter(u => u.role === 'member').length,
+    clients: allUsers.filter(u => u.role === 'client').length,
+    partners: allUsers.filter(u => u.role === 'partner').length,
+    collaborators: allUsers.filter(u => u.role === 'collaborator').length,
     active: allUsers.filter(u => u.status !== 'inactive').length,
     inactive: allUsers.filter(u => u.status === 'inactive').length
   };
@@ -430,25 +433,37 @@ const UserManagement = () => {
         )}
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6">
           <div className="bg-white rounded-xl border border-[#dfe8e1] p-4 text-center hover:shadow-md transition-shadow">
-            <div className="text-2xl font-bold text-[#1e4029]">{userStats.total}</div>
+            <div className="text-2xl font-bold text-[#5a8f6f]">{userStats.total}</div>
             <div className="text-xs text-[#7a8b7f] font-medium">Total</div>
           </div>
           <div className="bg-white rounded-xl border border-[#dfe8e1] p-4 text-center hover:shadow-md transition-shadow">
-            <div className="text-2xl font-bold text-red-600">{userStats.admins}</div>
+            <div className="text-2xl font-bold text-[#5a8f6f]">{userStats.admins}</div>
             <div className="text-xs text-[#7a8b7f] font-medium">Administrateurs</div>
           </div>
           <div className="bg-white rounded-xl border border-[#dfe8e1] p-4 text-center hover:shadow-md transition-shadow">
             <div className="text-2xl font-bold text-[#5a8f6f]">{userStats.members}</div>
-            <div className="text-xs text-[#7a8b7f] font-medium">Membres</div>
+            <div className="text-xs text-[#7a8b7f] font-medium">Utilisateurs</div>
           </div>
           <div className="bg-white rounded-xl border border-[#dfe8e1] p-4 text-center hover:shadow-md transition-shadow">
-            <div className="text-2xl font-bold text-green-600">{userStats.active}</div>
+            <div className="text-2xl font-bold text-[#5a8f6f]">{userStats.clients}</div>
+            <div className="text-xs text-[#7a8b7f] font-medium">Clients</div>
+          </div>
+          <div className="bg-white rounded-xl border border-[#dfe8e1] p-4 text-center hover:shadow-md transition-shadow">
+            <div className="text-2xl font-bold text-[#5a8f6f]">{userStats.partners}</div>
+            <div className="text-xs text-[#7a8b7f] font-medium">Partenaires</div>
+          </div>
+          <div className="bg-white rounded-xl border border-[#dfe8e1] p-4 text-center hover:shadow-md transition-shadow">
+            <div className="text-2xl font-bold text-[#5a8f6f]">{userStats.collaborators}</div>
+            <div className="text-xs text-[#7a8b7f] font-medium">Collaborateurs</div>
+          </div>
+          <div className="bg-white rounded-xl border border-[#dfe8e1] p-4 text-center hover:shadow-md transition-shadow">
+            <div className="text-2xl font-bold text-[#5a8f6f]">{userStats.active}</div>
             <div className="text-xs text-[#7a8b7f] font-medium">Actifs</div>
           </div>
           <div className="bg-white rounded-xl border border-[#dfe8e1] p-4 text-center hover:shadow-md transition-shadow">
-            <div className="text-2xl font-bold text-gray-500">{userStats.inactive}</div>
+            <div className="text-2xl font-bold text-[#5a8f6f]">{userStats.inactive}</div>
             <div className="text-xs text-[#7a8b7f] font-medium">Désactivés</div>
           </div>
         </div>
