@@ -140,7 +140,7 @@ const AllProjects = () => {
         project.name.toLowerCase().includes(query) ||
         project.category.toLowerCase().includes(query) ||
         project.description?.toLowerCase().includes(query) ||
-        project.client?.companyName?.toLowerCase().includes(query) ||
+        project.client?.company?.toLowerCase().includes(query) ||
         project.projectLead?.name?.toLowerCase().includes(query) ||
         project.tasks?.some(task => task.title?.toLowerCase().includes(query)) ||
         project.messages?.some(msg => msg.content?.toLowerCase().includes(query))
@@ -899,10 +899,10 @@ const AllProjects = () => {
                 {project.client && (
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-[#f4f7f4] rounded-full flex items-center justify-center text-xs font-medium text-[#7a8b7f]">
-                        {project.client.companyName?.charAt(0).toUpperCase() || "C"}
+                        {project.client.company?.charAt(0).toUpperCase() || project.client.name?.charAt(0).toUpperCase() || "C"}
                       </div>
                       <span className="text-xs text-[#7a8b7f] truncate">
-                        Client: {project.client.companyName || "Client"}
+                        Client: {project.client.company || project.client.name || "Client"}
                       </span>
                     </div>
                   )}

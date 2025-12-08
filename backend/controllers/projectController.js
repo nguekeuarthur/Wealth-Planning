@@ -19,7 +19,7 @@ exports.getAllProjects = async (req, res) => {
     filter.archived = { $ne: true };
 
     const projects = await Project.find(filter)
-      .populate('client', 'companyName contactName email industry logoUrl')
+      .populate('client', 'name email company address logoUrl phoneNumber')
       .populate('projectLead', 'name email')
       .populate('assignedUsers', 'name email')
       .populate('teams', 'name leader members color department')
@@ -69,7 +69,7 @@ exports.getProjectById = async (req, res) => {
     );
 
     const project = await Project.findById(req.params.id)
-      .populate('client', 'companyName contactName email industry logoUrl phoneNumber')
+      .populate('client', 'name email company address logoUrl phoneNumber')
       .populate('projectLead', 'name email')
       .populate('assignedUsers', 'name email')
       .populate({

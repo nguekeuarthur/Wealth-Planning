@@ -513,7 +513,7 @@ const ProjectDetails = () => {
                 <div>
                   <p className="text-white/60 text-xs uppercase">Client</p>
                   <p className="font-semibold">
-                    {project.client?.companyName || "—"}
+                    {project.client?.company || project.client?.name || "—"}
                   </p>
                 </div>
                 <div>
@@ -1357,16 +1357,16 @@ const ProjectDetails = () => {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                   <div>
                     <p className="text-[#7a8b7f] text-xs uppercase mb-1">Entreprise</p>
-                    <p className="font-semibold text-[#1e4029]">{project.client.companyName}</p>
+                    <p className="font-semibold text-[#1e4029]">{project.client.company || project.client.name || "—"}</p>
               </div>
                   <div>
                     <p className="text-[#7a8b7f] text-xs uppercase mb-1">Contact</p>
-                    <p className="text-[#4a5c52]">{project.client.contactName}</p>
+                    <p className="text-[#4a5c52]">{project.client.name || "—"}</p>
                         </div>
-                  {project.client.industry && (
+                  {project.client.address && (
                     <div>
-                      <p className="text-[#7a8b7f] text-xs uppercase mb-1">Secteur</p>
-                      <p className="text-[#4a5c52]">{project.client.industry}</p>
+                      <p className="text-[#7a8b7f] text-xs uppercase mb-1">Adresse</p>
+                      <p className="text-[#4a5c52]">{project.client.address}</p>
                 </div>
               )}
                   <div>

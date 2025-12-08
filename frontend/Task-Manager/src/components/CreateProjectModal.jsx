@@ -76,8 +76,10 @@ const CreateProjectModal = ({
 
   const fetchClients = async () => {
     try {
-      const response = await axiosInstance.get(API_PATHS.CLIENTS.GET_ALL_CLIENTS);
-      setClients(response.data?.clients || []);
+      const response = await axiosInstance.get(API_PATHS.USERS.GET_ALL_USERS);
+      // Filter users with role "client"
+      const clientUsers = (response.data?.users || []).filter(user => user.role === 'client');
+      setClients(clientUsers);
     } catch (error) {
       console.error("Error fetching clients:", error);
     }
@@ -253,7 +255,7 @@ const CreateProjectModal = ({
                 <option value="">Sélectionner un client</option>
                 {clients.map(client => (
                   <option key={client._id} value={client._id}>
-                    {client.companyName} - {client.industry || 'Industrie non spécifiée'}
+                    {client.company || 'Entreprise non spécifiée'} - {client.name || client.email}
                   </option>
                 ))}
               </select>
@@ -261,9 +263,11 @@ const CreateProjectModal = ({
               <div className="rounded-xl border border-dashed border-[#dfe8e1] p-3 text-sm text-[#7a8b7f] min-h-[48px] flex items-center">
                 {selectedClient ? (
                   <div>
-                    <p className="text-[#2d5f3f] font-medium">{selectedClient.companyName}</p>
-                    <p className="text-xs">{selectedClient.industry || 'Industrie non spécifiée'}</p>
-                    <p className="text-xs text-[#99aca2] mt-1">{selectedClient.contactName} - {selectedClient.email}</p>
+                    <p className="text-[#2d5f3f] font-medium">{selectedClient.company || 'Entreprise non spécifiée'}</p>
+                    <p className="text-xs text-[#99aca2] mt-1">{selectedClient.name || 'Sans nom'} - {selectedClient.email}</p>
+                    {selectedClient.address && (
+                      <p className="text-xs text-[#99aca2] mt-1">{selectedClient.address}</p>
+                    )}
                   </div>
                 ) : (
                   <span>Sélectionnez un client pour afficher ses informations</span>
