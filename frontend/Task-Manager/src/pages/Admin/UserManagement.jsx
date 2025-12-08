@@ -5,7 +5,7 @@ import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
 import {
   FiSearch, FiMail, FiPhone, FiUser, FiPlus,
-  FiEdit3, FiTrash2, FiExternalLink, FiFlag, FiCalendar, FiUsers, FiX, FiBriefcase
+  FiEdit3, FiTrash2, FiExternalLink, FiFlag, FiCalendar, FiUsers, FiX, FiBriefcase, FiMapPin, FiGlobe, FiStar
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import CreateTeamMemberModal from "../../components/CreateTeamMemberModal";
@@ -15,25 +15,43 @@ const UserManagement = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedRole, setSelectedRole] = useState("all");
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [deletingUser, setDeletingUser] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editFormData, setEditFormData] = useState({});
 
   const roles = [
     { value: "all", label: "Tous les rôles" },
     { value: "admin", label: "Administrateur" },
-    { value: "member", label: "Utilisateur" }
+    { value: "member", label: "Membre" },
+    { value: "client", label: "Client" },
+    { value: "partner", label: "Partenaire" },
+    { value: "collaborator", label: "Collaborateur" }
   ];
 
-  const statuses = [
-    { value: "all", label: "Tous les statuts" },
-    { value: "active", label: "Actif" },
-    { value: "inactive", label: "Inactif" }
-  ];
+  // Fonction helper pour convertir les rôles en labels français
+  const getRoleLabel = (role) => {
+    switch (role) {
+      case 'admin':
+        return 'Administrateur';
+      case 'member':
+        return 'Membre';
+      case 'client':
+        return 'Client';
+      case 'partner':
+        return 'Partenaire';
+      case 'collaborator':
+        return 'Collaborateur';
+      default:
+        return 'Utilisateur';
+    }
+  };
+
 
   const getAllUsers = async () => {
     try {
@@ -68,32 +86,21 @@ const UserManagement = () => {
       );
     }
 
-    // Filtre par statut (actif/inactif basé sur la dernière connexion)
-    if (selectedStatus !== "all") {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-      if (selectedStatus === "active") {
-        filtered = filtered.filter((user) =>
-          user.lastLoginAt && new Date(user.lastLoginAt) > thirtyDaysAgo
-        );
-      } else if (selectedStatus === "inactive") {
-        filtered = filtered.filter((user) =>
-          !user.lastLoginAt || new Date(user.lastLoginAt) <= thirtyDaysAgo
-        );
-      }
+    // Filtre par rôle
+    if (selectedRole !== "all") {
+      filtered = filtered.filter((user) => user.role === selectedRole);
     }
 
     setFilteredUsers(filtered);
-  }, [searchQuery, selectedStatus, allUsers]);
+  }, [searchQuery, selectedRole, allUsers]);
 
   // Statistiques des utilisateurs
   const userStats = {
     total: allUsers.length,
     admins: allUsers.filter(u => u.role === 'admin').length,
     members: allUsers.filter(u => u.role === 'member').length,
-    active: allUsers.filter(u => u.lastLoginAt && new Date(u.lastLoginAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length,
-    inactive: allUsers.filter(u => !u.lastLoginAt || new Date(u.lastLoginAt) <= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length
+    active: allUsers.filter(u => u.status !== 'inactive').length,
+    inactive: allUsers.filter(u => u.status === 'inactive').length
   };
 
   const handleUserClick = (user) => {
@@ -107,8 +114,33 @@ const UserManagement = () => {
   };
 
   const handleEditUser = (user) => {
-    setEditingUser(user);
-    setIsModalOpen(true);
+    setSelectedUser(user);
+    setEditFormData({
+      name: user.name || '',
+      email: user.email || '',
+      phoneNumber: user.phoneNumber || '',
+      nationality: user.nationality || '',
+      birthDate: user.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : '',
+      role: user.role || 'member',
+      company: user.company || '',
+      address: user.address || '',
+      website: user.website || '',
+      companyEmail: user.companyEmail || '',
+      companyPhone: user.companyPhone || '',
+      organizationName: user.organizationName || '',
+      position: user.position || '',
+      professionalPhone: user.professionalPhone || '',
+      professionalEmail: user.professionalEmail || '',
+      professionalAddress: user.professionalAddress || '',
+      specialization: user.specialization || '',
+      experience: user.experience || '',
+      notes: user.notes || ''
+    });
+    setIsDetailsModalOpen(false); // Fermer d'abord le modal de détails
+    setTimeout(() => {
+      setIsEditMode(true);
+      setIsDetailsModalOpen(true); // Ouvrir en mode édition
+    }, 100);
   };
 
   const handleUserCreated = (newUser) => {
@@ -121,20 +153,146 @@ const UserManagement = () => {
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action ne peut pas être annulée.")) return;
+  const handleDownloadReport = async () => {
+    try {
+      const response = await axiosInstance.get(API_PATHS.REPORTS.EXPORT_USERS, {
+        responseType: "blob",
+      });
+
+      // Create a URL for the blob
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "rapport Utilisateur.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading details:", error);
+      toast.error("Failed to download details. Please try again.");
+    }
+  };
+
+  const handleSaveUserEdit = async () => {
+    try {
+      await axiosInstance.put(API_PATHS.USERS.UPDATE_USER(selectedUser._id), editFormData);
+
+      // Mettre à jour la liste des utilisateurs localement
+      const updatedUsers = allUsers.map(user =>
+        user._id === selectedUser._id ? { ...user, ...editFormData } : user
+      );
+      setAllUsers(updatedUsers);
+
+      // Re-filtrer les utilisateurs
+      let filtered = updatedUsers;
+      if (searchQuery.trim() !== "") {
+        const query = searchQuery.toLowerCase();
+        filtered = filtered.filter((user) =>
+          user.name?.toLowerCase().includes(query) ||
+          user.email?.toLowerCase().includes(query) ||
+          user.phoneNumber?.toLowerCase().includes(query) ||
+          user.company?.toLowerCase().includes(query)
+        );
+      }
+      if (selectedRole !== "all") {
+        filtered = filtered.filter((user) => user.role === selectedRole);
+      }
+      setFilteredUsers(filtered);
+
+      setIsEditMode(false);
+      toast.success("Utilisateur modifié avec succès");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Échec de la modification");
+    }
+  };
+
+  const handleReactivateUser = async (userId) => {
+    if (!window.confirm("Êtes-vous sûr de vouloir réactiver cet utilisateur ?")) return;
     try {
       setDeletingUser(userId);
-      await axiosInstance.delete(API_PATHS.USERS.DELETE_USER(userId));
-      setAllUsers(allUsers.filter(u => u._id !== userId));
-      setFilteredUsers(filteredUsers.filter(u => u._id !== userId));
-      toast.success("Utilisateur supprimé avec succès");
+      await axiosInstance.put(API_PATHS.USERS.UPDATE_USER(userId), {
+        status: "active"
+      });
+
+      // Mettre à jour la liste des utilisateurs localement
+      const updatedUsers = allUsers.map(user =>
+        user._id === userId ? { ...user, status: "active" } : user
+      );
+      setAllUsers(updatedUsers);
+
+      // Re-filtrer les utilisateurs
+      let filtered = updatedUsers;
+      if (searchQuery.trim() !== "") {
+        const query = searchQuery.toLowerCase();
+        filtered = filtered.filter((user) =>
+          user.name?.toLowerCase().includes(query) ||
+          user.email?.toLowerCase().includes(query) ||
+          user.phoneNumber?.toLowerCase().includes(query) ||
+          user.company?.toLowerCase().includes(query)
+        );
+      }
+      if (selectedRole !== "all") {
+        filtered = filtered.filter((user) => user.role === selectedRole);
+      }
+      setFilteredUsers(filtered);
+
+      toast.success("Utilisateur réactivé avec succès");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Échec de la suppression");
+      toast.error(error.response?.data?.message || "Échec de la réactivation");
     } finally {
       setDeletingUser(null);
     }
   };
+
+  const handleDeleteUser = async (userId) => {
+    const reason = window.prompt("Raison de la suppression (optionnel) :", "Supprimé par l'administrateur");
+    if (reason === null) return; // Annulé par l'utilisateur
+
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer définitivement cet utilisateur ? Cette action ne peut pas être annulée.")) return;
+
+    try {
+      setDeletingUser(userId);
+      // D'abord marquer comme inactif
+      await axiosInstance.put(API_PATHS.USERS.UPDATE_USER(userId), {
+        status: "inactive"
+      });
+
+      // Créer une trace de désactivation
+      await axiosInstance.delete(API_PATHS.USERS.DELETE_USER(userId), {
+        data: { reason: reason || "Désactivé par l'administrateur" }
+      });
+
+      // Mettre à jour la liste des utilisateurs localement
+      const updatedUsers = allUsers.map(user =>
+        user._id === userId ? { ...user, status: "inactive" } : user
+      );
+      setAllUsers(updatedUsers);
+
+      // Re-filtrer les utilisateurs
+      let filtered = updatedUsers;
+      if (searchQuery.trim() !== "") {
+        const query = searchQuery.toLowerCase();
+        filtered = filtered.filter((user) =>
+          user.name?.toLowerCase().includes(query) ||
+          user.email?.toLowerCase().includes(query) ||
+          user.phoneNumber?.toLowerCase().includes(query) ||
+          user.company?.toLowerCase().includes(query)
+        );
+      }
+      if (selectedRole !== "all") {
+        filtered = filtered.filter((user) => user.role === selectedRole);
+      }
+      setFilteredUsers(filtered);
+
+      toast.success("Utilisateur supprimé avec succès");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Échec de la désactivation");
+    } finally {
+      setDeletingUser(null);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -174,6 +332,30 @@ const UserManagement = () => {
             </p>
           </div>
 
+          {/* Actions */}
+          <div className="flex gap-3">
+            <button
+              onClick={handleDownloadReport}
+              className="flex items-center gap-2 px-4 py-2 bg-[#5a8f6f] text-white rounded-xl hover:bg-[#4a7f5f] transition-colors shadow-lg hover:shadow-xl"
+            >
+              <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" className="text-lg" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path>
+                <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
+                <path d="M8 13h2"></path>
+                <path d="M14 13h2"></path>
+                <path d="M8 17h2"></path>
+                <path d="M14 17h2"></path>
+              </svg>
+              Télécharger le rapport
+            </button>
+            <button
+              onClick={() => navigate('/admin/deleted-users')}
+              className="flex items-center gap-2 px-4 py-2 text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-md hover:shadow-lg"
+            >
+              <FiTrash2 size={16} />
+              Utilisateurs supprimés
+            </button>
+          </div>
         </div>
       </div>
 
@@ -195,16 +377,57 @@ const UserManagement = () => {
           </div>
           <div>
             <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
               className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] cursor-pointer transition-colors"
             >
-              {statuses.map((status) => (
-                <option key={status.value} value={status.value}>{status.label}</option>
+              {roles.map((role) => (
+                <option key={role.value} value={role.value}>{role.label}</option>
               ))}
             </select>
           </div>
         </div>
+
+        {/* Recently Deactivated Users */}
+        {allUsers.some(user => user.status === 'inactive') && (
+          <div className="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 rounded-2xl p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <FiTrash2 className="text-red-600" size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-red-800">
+                    {allUsers.filter(user => user.status === 'inactive').length} utilisateur(s) désactivé(s)
+                  </h3>
+                  <p className="text-xs text-red-600">Cliquez pour réactiver</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {allUsers.filter(user => user.status === 'inactive').slice(0, 3).map((user) => (
+                  <button
+                    key={user._id}
+                    onClick={() => handleReactivateUser(user._id)}
+                    className="flex items-center gap-2 px-3 py-2 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors text-sm"
+                    title={`Réactiver ${user.name}`}
+                  >
+                    <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center">
+                      <span className="text-red-600 font-semibold text-xs">
+                        {user.name?.charAt(0).toUpperCase() || 'U'}
+                      </span>
+                    </div>
+                    <span className="text-red-800 font-medium">{user.name?.split(' ')[0] || 'Utilisateur'}</span>
+                  </button>
+                ))}
+                {allUsers.filter(user => user.status === 'inactive').length > 3 && (
+                  <div className="px-3 py-2 bg-red-200 text-red-800 rounded-lg text-sm font-medium">
+                    +{allUsers.filter(user => user.status === 'inactive').length - 3} autres
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -213,8 +436,12 @@ const UserManagement = () => {
             <div className="text-xs text-[#7a8b7f] font-medium">Total</div>
           </div>
           <div className="bg-white rounded-xl border border-[#dfe8e1] p-4 text-center hover:shadow-md transition-shadow">
+            <div className="text-2xl font-bold text-red-600">{userStats.admins}</div>
+            <div className="text-xs text-[#7a8b7f] font-medium">Administrateurs</div>
+          </div>
+          <div className="bg-white rounded-xl border border-[#dfe8e1] p-4 text-center hover:shadow-md transition-shadow">
             <div className="text-2xl font-bold text-[#5a8f6f]">{userStats.members}</div>
-            <div className="text-xs text-[#7a8b7f] font-medium">Utilisateurs</div>
+            <div className="text-xs text-[#7a8b7f] font-medium">Membres</div>
           </div>
           <div className="bg-white rounded-xl border border-[#dfe8e1] p-4 text-center hover:shadow-md transition-shadow">
             <div className="text-2xl font-bold text-green-600">{userStats.active}</div>
@@ -222,7 +449,7 @@ const UserManagement = () => {
           </div>
           <div className="bg-white rounded-xl border border-[#dfe8e1] p-4 text-center hover:shadow-md transition-shadow">
             <div className="text-2xl font-bold text-gray-500">{userStats.inactive}</div>
-            <div className="text-xs text-[#7a8b7f] font-medium">Inactifs</div>
+            <div className="text-xs text-[#7a8b7f] font-medium">Désactivés</div>
           </div>
         </div>
 
@@ -310,6 +537,34 @@ const UserManagement = () => {
                       </span>
                     </div>
 
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditUser(user);
+                          }}
+                          className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium flex items-center justify-center gap-1"
+                        >
+                          <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" height="14" width="14" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                          </svg>
+                          Modifier
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteUser(user._id);
+                          }}
+                          disabled={deletingUser === user._id}
+                          className="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs font-medium disabled:opacity-50 flex items-center justify-center gap-1"
+                        >
+                          <FiTrash2 size={12} />
+                          Supprimer
+                        </button>
+                    </div>
+
                   </div>
                 </div>
               );
@@ -322,22 +577,21 @@ const UserManagement = () => {
               <FiUser className="text-[#5a8f6f] text-6xl" />
             </div>
             <h3 className="text-xl font-medium text-[#1e4029] mb-2">
-              {searchQuery ? "Aucun utilisateur trouvé" : "Aucun utilisateur sur la plateforme"}
+              {searchQuery
+                ? selectedRole !== "all"
+                  ? `Aucun ${getRoleLabel(selectedRole).toLowerCase()} trouvé`
+                  : "Aucun utilisateur trouvé"
+                : selectedRole !== "all"
+                  ? `Aucun ${getRoleLabel(selectedRole).toLowerCase()} sur la plateforme`
+                  : "Aucun utilisateur sur la plateforme"}
             </h3>
             <p className="text-[#7a8b7f] mb-6">
               {searchQuery
                 ? "Essayez d'ajuster votre recherche"
-                : "Commencez par ajouter votre premier utilisateur"}
+                : selectedRole !== "all"
+                  ? `Il n'y a actuellement aucun utilisateur avec le rôle "${getRoleLabel(selectedRole).toLowerCase()}"`
+                  : "La plateforme ne contient actuellement aucun utilisateur"}
             </p>
-            {!searchQuery && (
-              <button
-                onClick={handleAddUser}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[#2d5f3f] text-white rounded-xl hover:bg-[#1e4029] transition-colors font-medium"
-              >
-                <FiPlus className="w-5 h-5" />
-                Ajouter un utilisateur
-              </button>
-            )}
           </div>
         )}
       </div>
@@ -345,7 +599,7 @@ const UserManagement = () => {
       {/* User Details Modal */}
       {isDetailsModalOpen && selectedUser && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-[#dfe8e1]">
               <div className="flex items-center gap-3">
@@ -365,20 +619,29 @@ const UserManagement = () => {
                     {selectedUser.name || "Utilisateur sans nom"}
                   </h2>
                   <p className="text-[#7a8b7f] text-sm">
-                    {selectedUser.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
+                    {getRoleLabel(selectedUser.role)}
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setIsDetailsModalOpen(false)}
-                className="p-2 hover:bg-[#f4f7f4] rounded-lg transition-colors"
-              >
-                <FiX className="text-[#7a8b7f] text-xl" />
-              </button>
+              {isEditMode ? (
+                <button
+                  onClick={() => setIsEditMode(false)}
+                  className="p-2 hover:bg-[#f4f7f4] rounded-lg transition-colors"
+                >
+                  <FiX className="text-[#7a8b7f] text-xl" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsDetailsModalOpen(false)}
+                  className="p-2 hover:bg-[#f4f7f4] rounded-lg transition-colors"
+                >
+                  <FiX className="text-[#7a8b7f] text-xl" />
+                </button>
+              )}
             </div>
 
             {/* Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+            <div className="p-6 overflow-y-auto flex-1 min-h-0">
               <div className="space-y-6">
                 {/* Basic Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -387,7 +650,16 @@ const UserManagement = () => {
                       <FiMail className="text-[#5a8f6f]" />
                       <span className="text-sm font-semibold text-[#1e4029]">Email</span>
                     </div>
-                    <p className="text-[#7a8b7f]">{selectedUser.email}</p>
+                    {isEditMode ? (
+                      <input
+                        type="email"
+                        value={editFormData.email}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
+                        className="w-full px-3 py-2 bg-white border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors text-[#1e4029]"
+                      />
+                    ) : (
+                      <p className="text-[#7a8b7f]">{selectedUser.email}</p>
+                    )}
                   </div>
 
                   <div className="bg-[#f4f7f4] rounded-xl p-4">
@@ -395,9 +667,23 @@ const UserManagement = () => {
                       <FiUser className="text-[#5a8f6f]" />
                       <span className="text-sm font-semibold text-[#1e4029]">Rôle</span>
                     </div>
-                    <p className="text-[#7a8b7f]">
-                      {selectedUser.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
-                    </p>
+                    {isEditMode ? (
+                      <select
+                        value={editFormData.role}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, role: e.target.value }))}
+                        className="w-full px-3 py-2 bg-white border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors text-[#1e4029]"
+                      >
+                        <option value="admin">Administrateur</option>
+                        <option value="member">Membre</option>
+                        <option value="client">Client</option>
+                        <option value="partner">Partenaire</option>
+                        <option value="collaborator">Collaborateur</option>
+                      </select>
+                    ) : (
+                      <p className="text-[#7a8b7f]">
+                        {getRoleLabel(selectedUser.role)}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -408,9 +694,19 @@ const UserManagement = () => {
                       <FiPhone className="text-[#5a8f6f]" />
                       <span className="text-sm font-semibold text-[#1e4029]">Téléphone</span>
                     </div>
-                    <p className="text-[#7a8b7f]">
-                      {selectedUser.phoneNumber || 'Non renseigné'}
-                    </p>
+                    {isEditMode ? (
+                      <input
+                        type="tel"
+                        value={editFormData.phoneNumber}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                        placeholder="Ex: +33 6 12 34 56 78"
+                        className="w-full px-3 py-2 bg-white border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors text-[#1e4029]"
+                      />
+                    ) : (
+                      <p className="text-[#7a8b7f]">
+                        {selectedUser.phoneNumber || 'Non renseigné'}
+                      </p>
+                    )}
                   </div>
 
                   <div className="bg-[#f4f7f4] rounded-xl p-4">
@@ -418,9 +714,19 @@ const UserManagement = () => {
                       <FiFlag className="text-[#5a8f6f]" />
                       <span className="text-sm font-semibold text-[#1e4029]">Nationalité</span>
                     </div>
-                    <p className="text-[#7a8b7f]">
-                      {selectedUser.nationality || 'Non renseignée'}
-                    </p>
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        value={editFormData.nationality}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, nationality: e.target.value }))}
+                        placeholder="Ex: Française"
+                        className="w-full px-3 py-2 bg-white border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors text-[#1e4029]"
+                      />
+                    ) : (
+                      <p className="text-[#7a8b7f]">
+                        {selectedUser.nationality || 'Non renseignée'}
+                      </p>
+                    )}
                   </div>
 
                   <div className="bg-[#f4f7f4] rounded-xl p-4">
@@ -428,25 +734,199 @@ const UserManagement = () => {
                       <FiCalendar className="text-[#5a8f6f]" />
                       <span className="text-sm font-semibold text-[#1e4029]">Date d'anniversaire</span>
                     </div>
-                    <p className="text-[#7a8b7f]">
-                      {selectedUser.birthDate
-                        ? new Date(selectedUser.birthDate).toLocaleDateString('fr-FR', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric'
-                          })
-                        : 'Non renseignée'
-                      }
-                    </p>
+                    {isEditMode ? (
+                      <input
+                        type="date"
+                        value={editFormData.birthDate}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, birthDate: e.target.value }))}
+                        className="w-full px-3 py-2 bg-white border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors text-[#1e4029]"
+                      />
+                    ) : (
+                      <p className="text-[#7a8b7f]">
+                        {selectedUser.birthDate
+                          ? new Date(selectedUser.birthDate).toLocaleDateString('fr-FR', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric'
+                            })
+                          : 'Non renseignée'
+                        }
+                      </p>
+                    )}
                   </div>
 
-                  {selectedUser.company && (
+                  {/* Informations spécifiques selon le rôle */}
+                  {(selectedUser.role === 'client' || selectedUser.role === 'collaborator') && selectedUser.company && (
                     <div className="bg-[#f4f7f4] rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <FiBriefcase className="text-[#5a8f6f]" />
                         <span className="text-sm font-semibold text-[#1e4029]">Entreprise</span>
                       </div>
-                      <p className="text-[#7a8b7f]">{selectedUser.company}</p>
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          value={editFormData.company}
+                          onChange={(e) => setEditFormData(prev => ({ ...prev, company: e.target.value }))}
+                          className="w-full px-3 py-2 bg-white border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors text-[#1e4029]"
+                        />
+                      ) : (
+                        <p className="text-[#7a8b7f]">{selectedUser.company}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {selectedUser.role === 'partner' && selectedUser.organizationName && (
+                    <div className="bg-[#f4f7f4] rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FiBriefcase className="text-[#5a8f6f]" />
+                        <span className="text-sm font-semibold text-[#1e4029]">Organisation</span>
+                      </div>
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          value={editFormData.organizationName}
+                          onChange={(e) => setEditFormData(prev => ({ ...prev, organizationName: e.target.value }))}
+                          className="w-full px-3 py-2 bg-white border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors text-[#1e4029]"
+                        />
+                      ) : (
+                        <p className="text-[#7a8b7f]">{selectedUser.organizationName}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {selectedUser.role === 'partner' && selectedUser.position && (
+                    <div className="bg-[#f4f7f4] rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FiUser className="text-[#5a8f6f]" />
+                        <span className="text-sm font-semibold text-[#1e4029]">Poste</span>
+                      </div>
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          value={editFormData.position}
+                          onChange={(e) => setEditFormData(prev => ({ ...prev, position: e.target.value }))}
+                          className="w-full px-3 py-2 bg-white border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors text-[#1e4029]"
+                        />
+                      ) : (
+                        <p className="text-[#7a8b7f]">{selectedUser.position}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {selectedUser.role === 'partner' && selectedUser.specialization && (
+                    <div className="bg-[#f4f7f4] rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FiStar className="text-[#5a8f6f]" />
+                        <span className="text-sm font-semibold text-[#1e4029]">Domaine d'expertise</span>
+                      </div>
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          value={editFormData.specialization}
+                          onChange={(e) => setEditFormData(prev => ({ ...prev, specialization: e.target.value }))}
+                          className="w-full px-3 py-2 bg-white border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors text-[#1e4029]"
+                        />
+                      ) : (
+                        <p className="text-[#7a8b7f]">{selectedUser.specialization}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Adresses professionnelles */}
+                  {((selectedUser.role === 'client' || selectedUser.role === 'collaborator') && selectedUser.address) ||
+                   (selectedUser.role === 'partner' && selectedUser.professionalAddress) ? (
+                    <div className="bg-[#f4f7f4] rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FiMapPin className="text-[#5a8f6f]" />
+                        <span className="text-sm font-semibold text-[#1e4029]">Adresse professionnelle</span>
+                      </div>
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          value={selectedUser.role === 'partner' ? editFormData.professionalAddress : editFormData.address}
+                          onChange={(e) => setEditFormData(prev => ({
+                            ...prev,
+                            [selectedUser.role === 'partner' ? 'professionalAddress' : 'address']: e.target.value
+                          }))}
+                          className="w-full px-3 py-2 bg-white border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors text-[#1e4029]"
+                        />
+                      ) : (
+                        <p className="text-[#7a8b7f]">
+                          {selectedUser.role === 'partner' ? selectedUser.professionalAddress : selectedUser.address}
+                        </p>
+                      )}
+                    </div>
+                  ) : null}
+
+                  {/* Emails professionnels */}
+                  {((selectedUser.role === 'client' || selectedUser.role === 'collaborator') && selectedUser.companyEmail) ||
+                   (selectedUser.role === 'partner' && selectedUser.professionalEmail) ? (
+                    <div className="bg-[#f4f7f4] rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FiMail className="text-[#5a8f6f]" />
+                        <span className="text-sm font-semibold text-[#1e4029]">Email professionnel</span>
+                      </div>
+                      {isEditMode ? (
+                        <input
+                          type="email"
+                          value={selectedUser.role === 'partner' ? editFormData.professionalEmail : editFormData.companyEmail}
+                          onChange={(e) => setEditFormData(prev => ({
+                            ...prev,
+                            [selectedUser.role === 'partner' ? 'professionalEmail' : 'companyEmail']: e.target.value
+                          }))}
+                          className="w-full px-3 py-2 bg-white border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors text-[#1e4029]"
+                        />
+                      ) : (
+                        <p className="text-[#7a8b7f]">
+                          {selectedUser.role === 'partner' ? selectedUser.professionalEmail : selectedUser.companyEmail}
+                        </p>
+                      )}
+                    </div>
+                  ) : null}
+
+                  {/* Téléphones professionnels */}
+                  {((selectedUser.role === 'client' || selectedUser.role === 'collaborator') && selectedUser.companyPhone) ||
+                   (selectedUser.role === 'partner' && selectedUser.professionalPhone) ? (
+                    <div className="bg-[#f4f7f4] rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FiPhone className="text-[#5a8f6f]" />
+                        <span className="text-sm font-semibold text-[#1e4029]">Téléphone professionnel</span>
+                      </div>
+                      {isEditMode ? (
+                        <input
+                          type="tel"
+                          value={selectedUser.role === 'partner' ? editFormData.professionalPhone : editFormData.companyPhone}
+                          onChange={(e) => setEditFormData(prev => ({
+                            ...prev,
+                            [selectedUser.role === 'partner' ? 'professionalPhone' : 'companyPhone']: e.target.value
+                          }))}
+                          className="w-full px-3 py-2 bg-white border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors text-[#1e4029]"
+                        />
+                      ) : (
+                        <p className="text-[#7a8b7f]">
+                          {selectedUser.role === 'partner' ? selectedUser.professionalPhone : selectedUser.companyPhone}
+                        </p>
+                      )}
+                    </div>
+                  ) : null}
+
+                  {/* Sites web */}
+                  {selectedUser.website && (
+                    <div className="bg-[#f4f7f4] rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FiGlobe className="text-[#5a8f6f]" />
+                        <span className="text-sm font-semibold text-[#1e4029]">Site web</span>
+                      </div>
+                      {isEditMode ? (
+                        <input
+                          type="url"
+                          value={editFormData.website}
+                          onChange={(e) => setEditFormData(prev => ({ ...prev, website: e.target.value }))}
+                          className="w-full px-3 py-2 bg-white border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors text-[#1e4029]"
+                        />
+                      ) : (
+                        <p className="text-[#7a8b7f]">{selectedUser.website}</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -505,11 +985,6 @@ const UserManagement = () => {
                                 <span className="text-sm text-[#1e4029] font-medium">
                                   {team?.name || 'Équipe assignée'}
                                 </span>
-                                {team?.department && (
-                                  <span className="text-xs text-[#7a8b7f] uppercase tracking-wide">
-                                    {team.department}
-                                  </span>
-                                )}
                               </div>
                             </div>
                           ))}
@@ -542,13 +1017,30 @@ const UserManagement = () => {
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 p-6 border-t border-[#dfe8e1]">
-              <button
-                onClick={() => setIsDetailsModalOpen(false)}
-                className="px-4 py-2 text-[#7a8b7f] bg-white border border-[#dfe8e1] rounded-xl hover:bg-[#f4f7f4] transition-colors font-medium"
-              >
-                Fermer
-              </button>
+            <div className="flex justify-end gap-3 p-6 border-t border-[#dfe8e1] flex-shrink-0">
+              {isEditMode ? (
+                <>
+                  <button
+                    onClick={() => setIsEditMode(false)}
+                    className="px-4 py-2 text-[#7a8b7f] bg-white border border-[#dfe8e1] rounded-xl hover:bg-[#f4f7f4] transition-colors font-medium"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleSaveUserEdit}
+                    className="px-4 py-2 bg-[#5a8f6f] text-white rounded-xl hover:bg-[#4a7f5f] transition-colors font-medium"
+                  >
+                    Sauvegarder
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setIsDetailsModalOpen(false)}
+                  className="px-4 py-2 text-[#7a8b7f] bg-white border border-[#dfe8e1] rounded-xl hover:bg-[#f4f7f4] transition-colors font-medium"
+                >
+                  Fermer
+                </button>
+              )}
             </div>
           </div>
         </div>

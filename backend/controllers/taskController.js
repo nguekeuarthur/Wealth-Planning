@@ -207,14 +207,33 @@ const updateTaskStatus = async (req, res) => {
       return res.status(403).json({ message: "Not authorized" });
     }
 
+    const oldStatus = task.status;
     task.status = req.body.status || task.status;
 
-    if (task.status === "Completed") {
+    if (task.status === "completed") {
       task.todoChecklist.forEach((item) => (item.completed = true));
       task.progress = 100;
     }
 
     await task.save();
+
+    // Mettre à jour automatiquement la progression du projet parent
+    if (task.project && (oldStatus !== task.status)) {
+      const Project = require('../models/Project');
+      const project = await Project.findById(task.project).populate('tasks');
+
+      if (project && project.tasks.length > 0) {
+        const totalTasks = project.tasks.length;
+        const completedTasks = project.tasks.filter(t => t.status === 'Completed').length;
+        const calculatedCompletion = Math.round((completedTasks / totalTasks) * 100);
+
+        if (project.completion !== calculatedCompletion) {
+          project.completion = calculatedCompletion;
+          await project.save();
+        }
+      }
+    }
+
     res.json({ message: "Task status updated", task });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -257,6 +276,24 @@ const updateTaskChecklist = async (req, res) => {
     }
 
     await task.save();
+
+    // Mettre à jour automatiquement la progression du projet parent
+    if (task.project) {
+      const Project = require('../models/Project');
+      const project = await Project.findById(task.project).populate('tasks');
+
+      if (project && project.tasks.length > 0) {
+        const totalTasks = project.tasks.length;
+        const completedTasks = project.tasks.filter(t => t.status === 'Completed').length;
+        const calculatedCompletion = Math.round((completedTasks / totalTasks) * 100);
+
+        if (project.completion !== calculatedCompletion) {
+          project.completion = calculatedCompletion;
+          await project.save();
+        }
+      }
+    }
+
     const updatedTask = await Task.findById(req.params.id).populate(
       "assignedTo",
       "name email profileImageUrl"

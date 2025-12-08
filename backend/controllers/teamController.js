@@ -45,7 +45,7 @@ const getTeamById = async (req, res) => {
 // @access  Private (Admin)
 const createTeam = async (req, res) => {
   try {
-    const { name, description, leader, members, company, department, color } = req.body;
+    const { name, description, leader, members, company, color } = req.body;
 
     // Validate required fields
     if (!name || !leader) {
@@ -79,7 +79,6 @@ const createTeam = async (req, res) => {
       leader,
       members: members || [],
       company: company?.trim(),
-      department: department || "OTHER",
       color: color || "#5a8f6f"
     });
 
@@ -114,7 +113,7 @@ const createTeam = async (req, res) => {
 // @access  Private (Admin)
 const updateTeam = async (req, res) => {
   try {
-    const { name, description, leader, members, company, department, color, isActive } = req.body;
+    const { name, description, leader, members, company, color, isActive } = req.body;
 
     const team = await Team.findById(req.params.id);
     if (!team) {

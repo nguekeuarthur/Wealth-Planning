@@ -17,10 +17,12 @@ export const API_PATHS = {
 
   USERS: {
     GET_ALL_USERS: "/api/users", // Get all users (Admin only)
+    GET_COMPANIES: "/api/users/companies", // Get company names for autocomplete (Authenticated users)
     GET_USER_BY_ID: (userId) => `/api/users/${userId}`, // Get user by ID
     CREATE_USER: "/api/users", // Create a new user (Admin only)
     UPDATE_USER: (userId) => `/api/users/${userId}`, // Update user details
     DELETE_USER: (userId) => `/api/users/${userId}`, // Delete a user
+    GET_DELETED_USERS: "/api/users/deleted", // Get deleted users (Admin only)
   },
 
   CLIENTS: {

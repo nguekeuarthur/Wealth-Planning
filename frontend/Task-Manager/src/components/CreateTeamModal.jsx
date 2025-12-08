@@ -14,29 +14,19 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
     leader: "",
     members: [],
     company: "",
-    department: "",
     color: "#5a8f6f"
   });
 
   const [availableUsers, setAvailableUsers] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [leaderSearch, setLeaderSearch] = useState("");
   const [memberSearch, setMemberSearch] = useState("");
+  const [companySearch, setCompanySearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
   const [showLeaderDropdown, setShowLeaderDropdown] = useState(false);
   const [showMemberDropdown, setShowMemberDropdown] = useState(false);
-
-  const departments = [
-    "DEVELOPMENT",
-    "DESIGN",
-    "MARKETING",
-    "SALES",
-    "SUPPORT",
-    "MANAGEMENT",
-    "HR",
-    "FINANCE",
-    "LEGAL",
-    "OTHER"
-  ];
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
 
   const teamColors = [
     "#5a8f6f", // Primary green
@@ -61,7 +51,6 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
           leader: editTeam.leader?._id || "",
           members: editTeam.members?.map(m => m._id) || [],
           company: editTeam.company || "",
-          department: editTeam.department || "",
           color: editTeam.color || "#5a8f6f"
         });
       } else {
@@ -71,14 +60,44 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
           leader: "",
           members: [],
           company: "",
-          department: "",
           color: "#5a8f6f"
         });
       }
       setLeaderSearch("");
       setMemberSearch("");
+      setCompanySearch("");
+
+      // Charger les entreprises si la modal est ouverte
+      if (isOpen) {
+        loadCompanies();
+      }
     }
   }, [isOpen, editTeam]);
+
+  const loadCompanies = async () => {
+    try {
+      setLoadingCompanies(true);
+      const response = await axiosInstance.get(API_PATHS.USERS.GET_COMPANIES);
+      const companies = response.data?.companies || [];
+      setCompanies(companies);
+    } catch (error) {
+      console.error('Erreur lors du chargement des entreprises:', error);
+    } finally {
+      setLoadingCompanies(false);
+    }
+  };
+
+  // Fermer les dropdowns quand on clique ailleurs
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.company-dropdown-container')) {
+        setShowCompanyDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const getAvailableUsers = async () => {
     try {
@@ -92,6 +111,20 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Gestionnaire spécial pour le champ entreprise
+  const handleCompanyChange = (value) => {
+    setCompanySearch(value);
+    setFormData(prev => ({ ...prev, company: value }));
+    setShowCompanyDropdown(value.length > 0);
+  };
+
+  // Sélection d'une entreprise depuis les suggestions
+  const selectCompany = (company) => {
+    setCompanySearch(company.name);
+    setFormData(prev => ({ ...prev, company: company.name }));
+    setShowCompanyDropdown(false);
   };
 
   const handleLeaderSelect = (user) => {
@@ -218,21 +251,53 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-[#1e4029] mb-2">
-                  Entreprise
-                </label>
-                <div className="relative">
-                  <FiBriefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#7a8b7f]" />
-                  <input
-                    type="text"
-                    value={formData.company}
-                    onChange={(e) => handleInputChange("company", e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors"
-                    placeholder="Nom de l'entreprise"
-                  />
-                </div>
+            <div className="company-dropdown-container">
+              <label className="block text-sm font-semibold text-[#1e4029] mb-2">
+                Entreprise
+              </label>
+              <div className="relative">
+                <FiBriefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#7a8b7f]" />
+                <input
+                  type="text"
+                  value={companySearch}
+                  onChange={(e) => handleCompanyChange(e.target.value)}
+                  onFocus={() => companySearch && setShowCompanyDropdown(true)}
+                  className="w-full pl-10 pr-4 py-3 border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors"
+                  placeholder="Nom de l'entreprise"
+                />
+
+                {/* Dropdown des suggestions d'entreprises */}
+                {showCompanyDropdown && (companySearch || companies.length > 0) && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-[#dfe8e1] rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                    {loadingCompanies ? (
+                      <div className="px-4 py-3 text-sm text-[#7a8b7f]">Chargement...</div>
+                    ) : (
+                      <>
+                        {/* Suggestions filtrées */}
+                        {companies
+                          .filter(company =>
+                            company.name.toLowerCase().includes(companySearch.toLowerCase())
+                          )
+                          .map((company) => (
+                            <div
+                              key={company.name}
+                              className="px-4 py-3 hover:bg-[#f4f7f4] cursor-pointer border-b border-[#f4f7f4] last:border-b-0"
+                              onClick={() => selectCompany(company)}
+                            >
+                              <div className="font-medium text-[#1e4029]">{company.name}</div>
+                              <div className="text-xs text-[#7a8b7f]">
+                                {company.employeeCount} employé{company.employeeCount > 1 ? 's' : ''}
+                                {company.industry && ` • ${company.industry}`}
+                              </div>
+                            </div>
+                          ))}
+
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
+            </div>
             </div>
 
             <div>
@@ -248,24 +313,8 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
               />
             </div>
 
-            {/* Department and Color */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-[#1e4029] mb-2">
-                  Département
-                </label>
-                <select
-                  value={formData.department}
-                  onChange={(e) => handleInputChange("department", e.target.value)}
-                  className="w-full px-4 py-3 border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] cursor-pointer transition-colors"
-                >
-                  <option value="">Sélectionner un département</option>
-                  {departments.map(dept => (
-                    <option key={dept} value={dept}>{dept}</option>
-                  ))}
-                </select>
-              </div>
-
+            {/* Team Color */}
+            <div>
               <div>
                 <label className="block text-sm font-semibold text-[#1e4029] mb-2">
                   Couleur de l'équipe

@@ -157,11 +157,127 @@ const deleteUser = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Créer une trace de l'utilisateur supprimé
+    const DeletedUser = require("../models/DeletedUser");
+    const deletedUserTrace = new DeletedUser({
+      originalUserId: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      profileImageUrl: user.profileImageUrl,
+      phoneNumber: user.phoneNumber,
+      birthDate: user.birthDate,
+      nationality: user.nationality,
+      nationality2: user.nationality2,
+      gender: user.gender,
+      role: user.role,
+      company: user.company,
+      address: user.address,
+      website: user.website,
+      companySize: user.companySize,
+      industry: user.industry,
+      contactName: user.contactName,
+      companyEmail: user.companyEmail,
+      companyPhone: user.companyPhone,
+      status: user.status,
+      notes: user.notes,
+      organizationName: user.organizationName,
+      position: user.position,
+      professionalPhone: user.professionalPhone,
+      professionalEmail: user.professionalEmail,
+      professionalAddress: user.professionalAddress,
+      specialization: user.specialization,
+      experience: user.experience,
+      deletedBy: req.user.id, // ID de l'admin qui supprime
+      deletionReason: req.body.reason || "Supprimé par l'administrateur"
+    });
+
+    await deletedUserTrace.save();
+
+    // Supprimer l'utilisateur
     await User.findByIdAndDelete(req.params.id);
-    res.json({ message: "User deleted successfully" });
+
+    res.json({
+      message: "User deleted successfully",
+      traceCreated: true
+    });
   } catch (error) {
+    console.error("Error deleting user:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-module.exports = { getUsers, getUserById, createUser, updateUser, deleteUser };
+// @desc    Get deleted users (Admin only)
+// @route   GET /api/users/deleted
+// @access  Private (Admin)
+const getDeletedUsers = async (req, res) => {
+  try {
+    const DeletedUser = require("../models/DeletedUser");
+    const deletedUsers = await DeletedUser.find({})
+      .sort({ deletedAt: -1 }) // Plus récent en premier
+      .limit(50); // Limiter aux 50 plus récents
+
+    res.json({ users: deletedUsers });
+  } catch (error) {
+    console.error("Error fetching deleted users:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Get distinct company names for autocomplete
+// @route   GET /api/users/companies
+// @access  Private (Authenticated users)
+const getCompanyNames = async (req, res) => {
+  try {
+    // Récupérer les détails complets des entreprises
+    const companyDetails = await User.aggregate([
+      {
+        $match: {
+          company: { $exists: true, $ne: null, $ne: '' },
+          role: 'client'
+        }
+      },
+      {
+        $group: {
+          _id: { $toLower: '$company' }, // Grouper par nom en minuscules pour éviter les doublons
+          name: { $first: '$company' },
+          industry: { $first: '$industry' },
+          address: { $first: '$address' },
+          website: { $first: '$website' },
+          companyEmail: { $first: '$companyEmail' },
+          companyPhone: { $first: '$companyPhone' },
+          companySize: { $first: '$companySize' },
+          notes: { $first: '$notes' },
+          employeeCount: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          name: 1,
+          industry: 1,
+          address: 1,
+          website: 1,
+          companyEmail: 1,
+          companyPhone: 1,
+          companySize: 1,
+          notes: 1,
+          employeeCount: 1
+        }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      companies: companyDetails
+    });
+  } catch (error) {
+    console.error('Erreur lors de la récupération des entreprises:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur serveur',
+      error: error.message
+    });
+  }
+};
+
+module.exports = { getUsers, getUserById, createUser, updateUser, deleteUser, getDeletedUsers, getCompanyNames };

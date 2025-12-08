@@ -315,7 +315,6 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
                               <span className="text-[#5a8f6f] text-xs">✓ Sélectionné</span>
                             )}
                           </div>
-                          <p className="text-xs text-[#7a8b7f] uppercase mb-2">{team.department}</p>
                           <div className="flex items-center gap-2">
                             {team.leader.profileImageUrl ? (
                               <img

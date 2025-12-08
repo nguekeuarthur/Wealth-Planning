@@ -45,7 +45,7 @@ const AllProjects = () => {
     }
 
     const totalTasks = project.tasks.length;
-    const completedTasks = project.tasks.filter(task => task.status === 'completed').length;
+    const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
     const calculatedCompletion = Math.round((completedTasks / totalTasks) * 100);
 
     // Si la progression calculée diffère de celle stockée, on peut la mettre à jour automatiquement
@@ -295,9 +295,9 @@ const AllProjects = () => {
   // Fonction pour calculer les métriques d'un projet
   const calculateProjectMetrics = (project) => {
     const totalTasks = project.tasks?.length || 0;
-    const completedTasks = project.tasks?.filter(task => task.status === 'completed').length || 0;
+    const completedTasks = project.tasks?.filter(task => task.status === 'Completed').length || 0;
     const overdueTasks = project.tasks?.filter(task => {
-      if (!task.dueDate || task.status === 'completed') return false;
+      if (!task.dueDate || task.status === 'Completed') return false;
       return new Date(task.dueDate) < new Date();
     }).length || 0;
 

@@ -14,9 +14,9 @@ import ManageUsers from "./pages/Admin/ManageUsers";
 import AllProjects from "./pages/Admin/AllProjects";
 import ArchivedProjects from "./pages/Admin/ArchivedProjects";
 import ProjectDetails from "./pages/Admin/ProjectDetails";
-import AllClients from "./pages/Admin/AllClients";
 import ClientDetails from "./pages/Admin/ClientDetails";
 import UserManagement from "./pages/Admin/UserManagement";
+import DeletedUsers from "./pages/Admin/DeletedUsers";
 import TeamMemberDetails from "./pages/Admin/TeamMemberDetails";
 import AllInvoices from "./pages/Admin/AllInvoices";
 import AllContracts from "./pages/Admin/AllContracts";
@@ -72,9 +72,9 @@ const App = () => {
               <Route path="/admin/projects" element={<AllProjects />} />
               <Route path="/admin/projects/archived" element={<ArchivedProjects />} />
               <Route path="/admin/project/:id" element={<ProjectDetails />} />
-              <Route path="/admin/clients" element={<AllClients />} />
               <Route path="/admin/client/:id" element={<ClientDetails />} />
               <Route path="/admin/team" element={<UserManagement />} />
+              <Route path="/admin/deleted-users" element={<DeletedUsers />} />
               <Route path="/admin/team/:id" element={<TeamMemberDetails />} />
               <Route path="/admin/invoices" element={<AllInvoices />} />
               <Route path="/admin/contracts" element={<AllContracts />} />

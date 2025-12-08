@@ -15,26 +15,12 @@ const AllTeams = () => {
   const [allTeams, setAllTeams] = useState([]);
   const [filteredTeams, setFilteredTeams] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState(null);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
-  const departments = [
-    "All Departments",
-    "DEVELOPMENT",
-    "DESIGN",
-    "MARKETING",
-    "SALES",
-    "SUPPORT",
-    "MANAGEMENT",
-    "HR",
-    "FINANCE",
-    "LEGAL",
-    "OTHER"
-  ];
 
   const getAllTeams = async () => {
     try {
@@ -68,15 +54,9 @@ const AllTeams = () => {
       );
     }
 
-    // Filter by department
-    if (selectedDepartment !== "all" && selectedDepartment !== "All Departments") {
-      filtered = filtered.filter(
-        (team) => team.department?.toUpperCase() === selectedDepartment.toUpperCase()
-      );
-    }
 
     setFilteredTeams(filtered);
-  }, [searchQuery, selectedDepartment, allTeams]);
+  }, [searchQuery, allTeams]);
 
   const handleAddTeam = () => {
     setEditingTeam(null);
@@ -115,21 +95,6 @@ const AllTeams = () => {
     }
   };
 
-  const getDepartmentColor = (department) => {
-    const colors = {
-      "DEVELOPMENT": "bg-blue-50 text-blue-700 border-blue-200",
-      "DESIGN": "bg-purple-50 text-purple-700 border-purple-200",
-      "MARKETING": "bg-green-50 text-green-700 border-green-200",
-      "SALES": "bg-yellow-50 text-yellow-700 border-yellow-200",
-      "SUPPORT": "bg-red-50 text-red-700 border-red-200",
-      "MANAGEMENT": "bg-indigo-50 text-indigo-700 border-indigo-200",
-      "HR": "bg-pink-50 text-pink-700 border-pink-200",
-      "FINANCE": "bg-emerald-50 text-emerald-700 border-emerald-200",
-      "LEGAL": "bg-slate-50 text-slate-700 border-slate-200",
-      "OTHER": "bg-gray-50 text-gray-700 border-gray-200"
-    };
-    return colors[department] || colors["OTHER"];
-  };
 
   if (loading) {
     return (
@@ -182,31 +147,17 @@ const AllTeams = () => {
       </div>
 
       <div className="space-y-6">
-        {/* Search and Filter */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="md:col-span-2">
-            <div className="relative">
-              <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#7a8b7f]" />
-              <input
-                type="text"
-                placeholder="Rechercher par nom d'équipe, description ou chef..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors"
-              />
-            </div>
-          </div>
-          <div>
-            <select
-              value={selectedDepartment}
-              onChange={(e) => setSelectedDepartment(e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] cursor-pointer transition-colors"
-            >
-              <option value="all">Tous les départements</option>
-              {departments.slice(1).map((department) => (
-                <option key={department} value={department}>{department}</option>
-              ))}
-            </select>
+        {/* Search */}
+        <div className="grid grid-cols-1 gap-4">
+          <div className="relative">
+            <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#7a8b7f]" />
+            <input
+              type="text"
+              placeholder="Rechercher par nom d'équipe, description ou chef..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-11 pr-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors"
+            />
           </div>
         </div>
 
@@ -247,14 +198,6 @@ const AllTeams = () => {
                     )}
                   </div>
 
-                  {/* Department Badge */}
-                  {team.department && (
-                    <div className="mb-4">
-                      <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold border ${getDepartmentColor(team.department)}`}>
-                        {team.department}
-                      </span>
-                    </div>
-                  )}
 
                   {/* Leader Info */}
                   <div className="mb-4">
@@ -339,9 +282,9 @@ const AllTeams = () => {
       {/* Team Details Modal */}
       {isDetailsModalOpen && selectedTeam && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-[#dfe8e1]">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            {/* Header - Fixed */}
+            <div className="flex items-center justify-between p-6 border-b border-[#dfe8e1] flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div
                   className="p-2 rounded-lg"
@@ -366,9 +309,9 @@ const AllTeams = () => {
               </button>
             </div>
 
-            {/* Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-              <div className="space-y-6">
+            {/* Content - Scrollable */}
+            <div className="overflow-y-auto flex-1">
+              <div className="space-y-6 p-6">
                 {/* Basic Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-[#f4f7f4] rounded-xl p-4">
@@ -379,13 +322,6 @@ const AllTeams = () => {
                     <p className="text-[#7a8b7f]">{selectedTeam.company || 'Non spécifiée'}</p>
                   </div>
 
-                  <div className="bg-[#f4f7f4] rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <FiUsers className="text-[#5a8f6f]" />
-                      <span className="text-sm font-semibold text-[#1e4029]">Département</span>
-                    </div>
-                    <p className="text-[#7a8b7f]">{selectedTeam.department || 'Non spécifié'}</p>
-                  </div>
                 </div>
 
                 {/* Description */}
@@ -470,8 +406,8 @@ const AllTeams = () => {
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex justify-end gap-3 p-6 border-t border-[#dfe8e1]">
+            {/* Actions - Fixed Footer */}
+            <div className="flex justify-end gap-3 p-6 border-t border-[#dfe8e1] flex-shrink-0">
               <button
                 onClick={() => {
                   setIsDetailsModalOpen(false);

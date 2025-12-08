@@ -5,11 +5,11 @@ import axiosInstance from "../utils/axiosInstance";
 import { API_PATHS } from "../utils/apiPaths";
 import toast from "react-hot-toast";
 
-const CreateTeamMemberModal = ({ isOpen, onClose, onClientCreated, editClient = null }) => {
+const CreateTeamMemberModal = ({ isOpen, onClose, onClientCreated, editClient = null }) => { // eslint-disable-line no-unused-vars
   const [formData, setFormData] = useState({
     selectedUser: null,
     role: "member",
-    industry: "",
+    company: "",
   });
 
   const [users, setUsers] = useState([]);
@@ -17,19 +17,12 @@ const CreateTeamMemberModal = ({ isOpen, onClose, onClientCreated, editClient = 
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
 
-  const industries = [
-    "REAL ESTATE",
-    "LEGAL",
-    "AUTOMOTIVE",
-    "FINANCE",
-    "TECHNOLOGY",
-    "HEALTHCARE",
-    "RETAIL",
-    "MANUFACTURING",
-    "CONSULTING",
-    "OTHER"
-  ];
+  // Liste des entreprises récupérée dynamiquement
+  const [companies, setCompanies] = useState([]);
+  const [companySearch, setCompanySearch] = useState("");
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
 
   const roles = [
     { value: "member", label: "Utilisateur" },
@@ -41,6 +34,7 @@ const CreateTeamMemberModal = ({ isOpen, onClose, onClientCreated, editClient = 
     const loadData = async () => {
       try {
         setLoadingUsers(true);
+        setLoadingCompanies(true);
 
         // Charger tous les utilisateurs (pour la recherche)
         const usersResponse = await axiosInstance.get(API_PATHS.USERS.GET_ALL_USERS);
@@ -48,11 +42,17 @@ const CreateTeamMemberModal = ({ isOpen, onClose, onClientCreated, editClient = 
         console.log("Utilisateurs chargés:", allUsers.slice(0, 3)); // Debug: voir la structure
         setUsers(allUsers);
 
+        // Charger les entreprises via l'API dédiée
+        const companiesResponse = await axiosInstance.get(API_PATHS.USERS.GET_COMPANIES);
+        const companies = companiesResponse.data?.companies || [];
+        setCompanies(companies);
+
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error);
         toast.error("Erreur lors du chargement des données");
       } finally {
         setLoadingUsers(false);
+        setLoadingCompanies(false);
       }
     };
 
@@ -60,6 +60,18 @@ const CreateTeamMemberModal = ({ isOpen, onClose, onClientCreated, editClient = 
       loadData();
     }
   }, [isOpen]);
+
+  // Fermer les dropdowns quand on clique ailleurs
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.company-dropdown')) {
+        setShowCompanyDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -87,10 +99,10 @@ const CreateTeamMemberModal = ({ isOpen, onClose, onClientCreated, editClient = 
 
     setLoading(true);
     try {
-      // Mettre à jour le rôle et l'industrie de l'utilisateur
+      // Mettre à jour le rôle et l'entreprise de l'utilisateur
       const updateData = {
         role: formData.role,
-        industry: formData.industry,
+        company: formData.company,
       };
 
       const response = await axiosInstance.put(
@@ -113,7 +125,7 @@ const CreateTeamMemberModal = ({ isOpen, onClose, onClientCreated, editClient = 
     setFormData({
       selectedUser: null,
       role: "member",
-      industry: "",
+      company: "",
     });
     setUserSearch("");
     setShowUserDropdown(false);
@@ -267,31 +279,57 @@ const CreateTeamMemberModal = ({ isOpen, onClose, onClientCreated, editClient = 
         </div>
 
 
-        {/* Secteur d'activité */}
-        <div>
+        {/* Entreprise cliente */}
+        <div className="relative company-dropdown">
           <label className="block text-sm font-semibold text-[#1e4029] mb-2">
-            Secteur d'activité
+            Entreprise cliente
           </label>
-          <select
-            name="industry"
-            value={formData.industry}
-            onChange={handleInputChange}
-            className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-all appearance-none cursor-pointer text-sm text-[#1e4029]"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%237a8b7f' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-              backgroundPosition: "right 1rem center",
-              backgroundRepeat: "no-repeat",
-              backgroundSize: "1.5em 1.5em",
-              paddingRight: "3rem"
-            }}
-          >
-            <option value="">Sélectionner un secteur</option>
-            {industries.map((industry) => (
-              <option key={industry} value={industry}>
-                {industry}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <input
+              type="text"
+              value={companySearch}
+              onChange={(e) => {
+                setCompanySearch(e.target.value);
+                setFormData(prev => ({ ...prev, company: e.target.value }));
+                setShowCompanyDropdown(true);
+              }}
+              onFocus={() => setShowCompanyDropdown(true)}
+              placeholder="Tapez le nom de l'entreprise..."
+              className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-all text-[#1e4029] placeholder-[#7a8b7f]"
+            />
+
+            {/* Dropdown des suggestions */}
+            {showCompanyDropdown && (companySearch || companies.length > 0) && (
+              <div className="absolute z-50 w-full mt-1 bg-white border border-[#dfe8e1] rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                {loadingCompanies ? (
+                  <div className="px-4 py-3 text-sm text-[#7a8b7f]">Chargement...</div>
+                ) : (
+                  <>
+                    {/* Suggestions filtrées */}
+                    {companies
+                      .filter(company =>
+                        company.name.toLowerCase().includes(companySearch.toLowerCase())
+                      )
+                      .map((company) => (
+                        <div
+                          key={company.name}
+                          className="px-4 py-3 hover:bg-[#f4f7f4] cursor-pointer border-b border-[#f4f7f4] last:border-b-0"
+                          onClick={() => {
+                            setCompanySearch(company.name);
+                            setFormData(prev => ({ ...prev, company: company.name }));
+                            setShowCompanyDropdown(false);
+                          }}
+                        >
+                          <div className="font-medium text-[#1e4029]">{company.name}</div>
+                          <div className="text-xs text-[#7a8b7f]">{company.count} employé{company.count > 1 ? 's' : ''}</div>
+                        </div>
+                      ))}
+
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Actions */}

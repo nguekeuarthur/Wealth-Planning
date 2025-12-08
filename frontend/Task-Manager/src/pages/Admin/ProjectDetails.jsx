@@ -340,10 +340,10 @@ const ProjectDetails = () => {
   const calculateProjectMetrics = (data) => {
     const totalTasks = data?.tasks?.length || 0;
     const completedTasks =
-      data?.tasks?.filter((task) => task.status === "completed").length || 0;
+      data?.tasks?.filter((task) => task.status === "Completed").length || 0;
     const overdueTasks =
       data?.tasks?.filter((task) => {
-        if (!task.dueDate || task.status === "completed") return false;
+        if (!task.dueDate || task.status === "Completed") return false;
         return new Date(task.dueDate) < new Date();
       }).length || 0;
 
@@ -766,8 +766,7 @@ const ProjectDetails = () => {
                           {(project.tasks || [])
                             .filter(
                               (task) =>
-                                task.status === "Completed" ||
-                                task.status === "completed"
+                                task.status === "Completed"
                             )
                             .map((task) =>
                               renderTaskCard(task, {
@@ -1447,9 +1446,6 @@ const ProjectDetails = () => {
                           </div>
                             <div className="flex-1 text-left">
                               <h4 className="font-semibold text-[#1e4029]">{team.name}</h4>
-                              {team.department && (
-                                <p className="text-xs text-[#7a8b7f] uppercase">{team.department}</p>
-                              )}
                               {team.members && (
                                 <p className="text-xs text-[#7a8b7f] mt-1">
                                   {team.members.length} membre{team.members.length > 1 ? 's' : ''}

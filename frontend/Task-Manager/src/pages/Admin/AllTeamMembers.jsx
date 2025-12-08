@@ -278,7 +278,12 @@ const UserManagement = () => {
                     }`}
                   >
                     <span className="text-white text-xs font-semibold uppercase tracking-wider">
-                      {user.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
+                      {user.role === 'admin' ? 'Administrateur' :
+                       user.role === 'member' ? 'Membre' :
+                       user.role === 'client' ? 'Client' :
+                       user.role === 'partner' ? 'Partenaire' :
+                       user.role === 'collaborator' ? 'Collaborateur' :
+                       'Utilisateur'}
                     </span>
                   </div>
                       
@@ -419,4 +424,4 @@ const UserManagement = () => {
   );
 };
 
-export default AllClients;
+export default UserManagement;

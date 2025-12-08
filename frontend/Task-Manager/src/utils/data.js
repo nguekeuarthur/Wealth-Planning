@@ -25,12 +25,6 @@ import {
       path: "/admin/projects",
     },
     {
-      id: "03",
-      label: "Clients",
-      icon: LuUserCheck,
-      path: "/admin/clients",
-    },
-    {
       id: "04",
       label: "Utilisateurs",
       icon: LuUserCheck,

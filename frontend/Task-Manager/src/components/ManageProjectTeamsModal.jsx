@@ -58,8 +58,7 @@ const ManageProjectTeamsModal = ({ isOpen, onClose, project, onUpdate }) => {
   };
 
   const filteredTeams = allTeams.filter(team =>
-    team.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    team.department?.toLowerCase().includes(searchQuery.toLowerCase())
+    team.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const isTeamSelected = (teamId) => selectedTeams.includes(teamId);
@@ -108,9 +107,6 @@ const ManageProjectTeamsModal = ({ isOpen, onClose, project, onUpdate }) => {
                       </div>
                       <div>
                         <h4 className="font-semibold text-[#1e4029]">{team.name}</h4>
-                        {team.department && (
-                          <p className="text-xs text-[#7a8b7f] uppercase">{team.department}</p>
-                        )}
                       </div>
                       {isTeamSelected(team._id) && (
                         <div className="ml-auto">

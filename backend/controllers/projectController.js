@@ -29,6 +29,23 @@ exports.getAllProjects = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
+    // Mettre à jour automatiquement la progression pour chaque projet
+    for (const project of projects) {
+      if (project.tasks && project.tasks.length > 0) {
+        const totalTasks = project.tasks.length;
+        const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
+        const calculatedCompletion = Math.round((completedTasks / totalTasks) * 100);
+
+        if (project.completion !== calculatedCompletion) {
+          project.completion = calculatedCompletion;
+          await project.save();
+        }
+      } else if (project.completion !== 0) {
+        project.completion = 0;
+        await project.save();
+      }
+    }
+
     res.json({ projects });
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur', error: error.message });
@@ -81,6 +98,23 @@ exports.getProjectById = async (req, res) => {
     // Check permissions
     if (req.user.role !== 'admin' && project.client.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Accès refusé' });
+    }
+
+    // Calculer automatiquement la progression basée sur les tâches terminées
+    if (project.tasks && project.tasks.length > 0) {
+      const totalTasks = project.tasks.length;
+      const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
+      const calculatedCompletion = Math.round((completedTasks / totalTasks) * 100);
+
+      // Mettre à jour la progression si elle a changé
+      if (project.completion !== calculatedCompletion) {
+        project.completion = calculatedCompletion;
+        await project.save();
+      }
+    } else if (project.completion !== 0) {
+      // Si pas de tâches, la progression devrait être 0
+      project.completion = 0;
+      await project.save();
     }
 
     res.json({ project });

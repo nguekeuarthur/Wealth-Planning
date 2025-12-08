@@ -9,6 +9,8 @@ const UserSchema = new mongoose.Schema(
     phoneNumber: { type: String, default: null },
     birthDate: { type: Date, required: false, default: null },
     nationality: { type: String, required: false, trim: true, default: null },
+    nationality2: { type: String, required: false, trim: true, default: null },
+    gender: { type: String, enum: ["male", "female", "other", null], default: null },
     profileCompleted: { type: Boolean, default: false },
     teams: [{
       type: mongoose.Schema.Types.ObjectId,
@@ -37,7 +39,7 @@ const UserSchema = new mongoose.Schema(
       ],
       default: null 
     },
-    role: { type: String, enum: ["admin", "member"], default: "member" }, // Role-based access
+    role: { type: String, enum: ["admin", "member", "client", "partner", "collaborator"], default: "member" }, // Role-based access
     language: {
       type: String,
       default: "FR",
@@ -52,6 +54,19 @@ const UserSchema = new mongoose.Schema(
     loginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Date, default: null },
     lastLoginAt: { type: Date, default: null },
+    contactName: { type: String, default: null },
+    companyEmail: { type: String, default: null },
+    companyPhone: { type: String, default: null },
+    status: { type: String, enum: ["active", "inactive", "prospect"], default: "active" },
+    notes: { type: String, default: null },
+    // Champs spécifiques aux partenaires
+    organizationName: { type: String, default: null },
+    position: { type: String, default: null },
+    professionalPhone: { type: String, default: null },
+    professionalEmail: { type: String, default: null },
+    professionalAddress: { type: String, default: null },
+    specialization: { type: String, default: null },
+    experience: { type: String, default: null },
   },
   { timestamps: true }
 );

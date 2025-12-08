@@ -655,8 +655,29 @@ const updateUserProfile = async (req, res) => {
       newPassword,
       birthDate,
       nationality,
+      nationality2,
+      gender,
+      role,
       phoneNumber,
       profileCompleted,
+      // Champs supplémentaires pour les clients
+      company,
+      contactName,
+      address,
+      website,
+      companyEmail,
+      companyPhone,
+      companySize,
+      notes,
+      status,
+      // Champs supplémentaires pour les partenaires
+      organizationName,
+      position,
+      professionalPhone,
+      professionalEmail,
+      professionalAddress,
+      specialization,
+      experience,
     } = req.body;
 
     if (name) user.name = name;
@@ -667,8 +688,31 @@ const updateUserProfile = async (req, res) => {
     // Nouveaux champs pour le profil
     if (birthDate) user.birthDate = new Date(birthDate);
     if (nationality) user.nationality = nationality;
+    if (nationality2 !== undefined) user.nationality2 = nationality2;
+    if (gender) user.gender = gender;
+    if (role) user.role = role;
     if (phoneNumber) user.phoneNumber = phoneNumber;
     if (typeof profileCompleted === 'boolean') user.profileCompleted = profileCompleted;
+
+    // Champs supplémentaires pour les clients
+    if (company !== undefined) user.company = company;
+    if (contactName !== undefined) user.contactName = contactName;
+    if (address !== undefined) user.address = address;
+    if (website !== undefined) user.website = website;
+    if (companyEmail !== undefined) user.companyEmail = companyEmail;
+    if (companyPhone !== undefined) user.companyPhone = companyPhone;
+    if (companySize !== undefined) user.companySize = companySize;
+    if (notes !== undefined) user.notes = notes;
+    if (status !== undefined) user.status = status;
+
+    // Champs supplémentaires pour les partenaires
+    if (organizationName !== undefined) user.organizationName = organizationName;
+    if (position !== undefined) user.position = position;
+    if (professionalPhone !== undefined) user.professionalPhone = professionalPhone;
+    if (professionalEmail !== undefined) user.professionalEmail = professionalEmail;
+    if (professionalAddress !== undefined) user.professionalAddress = professionalAddress;
+    if (specialization !== undefined) user.specialization = specialization;
+    if (experience !== undefined) user.experience = experience;
 
     if (email && email !== user.email) {
       const normalizedEmail = normalizeEmail(email);

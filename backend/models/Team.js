@@ -27,22 +27,6 @@ const TeamSchema = new mongoose.Schema(
       trim: true,
       maxlength: 100
     },
-    department: {
-      type: String,
-      enum: [
-        "DEVELOPMENT",
-        "DESIGN",
-        "MARKETING",
-        "SALES",
-        "SUPPORT",
-        "MANAGEMENT",
-        "HR",
-        "FINANCE",
-        "LEGAL",
-        "OTHER"
-      ],
-      default: "OTHER"
-    },
     color: {
       type: String,
       default: "#5a8f6f",
@@ -68,7 +52,6 @@ const TeamSchema = new mongoose.Schema(
 // Index for better query performance
 TeamSchema.index({ leader: 1 });
 TeamSchema.index({ members: 1 });
-TeamSchema.index({ department: 1 });
 
 // Virtual for member count
 TeamSchema.virtual('memberCount').get(function() {
