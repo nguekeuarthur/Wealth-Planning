@@ -1,6 +1,6 @@
 const express = require("express");
 const { adminOnly, protect } = require("../middlewares/authMiddleware");
-const { getUsers, getUserById, createUser, updateUser, deleteUser, getDeletedUsers, getCompanyNames } = require("../controllers/userController");
+const { getUsers, getUserById, createUser, updateUser, deleteUser, getDeletedUsers, getCompanyNames, cleanupDeletedUsers } = require("../controllers/userController");
 
 const router = express.Router();
 
@@ -12,5 +12,6 @@ router.get("/:id", protect, getUserById); // Get a specific user
 router.post("/", protect, adminOnly, createUser); // Create a new user (Admin only)
 router.put("/:id", protect, adminOnly, updateUser); // Update user (Admin only)
 router.delete("/:id", protect, adminOnly, deleteUser); // Delete user (Admin only)
+router.post("/cleanup-deleted", protect, adminOnly, cleanupDeletedUsers); // Clean up orphaned deleted users (Admin only)
 
 module.exports = router;

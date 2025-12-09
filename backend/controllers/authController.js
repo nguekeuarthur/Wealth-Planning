@@ -198,9 +198,20 @@ const registerUser = async (req, res) => {
     }
 
     const normalizedEmail = normalizeEmail(email);
-    const userExists = await User.findOne({ email: normalizedEmail });
+    const userExists = await User.findOne({
+      email: normalizedEmail,
+      status: { $ne: 'inactive' } // Exclure les utilisateurs désactivés
+    });
     if (userExists) {
       return res.status(400).json({ i18nKey: "user_exists" });
+    }
+
+    // Vérifier aussi dans DeletedUser pour éviter les conflits
+    const DeletedUser = require("../models/DeletedUser");
+    const deletedUserExists = await DeletedUser.findOne({ email: normalizedEmail });
+    if (deletedUserExists) {
+      // Permettre la recréation d'un utilisateur supprimé, mais avertir
+      console.log(`[AUTH][REGISTER] Recreating user with previously deleted email: ${normalizedEmail}`);
     }
 
     let role = "member";
@@ -249,9 +260,19 @@ const registerUser = async (req, res) => {
     }
 
     try {
+      console.log("[registerUser] Sending verification email to:", user.email);
       await sendVerificationEmail(user, user.language);
+      console.log("[registerUser] Verification email sent successfully");
     } catch (emailError) {
       console.error("[registerUser] Error sending verification email:", emailError);
+      console.error("[registerUser] Email service details:", {
+        SMTP_HOST: process.env.SMTP_HOST ? "configured" : "missing",
+        SMTP_PORT: process.env.SMTP_PORT ? "configured" : "missing",
+        SMTP_USER: process.env.SMTP_USER ? "configured" : "missing",
+        SMTP_PASS: process.env.SMTP_PASS ? "configured" : "missing",
+        EMAIL_FROM: process.env.EMAIL_FROM ? "configured" : "missing",
+        FRONTEND_URL: process.env.FRONTEND_URL || "using default"
+      });
       // Ne pas bloquer la création si l'email échoue
     }
 

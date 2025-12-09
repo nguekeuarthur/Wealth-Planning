@@ -23,6 +23,7 @@ export const API_PATHS = {
     UPDATE_USER: (userId) => `/api/users/${userId}`, // Update user details
     DELETE_USER: (userId) => `/api/users/${userId}`, // Delete a user
     GET_DELETED_USERS: "/api/users/deleted", // Get deleted users (Admin only)
+    CLEANUP_DELETED_USERS: "/api/users/cleanup-deleted", // Clean up orphaned deleted users (Admin only)
   },
 
   CLIENTS: {

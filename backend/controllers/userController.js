@@ -280,4 +280,49 @@ const getCompanyNames = async (req, res) => {
   }
 };
 
-module.exports = { getUsers, getUserById, createUser, updateUser, deleteUser, getDeletedUsers, getCompanyNames };
+// @desc    Clean up orphaned deleted users (for fixing database inconsistencies)
+// @route   POST /api/users/cleanup-deleted
+// @access  Private (Admin only)
+const cleanupDeletedUsers = async (req, res) => {
+  try {
+    const { dryRun = true } = req.body; // Par défaut, mode simulation
+
+    const DeletedUser = require("../models/DeletedUser");
+    const deletedUsers = await DeletedUser.find({});
+    let cleaned = 0;
+    let errors = [];
+
+    for (const deletedUser of deletedUsers) {
+      try {
+        // Vérifier si l'utilisateur original existe encore
+        const originalUser = await User.findById(deletedUser.originalUserId);
+
+        if (originalUser) {
+          // L'utilisateur existe encore, il n'a pas été supprimé correctement
+          if (!dryRun) {
+            await User.findByIdAndDelete(deletedUser.originalUserId);
+            console.log(`[CLEANUP] Deleted orphaned user: ${originalUser.email}`);
+            cleaned++;
+          } else {
+            console.log(`[CLEANUP][DRY-RUN] Would delete orphaned user: ${originalUser.email}`);
+            cleaned++;
+          }
+        }
+      } catch (error) {
+        errors.push(`Error processing ${deletedUser.email}: ${error.message}`);
+      }
+    }
+
+    res.json({
+      message: dryRun ? "Simulation terminée" : "Nettoyage terminé",
+      cleaned,
+      errors,
+      dryRun
+    });
+  } catch (error) {
+    console.error("Error during cleanup:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+module.exports = { getUsers, getUserById, createUser, updateUser, deleteUser, getDeletedUsers, getCompanyNames, cleanupDeletedUsers };
