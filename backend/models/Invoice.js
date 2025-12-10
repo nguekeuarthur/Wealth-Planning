@@ -42,7 +42,12 @@ const invoiceSchema = new mongoose.Schema({
     originalName: String,
     mimeType: String,
     size: Number
-  }
+  },
+  tags: [{
+    type: String,
+    enum: ['client', 'partner', 'collaborator', 'admin'],
+    default: []
+  }]
 }, { timestamps: true });
 
 // Middleware pre-save : Mettre automatiquement le statut à "non payée" si la date d'échéance est passée

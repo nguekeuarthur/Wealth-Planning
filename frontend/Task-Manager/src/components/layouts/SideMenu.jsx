@@ -1,5 +1,11 @@
 import React, { useContext, useEffect, useState } from "react";
-import { SIDE_MENU_DATA, SIDE_MENU_USER_DATA } from "../../utils/data";
+import { 
+  SIDE_MENU_DATA, 
+  SIDE_MENU_USER_DATA, 
+  SIDE_MENU_CLIENT_DATA,
+  SIDE_MENU_PARTNER_DATA,
+  SIDE_MENU_COLLABORATOR_DATA 
+} from "../../utils/data";
 import { UserContext } from "../../context/userContext";
 import { useNotifications } from "../../context/NotificationContext";
 import { useNavigate } from "react-router-dom";
@@ -27,7 +33,22 @@ const SideMenu = ({ activeMenu }) => {
 
   useEffect(() => {
     if(user){
-      setSideMenuData(user?.role === 'admin' ? SIDE_MENU_DATA : SIDE_MENU_USER_DATA)
+      switch(user?.role) {
+        case 'admin':
+          setSideMenuData(SIDE_MENU_DATA);
+          break;
+        case 'client':
+          setSideMenuData(SIDE_MENU_CLIENT_DATA);
+          break;
+        case 'partner':
+          setSideMenuData(SIDE_MENU_PARTNER_DATA);
+          break;
+        case 'collaborator':
+          setSideMenuData(SIDE_MENU_COLLABORATOR_DATA);
+          break;
+        default:
+          setSideMenuData(SIDE_MENU_USER_DATA);
+      }
     }
     return () => {};
   }, [user]);

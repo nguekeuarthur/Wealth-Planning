@@ -670,6 +670,12 @@ const ProfileCompletion = () => {
       const userRole = response.data.user.role || "member";
       if (userRole === "admin") {
         navigate("/admin/dashboard");
+      } else if (userRole === "client") {
+        navigate("/client/dashboard");
+      } else if (userRole === "partner") {
+        navigate("/partner/dashboard");
+      } else if (userRole === "collaborator") {
+        navigate("/collaborator/dashboard");
       } else {
         navigate("/user/dashboard");
       }
@@ -686,6 +692,12 @@ const ProfileCompletion = () => {
     const userRole = user?.role || "member";
     if (userRole === "admin") {
       navigate("/admin/dashboard");
+    } else if (userRole === "client") {
+      navigate("/client/dashboard");
+    } else if (userRole === "partner") {
+      navigate("/partner/dashboard");
+    } else if (userRole === "collaborator") {
+      navigate("/collaborator/dashboard");
     } else {
       navigate("/user/dashboard");
     }

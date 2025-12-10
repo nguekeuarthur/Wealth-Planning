@@ -19,6 +19,9 @@ if (SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS) {
       user: SMTP_USER,
       pass: SMTP_PASS,
     },
+    tls: {
+      rejectUnauthorized: false, // Désactiver la vérification des certificats
+    },
   });
 } else {
   console.warn(

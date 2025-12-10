@@ -6,15 +6,30 @@ const fs = require('fs').promises;
 // Get all documents
 exports.getAllDocuments = async (req, res) => {
   try {
-    const { project, type, category } = req.query;
+    const { project, type, category, tags } = req.query;
     const filter = {};
 
     if (project) filter.project = project;
     if (type) filter.type = type;
     if (category) filter.category = category;
 
-    // Clients see only their documents
-    if (req.user.role !== 'admin') {
+    // Permissions selon le rôle
+    if (req.user.role === 'admin' || req.user.role === 'collaborator') {
+      // Admin et Collaborateur voient tous les fichiers
+      // Si un tag est spécifié dans la requête, filtrer par tag
+      if (tags) {
+        filter.tags = tags;
+      }
+    } else if (req.user.role === 'client') {
+      // Clients voient seulement les fichiers tagués "client" de leurs projets
+      const userProjects = await Project.find({ client: req.user._id }).select('_id');
+      filter.project = { $in: userProjects.map(p => p._id) };
+      filter.tags = 'client';
+    } else if (req.user.role === 'partner') {
+      // Partenaires voient seulement les fichiers tagués "partner"
+      filter.tags = 'partner';
+    } else {
+      // Autres rôles : voir seulement leurs documents
       const userProjects = await Project.find({ client: req.user._id }).select('_id');
       filter.project = { $in: userProjects.map(p => p._id) };
     }
@@ -41,8 +56,21 @@ exports.getDocumentById = async (req, res) => {
       return res.status(404).json({ message: 'Document non trouvé' });
     }
 
-    // Check permissions
-    if (req.user.role !== 'admin' && document.project.client.toString() !== req.user._id.toString()) {
+    // Check permissions selon le rôle
+    let hasAccess = false;
+    if (req.user.role === 'admin' || req.user.role === 'collaborator') {
+      hasAccess = true;
+    } else if (req.user.role === 'client') {
+      // Clients voient seulement les fichiers tagués "client" de leurs projets
+      hasAccess = document.project && 
+                  document.project.client.toString() === req.user._id.toString() &&
+                  document.tags && document.tags.includes('client');
+    } else if (req.user.role === 'partner') {
+      // Partenaires voient seulement les fichiers tagués "partner"
+      hasAccess = document.tags && document.tags.includes('partner');
+    }
+
+    if (!hasAccess) {
       return res.status(403).json({ message: 'Accès refusé' });
     }
 

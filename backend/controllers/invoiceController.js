@@ -34,8 +34,19 @@ exports.getAllInvoices = async (req, res) => {
     if (status) filter.status = status;
     if (project) filter.project = project;
 
-    // Clients see only their invoices
-    if (req.user.role !== 'admin') {
+    // Permissions selon le rôle
+    if (req.user.role === 'admin' || req.user.role === 'collaborator') {
+      // Admin et Collaborateur voient toutes les factures
+      // Pas de filtre client
+    } else if (req.user.role === 'client') {
+      // Clients voient seulement leurs factures
+      filter.client = req.user._id;
+    } else if (req.user.role === 'partner') {
+      // Partenaires ne voient PAS les factures taguées "client"
+      // On va filtrer après la requête car MongoDB ne gère pas bien $ne sur les tableaux
+      // Pas de filtre ici, on filtrera après
+    } else {
+      // Autres rôles : voir seulement leurs factures
       filter.client = req.user._id;
     }
 
@@ -51,10 +62,17 @@ exports.getAllInvoices = async (req, res) => {
       }
     );
 
-    const invoices = await Invoice.find(filter)
+    let invoices = await Invoice.find(filter)
       .populate('client', 'companyName contactName email industry')
       .populate('project', 'name category')
       .sort({ issueDate: -1 });
+
+    // Filtrer les factures taguées "client" pour les partenaires
+    if (req.user.role === 'partner') {
+      invoices = invoices.filter(invoice => {
+        return !invoice.tags || !invoice.tags.includes('client');
+      });
+    }
 
     res.json({ invoices });
   } catch (error) {
@@ -85,8 +103,18 @@ exports.getInvoiceById = async (req, res) => {
         .populate('project', 'name category');
     }
 
-    // Check permissions
-    if (req.user.role !== 'admin' && invoice.client.toString() !== req.user._id.toString()) {
+    // Check permissions selon le rôle
+    let hasAccess = false;
+    if (req.user.role === 'admin' || req.user.role === 'collaborator') {
+      hasAccess = true;
+    } else if (req.user.role === 'client') {
+      hasAccess = invoice.client && invoice.client.toString() === req.user._id.toString();
+    } else if (req.user.role === 'partner') {
+      // Partenaires ne peuvent pas voir les factures taguées "client"
+      hasAccess = !invoice.tags || !invoice.tags.includes('client');
+    }
+
+    if (!hasAccess) {
       return res.status(403).json({ message: 'Accès refusé' });
     }
 
@@ -184,7 +212,7 @@ exports.updateInvoice = async (req, res) => {
       return res.status(404).json({ message: 'Facture non trouvée' });
     }
 
-    // Check permissions - Admin only for updates
+    // Check permissions - Admin only for updates (Collaborateur ne peut pas modifier)
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Accès refusé - Admin uniquement' });
     }
@@ -246,7 +274,17 @@ exports.deleteInvoice = async (req, res) => {
 // Get invoice statistics
 exports.getInvoiceStats = async (req, res) => {
   try {
-    const filter = req.user.role !== 'admin' ? { client: req.user._id } : {};
+    let filter = {};
+    if (req.user.role === 'admin' || req.user.role === 'collaborator') {
+      // Pas de filtre
+    } else if (req.user.role === 'client') {
+      filter.client = req.user._id;
+    } else if (req.user.role === 'partner') {
+      // Partenaires : exclure les factures taguées "client"
+      filter.tags = { $ne: 'client' };
+    } else {
+      filter.client = req.user._id;
+    }
 
     const stats = await Invoice.aggregate([
       { $match: filter },

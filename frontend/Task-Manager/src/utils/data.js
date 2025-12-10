@@ -7,6 +7,8 @@ import {
     LuUserCheck,
     LuFileText,
     LuBell,
+    LuMessageSquare,
+    LuFolder,
   
   } from "react-icons/lu";
   
@@ -83,6 +85,135 @@ import {
     },
     {
       id: "04",
+      label: "Déconnexion",
+      icon: LuLogOut,
+      path: "logout",
+    },
+  ];
+  
+  export const SIDE_MENU_CLIENT_DATA = [
+    {
+      id: "01",
+      label: "Tableau de bord",
+      icon: LuLayoutDashboard,
+      path: "/client/dashboard",
+    },
+    {
+      id: "02",
+      label: "Mes projets",
+      icon: LuClipboardCheck,
+      path: "/client/projects",
+    },
+    {
+      id: "03",
+      label: "Tâches",
+      icon: LuClipboardCheck,
+      path: "/client/tasks",
+    },
+    {
+      id: "04",
+      label: "Factures",
+      icon: LuFileText,
+      path: "/client/invoices",
+    },
+    {
+      id: "05",
+      label: "Documents",
+      icon: LuFolder,
+      path: "/client/documents",
+    },
+    {
+      id: "06",
+      label: "Messages",
+      icon: LuMessageSquare,
+      path: "/client/messages",
+    },
+    {
+      id: "07",
+      label: "Déconnexion",
+      icon: LuLogOut,
+      path: "logout",
+    },
+  ];
+  
+  export const SIDE_MENU_PARTNER_DATA = [
+    {
+      id: "01",
+      label: "Tableau de bord",
+      icon: LuLayoutDashboard,
+      path: "/partner/dashboard",
+    },
+    {
+      id: "02",
+      label: "Mes projets",
+      icon: LuClipboardCheck,
+      path: "/partner/projects",
+    },
+    {
+      id: "03",
+      label: "Tâches",
+      icon: LuClipboardCheck,
+      path: "/partner/tasks",
+    },
+    {
+      id: "04",
+      label: "Documents",
+      icon: LuFolder,
+      path: "/partner/documents",
+    },
+    {
+      id: "05",
+      label: "Messages",
+      icon: LuMessageSquare,
+      path: "/partner/messages",
+    },
+    {
+      id: "06",
+      label: "Déconnexion",
+      icon: LuLogOut,
+      path: "logout",
+    },
+  ];
+  
+  export const SIDE_MENU_COLLABORATOR_DATA = [
+    {
+      id: "01",
+      label: "Tableau de bord",
+      icon: LuLayoutDashboard,
+      path: "/collaborator/dashboard",
+    },
+    {
+      id: "02",
+      label: "Projets",
+      icon: LuClipboardCheck,
+      path: "/collaborator/projects",
+    },
+    {
+      id: "03",
+      label: "Tâches",
+      icon: LuClipboardCheck,
+      path: "/collaborator/tasks",
+    },
+    {
+      id: "04",
+      label: "Factures",
+      icon: LuFileText,
+      path: "/collaborator/invoices",
+    },
+    {
+      id: "05",
+      label: "Documents",
+      icon: LuFolder,
+      path: "/collaborator/documents",
+    },
+    {
+      id: "06",
+      label: "Messages",
+      icon: LuMessageSquare,
+      path: "/collaborator/messages",
+    },
+    {
+      id: "07",
       label: "Déconnexion",
       icon: LuLogOut,
       path: "logout",

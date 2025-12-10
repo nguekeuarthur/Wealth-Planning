@@ -132,9 +132,15 @@ const Login = () => {
       if (token && refreshToken && user) {
         updateUser(response.data);
 
-        //Redirect based on role (toujours vers le dashboard normal)
+        //Redirect based on role
         if (user.role === "admin") {
           navigate("/admin/dashboard");
+        } else if (user.role === "client") {
+          navigate("/client/dashboard");
+        } else if (user.role === "partner") {
+          navigate("/partner/dashboard");
+        } else if (user.role === "collaborator") {
+          navigate("/collaborator/dashboard");
         } else {
           navigate("/user/dashboard");
         }

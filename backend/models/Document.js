@@ -40,7 +40,12 @@ const documentSchema = new mongoose.Schema({
   isArchived: { 
     type: Boolean, 
     default: false 
-  }
+  },
+  tags: [{
+    type: String,
+    enum: ['client', 'partner', 'collaborator', 'admin'],
+    default: []
+  }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('Document', documentSchema);

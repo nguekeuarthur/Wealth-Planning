@@ -27,6 +27,9 @@ import AllTeams from "./pages/Admin/AllTeams";
 import UserDashboard from "./pages/User/UserDashboard";
 import MyTasks from "./pages/User/MyTasks";
 import ViewTaskDetails from "./pages/User/ViewTaskDetails";
+import ClientDashboard from "./pages/Client/ClientDashboard";
+import PartnerDashboard from "./pages/Partner/PartnerDashboard";
+import CollaboratorDashboard from "./pages/Collaborator/CollaboratorDashboard";
 
 // Landing Pages
 import Home from "./pages/Landing/Home";
@@ -94,6 +97,41 @@ const App = () => {
                 element={<ViewTaskDetails />}
               />
               <Route path="/user/notifications" element={<AllNotifications />} />
+            </Route>
+
+            {/* Client Routes - Accès à projets, factures, tâches, milestones, documents tagés client, messages */}
+            <Route element={<PrivateRoute allowedRoles={["client"]} />}>
+              <Route path="/client/dashboard" element={<ClientDashboard />} />
+              <Route path="/client/projects" element={<AllProjects />} />
+              <Route path="/client/project/:id" element={<ProjectDetails />} />
+              <Route path="/client/tasks" element={<MyTasks />} />
+              <Route path="/client/task-details/:id" element={<ViewTaskDetails />} />
+              <Route path="/client/invoices" element={<AllInvoices />} />
+              <Route path="/client/documents" element={<AllInvoices />} />
+              <Route path="/client/messages" element={<AllNotifications />} />
+            </Route>
+
+            {/* Partner Routes - Accès à messages (admin+collaborateur), tâches, milestones, documents tagés partenaire */}
+            <Route element={<PrivateRoute allowedRoles={["partner"]} />}>
+              <Route path="/partner/dashboard" element={<PartnerDashboard />} />
+              <Route path="/partner/projects" element={<AllProjects />} />
+              <Route path="/partner/project/:id" element={<ProjectDetails />} />
+              <Route path="/partner/tasks" element={<MyTasks />} />
+              <Route path="/partner/task-details/:id" element={<ViewTaskDetails />} />
+              <Route path="/partner/documents" element={<AllInvoices />} />
+              <Route path="/partner/messages" element={<AllNotifications />} />
+            </Route>
+
+            {/* Collaborator Routes - Accès à tout sauf modification factures */}
+            <Route element={<PrivateRoute allowedRoles={["collaborator"]} />}>
+              <Route path="/collaborator/dashboard" element={<CollaboratorDashboard />} />
+              <Route path="/collaborator/projects" element={<AllProjects />} />
+              <Route path="/collaborator/project/:id" element={<ProjectDetails />} />
+              <Route path="/collaborator/tasks" element={<MyTasks />} />
+              <Route path="/collaborator/task-details/:id" element={<ViewTaskDetails />} />
+              <Route path="/collaborator/invoices" element={<AllInvoices />} />
+              <Route path="/collaborator/documents" element={<AllInvoices />} />
+              <Route path="/collaborator/messages" element={<AllNotifications />} />
             </Route>
           </Routes>
         </Router>

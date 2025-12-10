@@ -16,11 +16,37 @@ exports.getAllMessages = async (req, res) => {
       { receiver: req.user._id }
     ];
 
-    const messages = await Message.find(filter)
-      .populate('sender', 'name email profileImageUrl')
-      .populate('receiver', 'name email profileImageUrl')
+    let messages = await Message.find(filter)
+      .populate('sender', 'name email profileImageUrl role')
+      .populate('receiver', 'name email profileImageUrl role')
       .populate('project', 'name')
       .sort({ createdAt: -1 });
+
+    // Filtrer selon les règles de rôle
+    if (req.user.role === 'client') {
+      // Clients : voient seulement les messages avec admin et/ou collaborateur, jamais avec partenaires
+      messages = messages.filter(msg => {
+        const senderRole = msg.sender?.role;
+        const receiverRole = msg.receiver?.role;
+        return senderRole !== 'partner' && receiverRole !== 'partner';
+      });
+    } else if (req.user.role === 'partner') {
+      // Partenaires : voient seulement les messages avec admin + collaborateur, jamais avec client
+      messages = messages.filter(msg => {
+        const senderRole = msg.sender?.role;
+        const receiverRole = msg.receiver?.role;
+        return senderRole !== 'client' && receiverRole !== 'client';
+      });
+    } else if (req.user.role === 'collaborator') {
+      // Collaborateurs : voient le chat Clients/Admin mais pas le chat Partenaires/Admin
+      messages = messages.filter(msg => {
+        const senderRole = msg.sender?.role;
+        const receiverRole = msg.receiver?.role;
+        // Exclure les messages entre partner et admin
+        return !(senderRole === 'partner' && receiverRole === 'admin') &&
+               !(senderRole === 'admin' && receiverRole === 'partner');
+      });
+    }
 
     res.json({ messages });
   } catch (error) {
@@ -33,27 +59,54 @@ exports.getProjectMessages = async (req, res) => {
   try {
     const { projectId } = req.params;
 
-    const project = await Project.findById(projectId);
+    const project = await Project.findById(projectId).populate('assignedUsers', 'role');
     if (!project) {
       return res.status(404).json({ message: 'Projet non trouvé' });
     }
 
     // Check permissions - allow admin, client, project lead, and assigned users
     const isAdmin = req.user.role === 'admin';
+    const isCollaborator = req.user.role === 'collaborator';
     const isClient = project.client && project.client.toString() === req.user._id.toString();
     const isProjectLead = project.projectLead && project.projectLead.toString() === req.user._id.toString();
     const isAssignedUser = project.assignedUsers && project.assignedUsers.some(
-      userId => userId.toString() === req.user._id.toString()
+      user => user._id.toString() === req.user._id.toString()
     );
 
-    if (!isAdmin && !isClient && !isProjectLead && !isAssignedUser) {
+    if (!isAdmin && !isCollaborator && !isClient && !isProjectLead && !isAssignedUser) {
       return res.status(403).json({ message: 'Accès refusé' });
     }
 
-    const messages = await Message.find({ project: projectId })
-      .populate('sender', 'name email profileImageUrl')
-      .populate('receiver', 'name email profileImageUrl')
+    let messages = await Message.find({ project: projectId })
+      .populate('sender', 'name email profileImageUrl role')
+      .populate('receiver', 'name email profileImageUrl role')
       .sort({ createdAt: -1 });
+
+    // Filtrer selon les règles de rôle
+    if (req.user.role === 'client') {
+      // Clients : voient seulement les messages avec admin et/ou collaborateur, jamais avec partenaires
+      messages = messages.filter(msg => {
+        const senderRole = msg.sender?.role;
+        const receiverRole = msg.receiver?.role;
+        return senderRole !== 'partner' && receiverRole !== 'partner';
+      });
+    } else if (req.user.role === 'partner') {
+      // Partenaires : voient seulement les messages avec admin + collaborateur, jamais avec client
+      messages = messages.filter(msg => {
+        const senderRole = msg.sender?.role;
+        const receiverRole = msg.receiver?.role;
+        return senderRole !== 'client' && receiverRole !== 'client';
+      });
+    } else if (req.user.role === 'collaborator') {
+      // Collaborateurs : voient le chat Clients/Admin mais pas le chat Partenaires/Admin
+      messages = messages.filter(msg => {
+        const senderRole = msg.sender?.role;
+        const receiverRole = msg.receiver?.role;
+        // Exclure les messages entre partner et admin
+        return !(senderRole === 'partner' && receiverRole === 'admin') &&
+               !(senderRole === 'admin' && receiverRole === 'partner');
+      });
+    }
 
     res.json({ messages });
   } catch (error) {
@@ -75,12 +128,106 @@ exports.getRecentMessages = async (req, res) => {
       ]
     };
 
-    const messages = await Message.find(filter)
-      .populate('sender', 'fullName email profilePic')
-      .populate('receiver', 'fullName email profilePic')
+    let messages = await Message.find(filter)
+      .populate('sender', 'fullName email profilePic role')
+      .populate('receiver', 'fullName email profilePic role')
       .populate('project', 'name')
       .sort({ createdAt: -1 })
       .limit(50);
+
+    // Filtrer selon les règles de rôle
+    if (req.user.role === 'client') {
+      // Clients : voient seulement les messages avec admin et/ou collaborateur, jamais avec partenaires
+      messages = messages.filter(msg => {
+        const senderRole = msg.sender?.role;
+        const receiverRole = msg.receiver?.role;
+        return senderRole !== 'partner' && receiverRole !== 'partner';
+      });
+    } else if (req.user.role === 'partner') {
+      // Partenaires : voient seulement les messages avec admin + collaborateur, jamais avec client
+      messages = messages.filter(msg => {
+        const senderRole = msg.sender?.role;
+        const receiverRole = msg.receiver?.role;
+        return senderRole !== 'client' && receiverRole !== 'client';
+      });
+    } else if (req.user.role === 'collaborator') {
+      // Collaborateurs : voient le chat Clients/Admin mais pas le chat Partenaires/Admin
+      messages = messages.filter(msg => {
+        const senderRole = msg.sender?.role;
+        const receiverRole = msg.receiver?.role;
+        // Exclure les messages entre partner et admin
+        return !(senderRole === 'partner' && receiverRole === 'admin') &&
+               !(senderRole === 'admin' && receiverRole === 'partner');
+      });
+    }
+
+    res.json({ messages });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+// Get messages for partner (specific endpoint)
+exports.getPartnerMessages = async (req, res) => {
+  try {
+    if (req.user.role !== 'partner') {
+      return res.status(403).json({ message: 'Accès refusé - Partenaire uniquement' });
+    }
+
+    const filter = {
+      $or: [
+        { sender: req.user._id },
+        { receiver: req.user._id }
+      ]
+    };
+
+    let messages = await Message.find(filter)
+      .populate('sender', 'name email profileImageUrl role')
+      .populate('receiver', 'name email profileImageUrl role')
+      .populate('project', 'name')
+      .sort({ createdAt: -1 });
+
+    // Partenaires : voient seulement les messages avec admin + collaborateur, jamais avec client
+    messages = messages.filter(msg => {
+      const senderRole = msg.sender?.role;
+      const receiverRole = msg.receiver?.role;
+      return senderRole !== 'client' && receiverRole !== 'client';
+    });
+
+    res.json({ messages });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+// Get messages for collaborator (specific endpoint)
+exports.getCollaboratorMessages = async (req, res) => {
+  try {
+    if (req.user.role !== 'collaborator') {
+      return res.status(403).json({ message: 'Accès refusé - Collaborateur uniquement' });
+    }
+
+    const filter = {
+      $or: [
+        { sender: req.user._id },
+        { receiver: req.user._id }
+      ]
+    };
+
+    let messages = await Message.find(filter)
+      .populate('sender', 'name email profileImageUrl role')
+      .populate('receiver', 'name email profileImageUrl role')
+      .populate('project', 'name')
+      .sort({ createdAt: -1 });
+
+    // Collaborateurs : voient le chat Clients/Admin mais pas le chat Partenaires/Admin
+    messages = messages.filter(msg => {
+      const senderRole = msg.sender?.role;
+      const receiverRole = msg.receiver?.role;
+      // Exclure les messages entre partner et admin
+      return !(senderRole === 'partner' && receiverRole === 'admin') &&
+             !(senderRole === 'admin' && receiverRole === 'partner');
+    });
 
     res.json({ messages });
   } catch (error) {

@@ -18,6 +18,15 @@ router.get('/project/:projectId', messageController.getProjectMessages);
 // Get all messages
 router.get('/', messageController.getAllMessages);
 
+// Get messages for partner
+router.get('/partner', messageController.getPartnerMessages);
+
+// Get messages for collaborator
+router.get('/collaborator', messageController.getCollaboratorMessages);
+
+// Get recent messages
+router.get('/recent', messageController.getRecentMessages);
+
 // Send message
 router.post('/', messageController.sendMessage);
 
