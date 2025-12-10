@@ -1,6 +1,5 @@
 const Project = require('../models/Project');
 const Task = require('../models/Task');
-const Invoice = require('../models/Invoice');
 
 // Get all projects
 exports.getAllProjects = async (req, res) => {
@@ -11,40 +10,17 @@ exports.getAllProjects = async (req, res) => {
     if (status) filter.status = status;
     if (category) filter.category = category;
 
-    // Admin sees all active projects, clients see only their active projects
+    // Admin sees all, clients see only their projects
     if (req.user.role !== 'admin') {
       filter.client = req.user._id;
     }
-    // Exclude archived projects by default
-    filter.archived = { $ne: true };
 
     const projects = await Project.find(filter)
-      .populate('client', 'name email company address logoUrl phoneNumber')
-      .populate('projectLead', 'name email')
-      .populate('assignedUsers', 'name email')
-      .populate('teams', 'name leader members color department')
-      .populate({
-        path: 'tasks',
-        populate: { path: 'assignedTo', select: 'name email profileImageUrl' }
-      })
+      .populate('client', 'fullName email')
+      .populate('projectLead', 'fullName email')
+      .populate('assignedUsers', 'fullName email')
+      .populate('tasks')
       .sort({ createdAt: -1 });
-
-    // Mettre à jour automatiquement la progression pour chaque projet
-    for (const project of projects) {
-      if (project.tasks && project.tasks.length > 0) {
-        const totalTasks = project.tasks.length;
-        const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
-        const calculatedCompletion = Math.round((completedTasks / totalTasks) * 100);
-
-        if (project.completion !== calculatedCompletion) {
-          project.completion = calculatedCompletion;
-          await project.save();
-        }
-      } else if (project.completion !== 0) {
-        project.completion = 0;
-        await project.save();
-      }
-    }
 
     res.json({ projects });
   } catch (error) {
@@ -55,40 +31,17 @@ exports.getAllProjects = async (req, res) => {
 // Get single project
 exports.getProjectById = async (req, res) => {
   try {
-    // Mettre à jour automatiquement les factures en retard avant de récupérer le projet
-    const now = new Date();
-    await Invoice.updateMany(
-      {
-        project: req.params.id,
-        dueDate: { $lt: now },
-        status: { $in: ['en attente', 'partiellement payée'] }
-      },
-      {
-        $set: { status: 'non payée' }
-      }
-    );
-
     const project = await Project.findById(req.params.id)
-      .populate('client', 'name email company address logoUrl phoneNumber')
-      .populate('projectLead', 'name email')
-      .populate('assignedUsers', 'name email')
-      .populate({
-        path: 'teams',
-        populate: [
-          { path: 'leader', select: 'name email' },
-          { path: 'members', select: 'name email' }
-        ]
-      })
-      .populate({
-        path: 'tasks',
-        populate: { path: 'assignedTo', select: 'name email profileImageUrl' }
-      })
+      .populate('client', 'fullName email profilePic phoneNumber')
+      .populate('projectLead', 'fullName email')
+      .populate('assignedUsers', 'fullName email')
+      .populate('tasks')
       .populate('documents')
       .populate('invoices')
       .populate('weeklyUpdates')
       .populate({
         path: 'messages',
-        populate: { path: 'sender receiver', select: 'name email profileImageUrl' }
+        populate: { path: 'sender receiver', select: 'fullName email' }
       });
 
     if (!project) {
@@ -98,23 +51,6 @@ exports.getProjectById = async (req, res) => {
     // Check permissions
     if (req.user.role !== 'admin' && project.client.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Accès refusé' });
-    }
-
-    // Calculer automatiquement la progression basée sur les tâches terminées
-    if (project.tasks && project.tasks.length > 0) {
-      const totalTasks = project.tasks.length;
-      const completedTasks = project.tasks.filter(task => task.status === 'Completed').length;
-      const calculatedCompletion = Math.round((completedTasks / totalTasks) * 100);
-
-      // Mettre à jour la progression si elle a changé
-      if (project.completion !== calculatedCompletion) {
-        project.completion = calculatedCompletion;
-        await project.save();
-      }
-    } else if (project.completion !== 0) {
-      // Si pas de tâches, la progression devrait être 0
-      project.completion = 0;
-      await project.save();
     }
 
     res.json({ project });
@@ -179,18 +115,15 @@ exports.deleteProject = async (req, res) => {
       return res.status(403).json({ message: 'Accès refusé - Admin uniquement' });
     }
 
-    const project = await Project.findByIdAndUpdate(
-      req.params.id,
-      {
-        archived: true,
-        archivedAt: new Date()
-      },
-      { new: true }
-    );
+    const project = await Project.findById(req.params.id);
 
     if (!project) {
       return res.status(404).json({ message: 'Projet non trouvé' });
     }
+
+    project.archived = true;
+    project.archivedAt = new Date();
+    await project.save();
 
     res.json({ message: 'Projet archivé avec succès' });
   } catch (error) {
@@ -206,9 +139,10 @@ exports.getArchivedProjects = async (req, res) => {
     }
 
     const projects = await Project.find({ archived: true })
-      .populate('client', 'name email')
-      .populate('projectLead', 'name email')
-      .populate('assignedUsers', 'name email')
+      .populate('client', 'fullName email')
+      .populate('projectLead', 'fullName email')
+      .populate('assignedUsers', 'fullName email')
+      .populate('tasks')
       .sort({ archivedAt: -1 });
 
     res.json({ projects });
@@ -224,18 +158,19 @@ exports.restoreProject = async (req, res) => {
       return res.status(403).json({ message: 'Accès refusé - Admin uniquement' });
     }
 
-    const project = await Project.findByIdAndUpdate(
-      req.params.id,
-      {
-        archived: false,
-        $unset: { archivedAt: 1 }
-      },
-      { new: true }
-    );
+    const project = await Project.findById(req.params.id);
 
     if (!project) {
       return res.status(404).json({ message: 'Projet non trouvé' });
     }
+
+    if (!project.archived) {
+      return res.status(400).json({ message: 'Le projet n\'est pas archivé' });
+    }
+
+    project.archived = false;
+    project.archivedAt = undefined;
+    await project.save();
 
     res.json({ message: 'Projet restauré avec succès', project });
   } catch (error) {
@@ -247,8 +182,6 @@ exports.restoreProject = async (req, res) => {
 exports.getProjectStats = async (req, res) => {
   try {
     const filter = req.user.role !== 'admin' ? { client: req.user._id } : {};
-    // Exclude archived projects from stats
-    filter.archived = { $ne: true };
 
     const stats = await Project.aggregate([
       { $match: filter },
