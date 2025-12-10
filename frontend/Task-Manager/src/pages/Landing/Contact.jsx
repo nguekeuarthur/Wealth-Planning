@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FaEnvelope, FaPhone, FaLinkedin, FaTwitter, FaFacebook } from "react-icons/fa";
+import { FaEnvelope, FaPhone, FaLinkedin, FaCalendarAlt, FaClock } from "react-icons/fa";
 import toast from "react-hot-toast";
 import bgImage from "../../assets/images/contact.jpg";
 import { useLanguage } from "../../context/languageContext";
@@ -14,23 +14,13 @@ const content = {
       title: "Envoyez-nous un message",
       success: "Message envoyé avec succès ! Nous vous répondrons bientôt.",
       fields: {
-        nameLabel: "Nom complet *",
+        nameLabel: "Nom complet",
         namePlaceholder: "Votre nom",
-        emailLabel: "Email *",
+        emailLabel: "Email",
         emailPlaceholder: "votre.email@exemple.com",
-        serviceLabel: "Service *",
-        servicePlaceholder: "Sélectionnez un service",
-        messageLabel: "Message *",
+        messageLabel: "Message",
         messagePlaceholder: "Décrivez votre demande...",
       },
-      selectOptions: [
-        "Création d'entreprise",
-        "Ouverture de compte bancaire",
-        "Service de Domiciliation",
-        "Conseil en Structuration Patrimoniale",
-        "Optimisation Fiscale",
-        "Autre",
-      ],
       button: "Envoyer le message",
     },
     contactInfo: {
@@ -42,7 +32,10 @@ const content = {
       phoneLabel: "Téléphone",
       phoneNote: "Lun-Ven 9h-18h",
       socialTitle: "Suivez-nous",
-      mapPlaceholder: "Carte interactive (Google Maps)",
+    },
+    appointment: {
+      title: "Planifier un Rendez-vous",
+      subtitle: "Réservez directement un créneau qui vous convient avec notre système de planification intégré"
     },
     faq: {
       title: "Questions Fréquentes",
@@ -115,23 +108,13 @@ const content = {
       title: "Send Us a Message",
       success: "Message sent successfully! We will be in touch shortly.",
       fields: {
-        nameLabel: "Full name *",
+        nameLabel: "Full name",
         namePlaceholder: "Your name",
-        emailLabel: "Email *",
+        emailLabel: "Email",
         emailPlaceholder: "your.email@example.com",
-        serviceLabel: "Service *",
-        servicePlaceholder: "Select a service",
-        messageLabel: "Message *",
+        messageLabel: "Message",
         messagePlaceholder: "Tell us more about your request...",
       },
-      selectOptions: [
-        "Company formation",
-        "Corporate bank onboarding",
-        "Business domiciliation",
-        "Wealth structuring advisory",
-        "Tax optimisation",
-        "Other",
-      ],
       button: "Send message",
     },
     contactInfo: {
@@ -143,7 +126,10 @@ const content = {
       phoneLabel: "Phone",
       phoneNote: "Mon–Fri 9am-6pm",
       socialTitle: "Follow us",
-      mapPlaceholder: "Interactive map (Google Maps)",
+    },
+    appointment: {
+      title: "Schedule an Appointment",
+      subtitle: "Book directly a slot that suits you with our integrated scheduling system"
     },
     faq: {
       title: "Frequently Asked Questions",
@@ -216,23 +202,13 @@ const content = {
       title: "Senden Sie uns eine Nachricht",
       success: "Nachricht erfolgreich gesendet! Wir werden uns in Kürze bei Ihnen melden.",
       fields: {
-        nameLabel: "Vollständiger Name *",
+        nameLabel: "Vollständiger Name",
         namePlaceholder: "Ihr Name",
-        emailLabel: "E-Mail *",
+        emailLabel: "E-Mail",
         emailPlaceholder: "ihre.email@beispiel.com",
-        serviceLabel: "Dienstleistung *",
-        servicePlaceholder: "Wählen Sie eine Dienstleistung",
         messageLabel: "Nachricht *",
         messagePlaceholder: "Erzählen Sie uns mehr über Ihre Anfrage...",
       },
-      selectOptions: [
-        "Unternehmensgründung",
-        "Firmenkonto-Eröffnung",
-        "Geschäftsdomizilierung",
-        "Vermögensstrukturierungsberatung",
-        "Steueroptimierung",
-        "Andere",
-      ],
       button: "Nachricht senden",
     },
     contactInfo: {
@@ -244,7 +220,10 @@ const content = {
       phoneLabel: "Telefon",
       phoneNote: "Mo–Fr 9–18 Uhr",
       socialTitle: "Folgen Sie uns",
-      mapPlaceholder: "Interaktive Karte (Google Maps)",
+    },
+    appointment: {
+      title: "Termin Vereinbaren",
+      subtitle: "Buchen Sie direkt einen Termin, der Ihnen passt, mit unserem integrierten Planungssystem"
     },
     faq: {
       title: "Häufig gestellte Fragen",
@@ -317,23 +296,13 @@ const content = {
       title: "Inviaci un Messaggio",
       success: "Messaggio inviato con successo! Ti contatteremo a breve.",
       fields: {
-        nameLabel: "Nome completo *",
+        nameLabel: "Nome completo",
         namePlaceholder: "Il tuo nome",
-        emailLabel: "Email *",
+        emailLabel: "Email",
         emailPlaceholder: "tua.email@esempio.com",
-        serviceLabel: "Servizio *",
-        servicePlaceholder: "Seleziona un servizio",
         messageLabel: "Messaggio *",
         messagePlaceholder: "Raccontaci di più sulla tua richiesta...",
       },
-      selectOptions: [
-        "Costituzione aziendale",
-        "Apertura conto aziendale",
-        "Domiciliazione aziendale",
-        "Consulenza sulla strutturazione patrimoniale",
-        "Ottimizzazione fiscale",
-        "Altro",
-      ],
       button: "Invia messaggio",
     },
     contactInfo: {
@@ -345,7 +314,10 @@ const content = {
       phoneLabel: "Telefono",
       phoneNote: "Lun–Ven 9–18",
       socialTitle: "Seguici",
-      mapPlaceholder: "Mappa interattiva (Google Maps)",
+    },
+    appointment: {
+      title: "Pianificare un Appuntamento",
+      subtitle: "Prenota direttamente un appuntamento che ti conviene con il nostro sistema di pianificazione integrato"
     },
     faq: {
       title: "Domande Frequenti",
@@ -417,7 +389,6 @@ const Contact = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    subject: "",
     message: ""
   });
 
@@ -431,7 +402,7 @@ const Contact = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     toast.success(copy.form.success);
-    setFormData({ name: "", email: "", subject: "", message: "" });
+    setFormData({ name: "", email: "", message: "" });
   };
 
   return (
@@ -520,26 +491,6 @@ const Contact = () => {
                     />
                   </div>
 
-                  <div>
-                    <label htmlFor="subject" className="block text-gray-700 font-light mb-3 text-lg">
-                      {copy.form.fields.serviceLabel}
-                    </label>
-                    <select
-                      id="subject"
-                      name="subject"
-                      value={formData.subject}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-6 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#2d5f3f] transition-colors font-light text-lg bg-white"
-                    >
-                      <option value="">{copy.form.fields.servicePlaceholder}</option>
-                      {copy.form.selectOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
 
                   <div>
                     <label htmlFor="message" className="block text-gray-700 font-light mb-3 text-lg">
@@ -630,24 +581,60 @@ const Contact = () => {
                   >
                     <FaLinkedin className="text-2xl" />
                   </a>
-                  <a
-                    href="#"
-                    className="bg-gradient-to-br from-[#5a8f6f] to-[#2d5f3f] text-white w-14 h-14 rounded-xl flex items-center justify-center hover:scale-110 hover:shadow-xl transition-all duration-500"
-                  >
-                    <FaTwitter className="text-2xl" />
-                  </a>
-                  <a
-                    href="#"
-                    className="bg-gradient-to-br from-[#1e4029] to-[#2d5f3f] text-white w-14 h-14 rounded-xl flex items-center justify-center hover:scale-110 hover:shadow-xl transition-all duration-500"
-                  >
-                    <FaFacebook className="text-2xl" />
-                  </a>
                 </div>
               </div>
 
-              {/* Map placeholder */}
-              <div className="mt-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl h-72 flex items-center justify-center shadow-lg border-2 border-gray-200">
-                <p className="text-gray-500 font-light text-lg">{copy.contactInfo.mapPlaceholder}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Cal.com Appointment Scheduling Section */}
+      <section className="py-32 px-6 bg-gradient-to-br from-white via-[#f8faf9] to-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#2d5f3f] rounded-full blur-3xl"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#5a8f6f] rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center justify-center mb-8 gap-3">
+              <FaCalendarAlt className="text-[#2d5f3f] text-3xl" />
+              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-[#2d5f3f] to-[#5a8f6f] animate-pulse shadow-lg"></div>
+              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-[#5a8f6f] to-[#2d5f3f] animate-pulse shadow-lg" style={{animationDelay: '0.2s'}}></div>
+              <FaClock className="text-[#2d5f3f] text-3xl" />
+            </div>
+            <h2 className="text-5xl md:text-6xl font-light text-[#1e4029] mb-6 tracking-tight">
+              {copy.appointment.title}
+            </h2>
+            <div className="w-32 h-2 bg-gradient-to-r from-transparent via-[#2d5f3f] to-transparent mx-auto mb-6 rounded-full"></div>
+            <p className="text-xl text-gray-700 font-light max-w-2xl mx-auto">
+              {copy.appointment.subtitle}
+            </p>
+          </div>
+
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white rounded-3xl shadow-2xl border-2 border-[#2d5f3f]/20 overflow-hidden">
+              {/* Cal.com Integration */}
+              <div className="p-8">
+                <div className="text-center mb-6">
+                  <h3 className="text-2xl font-light text-[#1e4029] mb-4">Planifiez votre rendez-vous</h3>
+                  <p className="text-gray-600 font-light mb-4">
+                    Réservez directement un créneau qui vous convient avec notre système de planification intégré
+                  </p>
+                </div>
+
+                {/* Cal.com Inline Embed */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <iframe
+                    src="https://cal.com/edima-evina-fanzjf/wealth-plannig?embed=inline"
+                    width="100%"
+                    height="600"
+                    frameBorder="0"
+                    className="rounded-lg"
+                    title="Planifier un rendez-vous"
+                  ></iframe>
+                </div>
               </div>
             </div>
           </div>
