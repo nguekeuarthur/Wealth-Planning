@@ -1,7 +1,7 @@
 import React from "react";
 import Progress from "../Progress";
 import AvatarGroup from "../AvatarGroup";
-import { LuPaperclip } from "react-icons/lu";
+import { LuPaperclip, LuPencil, LuTrash2 } from "react-icons/lu";
 import moment from "moment";
 
 const TaskCard = ({
@@ -17,6 +17,9 @@ const TaskCard = ({
   completedTodoCount,
   todoChecklist,
   onClick,
+  onEdit,
+  onDelete,
+  canModify = false,
 }) => {
   const getStatusTagColor = () => {
     switch (status) {
@@ -45,7 +48,7 @@ const TaskCard = ({
   };
 
   return <div
-      className="bg-white rounded-xl py-4 shadow-md shadow-gray-100 border border-gray-200/50 cursor-pointer"
+      className="bg-white rounded-xl py-4 shadow-md shadow-gray-100 border border-gray-200/50 cursor-pointer hover:shadow-lg transition-shadow"
       onClick={onClick}
     >
       <div className="flex items-end gap-3 px-4">
@@ -97,11 +100,38 @@ const TaskCard = ({
             </p>
           </div>
 
-          <div>
-            <label className="text-xs text-gray-500">Due Date</label>
-            <p className="text-[13px] font-medium text-gray-900">
-              {moment(dueDate).format("Do MMM YYYY")}
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <label className="text-xs text-gray-500">Due Date</label>
+              <p className="text-[13px] font-medium text-gray-900">
+                {moment(dueDate).format("Do MMM YYYY")}
+              </p>
+            </div>
+            
+            {canModify && (
+              <div className="flex items-center gap-1 ml-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit?.();
+                  }}
+                  className="p-1.5 hover:bg-[#f4f7f4] rounded-lg transition-colors"
+                  title="Modifier"
+                >
+                  <LuPencil className="w-4 h-4 text-[#2d5f3f]" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete?.();
+                  }}
+                  className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Supprimer"
+                >
+                  <LuTrash2 className="w-4 h-4 text-red-500" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

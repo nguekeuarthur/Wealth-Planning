@@ -1,8 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import { FaClock, FaUser, FaProjectDiagram, FaFlag } from 'react-icons/fa';
 
 const PendingTasksList = ({ tasks = [] }) => {
+  const navigate = useNavigate();
   const getPriorityColor = (priority) => {
     switch (priority?.toLowerCase()) {
       case 'high':
@@ -60,6 +62,7 @@ const PendingTasksList = ({ tasks = [] }) => {
             <tr 
               key={task.taskId} 
               className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
+              onClick={() => navigate(`/user/task-details/${task.taskId}`)}
             >
               <td className="px-4 py-4 whitespace-nowrap">
                 <span className="text-xs font-mono font-semibold text-gray-600 bg-gray-100 px-2 py-1 rounded">

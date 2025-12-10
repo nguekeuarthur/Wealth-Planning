@@ -20,6 +20,7 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
   const [loading, setLoading] = useState(false);
   const [selectedUserSearch, setSelectedUserSearch] = useState("");
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [roleFilter, setRoleFilter] = useState("all"); // Filtre par rôle
 
   const priorityOptions = [
     { value: "Low", label: "Basse", color: "bg-blue-100 text-blue-700" },
@@ -151,11 +152,17 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
   };
 
   const selectedUsers = getSelectedAssignees();
-  const availableUsers = users.filter(u => 
-    u.role !== 'admin' &&
-    (u.name?.toLowerCase().includes(selectedUserSearch.toLowerCase()) ||
-     u.email?.toLowerCase().includes(selectedUserSearch.toLowerCase()))
-  );
+  const availableUsers = users.filter(u => {
+    // Exclure les admins
+    if (u.role === 'admin') return false;
+    
+    // Filtrer par rôle si un filtre est sélectionné
+    if (roleFilter !== 'all' && u.role !== roleFilter) return false;
+    
+    // Filtrer par recherche
+    return u.name?.toLowerCase().includes(selectedUserSearch.toLowerCase()) ||
+           u.email?.toLowerCase().includes(selectedUserSearch.toLowerCase());
+  });
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Ajouter une tâche">
@@ -357,6 +364,70 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
           {/* Assignation à un membre individuel */}
           {assignmentType === "individual" && (
             <div>
+              {/* Filtre par rôle */}
+              <div className="mb-3">
+                <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
+                  Filtrer par rôle
+                </label>
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setRoleFilter("all")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      roleFilter === "all"
+                        ? "bg-[#2d5f3f] text-white"
+                        : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
+                    }`}
+                  >
+                    Tous
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRoleFilter("client")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      roleFilter === "client"
+                        ? "bg-[#2d5f3f] text-white"
+                        : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
+                    }`}
+                  >
+                    Clients
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRoleFilter("partner")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      roleFilter === "partner"
+                        ? "bg-[#2d5f3f] text-white"
+                        : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
+                    }`}
+                  >
+                    Partenaires
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRoleFilter("collaborator")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      roleFilter === "collaborator"
+                        ? "bg-[#2d5f3f] text-white"
+                        : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
+                    }`}
+                  >
+                    Collaborateurs
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRoleFilter("member")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      roleFilter === "member"
+                        ? "bg-[#2d5f3f] text-white"
+                        : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
+                    }`}
+                  >
+                    Membres
+                  </button>
+                </div>
+              </div>
+
               <div className="relative">
                 <input
                   type="text"
@@ -399,7 +470,17 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
                           )}
                           <div className="flex-1">
                             <p className="text-sm font-medium text-[#1e4029]">{user.name || "Sans nom"}</p>
-                            <p className="text-xs text-[#7a8b7f]">{user.email}</p>
+                            <p className="text-xs text-[#7a8b7f]">
+                              {user.email}
+                              {user.role && (
+                                <span className="ml-2 px-2 py-0.5 bg-[#f4f7f4] rounded text-[10px]">
+                                  {user.role === 'client' ? 'Client' : 
+                                   user.role === 'partner' ? 'Partenaire' : 
+                                   user.role === 'collaborator' ? 'Collaborateur' : 
+                                   user.role === 'member' ? 'Membre' : user.role}
+                                </span>
+                              )}
+                            </p>
                           </div>
                           {formData.assignedTo.includes(user._id) && (
                             <div className="w-5 h-5 bg-[#5a8f6f] rounded-full flex items-center justify-center">

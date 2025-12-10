@@ -333,7 +333,7 @@ const CreateProjectModal = ({
                         <>
                         <div className="absolute left-0 right-0 z-40 mt-2 bg-white border border-[#dfe8e1] rounded-xl shadow-xl max-h-56 overflow-y-auto">
                           {users
-                            .filter(u => u.role !== 'admin')
+                            .filter(u => u.role !== 'admin' && u.role !== 'member')
                             .filter(u =>
                               u.name?.toLowerCase().includes(leadSearch.toLowerCase()) ||
                               u.email?.toLowerCase().includes(leadSearch.toLowerCase())
@@ -362,11 +362,11 @@ const CreateProjectModal = ({
                                 )}
                                 <div>
                                   <p className="text-sm font-medium text-[#1e4029]">{user.name || "Sans nom"}</p>
-                                  <p className="text-xs text-[#7a8b7f]">{user.email}</p>
+                                  <p className="text-xs text-[#7a8b7f]">{user.email} - {user.role}</p>
                                 </div>
                               </button>
                             ))}
-                          {users.filter(u => u.role !== 'admin').filter(u =>
+                          {users.filter(u => u.role !== 'admin' && u.role !== 'member').filter(u =>
                             u.name?.toLowerCase().includes(leadSearch.toLowerCase()) ||
                             u.email?.toLowerCase().includes(leadSearch.toLowerCase())
                           ).length === 0 && (
@@ -383,7 +383,7 @@ const CreateProjectModal = ({
                 </div>
 
                 <div className="relative">
-                  <p className="text-xs text-[#7a8b7f] mb-1">Membres du projet</p>
+                  <p className="text-xs text-[#7a8b7f] mb-1">Membres du projet (Partenaires & Collaborateurs)</p>
                   <div className="relative">
                     <input
                       type="text"
@@ -402,7 +402,7 @@ const CreateProjectModal = ({
                     <>
                     <div className="absolute left-0 right-0 z-40 mt-2 bg-white border border-[#dfe8e1] rounded-xl shadow-xl max-h-56 overflow-y-auto">
                       {users
-                        .filter(u => u.role !== 'admin')
+                        .filter(u => u.role === 'partner' || u.role === 'collaborator')
                         .filter(u => !formData.assignedUsers.includes(u._id))
                         .filter(u =>
                           u.name?.toLowerCase().includes(memberSearch.toLowerCase()) ||
@@ -435,20 +435,20 @@ const CreateProjectModal = ({
                             )}
                             <div>
                               <p className="text-sm font-medium text-[#1e4029]">{user.name || "Sans nom"}</p>
-                              <p className="text-xs text-[#7a8b7f]">{user.email}</p>
+                              <p className="text-xs text-[#7a8b7f]">{user.email} - {user.role === 'partner' ? 'Partenaire' : 'Collaborateur'}</p>
                             </div>
                             <FiUser className="ml-auto text-[#7a8b7f] w-4 h-4" />
                           </button>
                         ))}
                       {users
-                        .filter(u => u.role !== 'admin')
+                        .filter(u => u.role === 'partner' || u.role === 'collaborator')
                         .filter(u => !formData.assignedUsers.includes(u._id))
                         .filter(u =>
                           u.name?.toLowerCase().includes(memberSearch.toLowerCase()) ||
                           u.email?.toLowerCase().includes(memberSearch.toLowerCase())
                         ).length === 0 && (
                         <div className="px-4 py-3 text-sm text-[#7a8b7f] text-center">
-                          Aucun membre disponible
+                          Aucun partenaire ou collaborateur disponible
                         </div>
                       )}
                     </div>
