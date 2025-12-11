@@ -13,7 +13,7 @@ router.get('/stats', projectController.getProjectStats);
 router.get('/', projectController.getAllProjects);
 
 // Get archived projects (Admin only)
-router.get('/archived', protect, (req, res) => { res.send('This is the archived projects route. Implement getArchivedProjects in projectController.js'); });
+router.get('/archived', projectController.getArchivedProjects);
 
 // Get single project
 router.get('/:id', projectController.getProjectById);
@@ -25,7 +25,7 @@ router.post('/', projectController.createProject);
 router.put('/:id', projectController.updateProject);
 
 // Restore archived project (Admin only)
-router.put('/:id/restore', (req, res) => { res.send('This is the restore project route. Implement restoreProject in projectController.js'); });
+router.put('/:id/restore', projectController.restoreProject);
 
 // Archive project (Admin only)
 router.delete('/:id', projectController.deleteProject);

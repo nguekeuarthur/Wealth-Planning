@@ -153,7 +153,6 @@ const ProjectDetails = () => {
 
     return (
       <div
-        key={task._id}
         draggable={!!onDragStart}
         onDragStart={(e) => {
           e.dataTransfer.effectAllowed = "move";
@@ -695,12 +694,14 @@ const ProjectDetails = () => {
                                 (task.status !== "Completed" &&
                                   task.status !== "In Progress")
                             )
-                            .map((task) =>
-                              renderTaskCard(task, {
-                                onDragStart: handleTaskDragStart,
-                                onDragEnd: handleTaskDragEnd,
-                              })
-                            )}
+                            .map((task) => (
+                              <div key={task._id}>
+                                {renderTaskCard(task, {
+                                  onDragStart: handleTaskDragStart,
+                                  onDragEnd: handleTaskDragEnd,
+                                })}
+                              </div>
+                            ))}
                         </div>
                       </div>
 
@@ -732,12 +733,14 @@ const ProjectDetails = () => {
                                 task.status === "In Progress" ||
                                 task.status === "in progress"
                             )
-                            .map((task) =>
-                              renderTaskCard(task, {
-                                onDragStart: handleTaskDragStart,
-                                onDragEnd: handleTaskDragEnd,
-                              })
-                            )}
+                            .map((task) => (
+                              <div key={task._id}>
+                                {renderTaskCard(task, {
+                                  onDragStart: handleTaskDragStart,
+                                  onDragEnd: handleTaskDragEnd,
+                                })}
+                              </div>
+                            ))}
                         </div>
                       </div>
 
@@ -768,12 +771,14 @@ const ProjectDetails = () => {
                               (task) =>
                                 task.status === "Completed"
                             )
-                            .map((task) =>
-                              renderTaskCard(task, {
-                                onDragStart: handleTaskDragStart,
-                                onDragEnd: handleTaskDragEnd,
-                              })
-                            )}
+                            .map((task) => (
+                              <div key={task._id}>
+                                {renderTaskCard(task, {
+                                  onDragStart: handleTaskDragStart,
+                                  onDragEnd: handleTaskDragEnd,
+                                })}
+                              </div>
+                            ))}
                         </div>
                       </div>
                     </div>
