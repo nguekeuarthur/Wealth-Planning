@@ -5,7 +5,7 @@ const Task = require('../models/Task');
 exports.getAllProjects = async (req, res) => {
   try {
     const { status, category } = req.query;
-    const filter = {};
+    const filter = { archived: { $ne: true } }; // Exclure les projets archivés
     
     if (status) filter.status = status;
     if (category) filter.category = category;
