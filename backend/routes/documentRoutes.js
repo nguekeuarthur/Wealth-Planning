@@ -10,6 +10,9 @@ router.use(protect);
 // Get all documents
 router.get('/', documentController.getAllDocuments);
 
+// Get archived documents (Admin only)
+router.get('/archived', documentController.getArchivedDocuments);
+
 // Get single document
 router.get('/:id', documentController.getDocumentById);
 
@@ -25,7 +28,10 @@ router.put('/:id/version', uploadMiddleware.single('file'), documentController.u
 // Download document
 router.get('/:id/download', documentController.downloadDocument);
 
-// Delete document (Admin only)
+// Restore archived document (Admin only)
+router.put('/:id/restore', documentController.restoreDocument);
+
+// Archive document (Admin only)
 router.delete('/:id', documentController.deleteDocument);
 
 module.exports = router;

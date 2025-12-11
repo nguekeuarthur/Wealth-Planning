@@ -41,6 +41,13 @@ const documentSchema = new mongoose.Schema({
     type: Boolean, 
     default: false 
   },
+  archived: {
+    type: Boolean,
+    default: false
+  },
+  archivedAt: {
+    type: Date
+  },
   tags: [{
     type: String,
     enum: ['client', 'partner', 'collaborator', 'admin'],

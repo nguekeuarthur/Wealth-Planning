@@ -10,7 +10,8 @@ import {
   FiTrash2,
   FiFile,
   FiMoreVertical,
-  FiDownload
+  FiDownload,
+  FiArchive
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import CreateContractModal from "../../components/CreateContractModal";
@@ -259,8 +260,17 @@ const AllContracts = () => {
             </p>
           </div>
 
-          {/* Action Button */}
+          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
+            <button
+              onClick={() => navigate("/admin/contracts/archived")}
+              className="group bg-white/10 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-white/20 border border-white/20"
+            >
+              <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+                <FiArchive className="text-lg" />
+              </div>
+              Contrats archivés
+            </button>
             <button
               onClick={handleAddContract}
               className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"

@@ -20,6 +20,7 @@ import DeletedUsers from "./pages/Admin/DeletedUsers";
 import TeamMemberDetails from "./pages/Admin/TeamMemberDetails";
 import AllInvoices from "./pages/Admin/AllInvoices";
 import AllContracts from "./pages/Admin/AllContracts";
+import ArchivedContracts from "./pages/Admin/ArchivedContracts";
 import AllNotifications from "./pages/Admin/AllNotifications";
 import ProfileCompletion from "./pages/Auth/ProfileCompletion";
 import AllTeams from "./pages/Admin/AllTeams";
@@ -81,6 +82,7 @@ const App = () => {
               <Route path="/admin/team/:id" element={<TeamMemberDetails />} />
               <Route path="/admin/invoices" element={<AllInvoices />} />
               <Route path="/admin/contracts" element={<AllContracts />} />
+              <Route path="/admin/contracts/archived" element={<ArchivedContracts />} />
               <Route path="/admin/notifications" element={<AllNotifications />} />
               <Route path="/admin/teams" element={<AllTeams />} />
               <Route path="/admin/tasks" element={<ManageTasks />} />

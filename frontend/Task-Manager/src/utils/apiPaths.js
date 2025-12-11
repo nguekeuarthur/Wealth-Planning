@@ -97,10 +97,13 @@ export const API_PATHS = {
 
   DOCUMENTS: {
     GET_ALL_DOCUMENTS: "/api/documents",
+    GET_ARCHIVED_DOCUMENTS: "/api/documents/archived",
     GET_DOCUMENT_BY_ID: (documentId) => `/api/documents/${documentId}`,
     UPLOAD_DOCUMENT: "/api/documents",
     UPDATE_DOCUMENT: (documentId) => `/api/documents/${documentId}`,
     DELETE_DOCUMENT: (documentId) => `/api/documents/${documentId}`,
+    RESTORE_DOCUMENT: (documentId) => `/api/documents/${documentId}/restore`,
+    DOWNLOAD_DOCUMENT: (documentId) => `/api/documents/${documentId}/download`,
   },
   WEEKLY_UPDATES: {
     GET_ALL: "/api/weekly-updates",

@@ -7,7 +7,7 @@ const fs = require('fs').promises;
 exports.getAllDocuments = async (req, res) => {
   try {
     const { project, type, category, tags } = req.query;
-    const filter = {};
+    const filter = { archived: { $ne: true } };
 
     if (project) filter.project = project;
     if (type) filter.type = type;
@@ -215,7 +215,7 @@ exports.updateDocumentVersion = async (req, res) => {
   }
 };
 
-// Delete document (Admin only)
+// Archive document (soft delete - Admin only)
 exports.deleteDocument = async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -228,22 +228,64 @@ exports.deleteDocument = async (req, res) => {
       return res.status(404).json({ message: 'Document non trouvé' });
     }
 
-    // Delete file from filesystem
-    try {
-      await fs.unlink(document.filePath);
-      // Delete all versions
-      for (const version of document.versions) {
-        await fs.unlink(version.filePath);
-      }
-    } catch (err) {
-      console.error('Erreur lors de la suppression du fichier:', err);
+    // Soft delete: mark as archived
+    document.archived = true;
+    document.archivedAt = new Date();
+    await document.save();
+
+    res.json({ message: 'Document archivé avec succès' });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur lors de l\'archivage', error: error.message });
+  }
+};
+
+// Get archived documents (Admin only)
+exports.getArchivedDocuments = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Accès refusé - Admin uniquement' });
     }
 
-    await document.deleteOne();
+    const { type } = req.query;
+    const filter = { archived: true };
+    
+    if (type) filter.type = type;
 
-    res.json({ message: 'Document supprimé avec succès' });
+    const documents = await Document.find(filter)
+      .populate('uploadedBy', 'fullName email')
+      .populate('project', 'name category')
+      .sort({ archivedAt: -1 });
+
+    res.json({ documents });
   } catch (error) {
-    res.status(500).json({ message: 'Erreur lors de la suppression', error: error.message });
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+// Restore archived document (Admin only)
+exports.restoreDocument = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Accès refusé - Admin uniquement' });
+    }
+
+    const document = await Document.findById(req.params.id);
+
+    if (!document) {
+      return res.status(404).json({ message: 'Document non trouvé' });
+    }
+
+    if (!document.archived) {
+      return res.status(400).json({ message: 'Le document n\'est pas archivé' });
+    }
+
+    document.archived = false;
+    document.archivedAt = undefined;
+    await document.save();
+
+    res.json({ message: 'Document restauré avec succès', document });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur lors de la restauration', error: error.message });
   }
 };
 
