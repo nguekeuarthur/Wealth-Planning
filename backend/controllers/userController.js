@@ -325,4 +325,157 @@ const cleanupDeletedUsers = async (req, res) => {
   }
 };
 
-module.exports = { getUsers, getUserById, createUser, updateUser, deleteUser, getDeletedUsers, getCompanyNames, cleanupDeletedUsers };
+// @desc    Search users
+// @route   GET /api/users/search
+// @access  Private
+const searchUsers = async (req, res) => {
+  try {
+    const { q, limit = 20 } = req.query;
+
+    console.log('🔍 Search users called with query:', q, 'by user:', req.user?._id);
+    console.log('👤 User details:', req.user);
+
+    if (!q || q.length < 2) {
+      console.log('❌ Query too short, returning empty array');
+      return res.json({ users: [] });
+    }
+
+    const searchRegex = new RegExp(q, 'i');
+    console.log('🔎 Search regex:', searchRegex);
+
+    // D'abord, compter tous les utilisateurs actifs (pour debug)
+    const totalUsers = await User.countDocuments({ deleted: { $ne: true } });
+    const allUsers = await User.find({ deleted: { $ne: true } }).select('name email');
+    console.log('📊 Total active users in database:', totalUsers);
+    console.log('👥 All users in DB:', allUsers.map(u => ({ name: u.name, email: u.email })));
+
+    // Essayer une recherche plus simple d'abord
+    console.log('🔍 Testing simple name search...');
+    const nameMatches = await User.find({
+      name: searchRegex,
+      deleted: { $ne: true }
+    }).select('name email profileImageUrl role');
+
+    console.log('📝 Name matches:', nameMatches.length, nameMatches.map(u => u.name));
+
+    console.log('🔍 Testing email search...');
+    const emailMatches = await User.find({
+      email: searchRegex,
+      deleted: { $ne: true }
+    }).select('name email profileImageUrl role');
+
+    console.log('📧 Email matches:', emailMatches.length, emailMatches.map(u => u.email));
+
+    // Recherche complète
+    const users = await User.find({
+      $and: [
+        { _id: { $ne: req.user._id } }, // Exclure l'utilisateur actuel
+        {
+          $or: [
+            { name: searchRegex },
+            { email: searchRegex }
+          ]
+        },
+        { deleted: { $ne: true } } // Exclure les utilisateurs supprimés
+      ]
+    })
+    .select('name email profileImageUrl role')
+    .limit(parseInt(limit))
+    .sort({ name: 1 });
+
+    console.log('✅ Found users matching query:', users.length);
+    console.log('👤 Matching users:', users.map(u => ({ name: u.name, email: u.email })));
+
+    res.json({ users });
+  } catch (error) {
+    console.error("❌ Error searching users:", error);
+    console.error("🚨 Error details:", error.stack);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Debug: Get all users (without admin restriction)
+// @route   GET /api/users/debug
+// @access  Private
+const getAllUsersDebug = async (req, res) => {
+  try {
+    // Obtenir tous les utilisateurs sans aucun filtre
+    const allUsers = await User.find({})
+      .select('name email role deleted')
+      .sort({ name: 1 });
+
+    // Utilisateurs actifs (deleted != true)
+    const activeUsers = await User.find({ deleted: { $ne: true } })
+      .select('name email role deleted')
+      .sort({ name: 1 });
+
+    console.log('🔍 DEBUG: All users in database:', allUsers.length);
+    console.log('📊 DEBUG: Active users:', activeUsers.length);
+
+    res.json({
+      totalUsersInDB: allUsers.length,
+      activeUsers: activeUsers.length,
+      currentUser: req.user,
+      allUsers: allUsers,
+      activeUsersList: activeUsers
+    });
+  } catch (error) {
+    console.error("Error in debug:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Seed test users
+// @route   POST /api/users/seed
+// @access  Private (Admin only)
+const seedUsers = async (req, res) => {
+  try {
+    const bcrypt = require('bcryptjs');
+
+    const testUsers = [
+      {
+        name: 'Alice Dupont',
+        email: 'alice@example.com',
+        password: await bcrypt.hash('password123', 10),
+        role: 'client'
+      },
+      {
+        name: 'Bob Martin',
+        email: 'bob@example.com',
+        password: await bcrypt.hash('password123', 10),
+        role: 'collaborator'
+      },
+      {
+        name: 'Claire Bernard',
+        email: 'claire@example.com',
+        password: await bcrypt.hash('password123', 10),
+        role: 'partner'
+      },
+      {
+        name: 'David Petit',
+        email: 'david@example.com',
+        password: await bcrypt.hash('password123', 10),
+        role: 'client'
+      }
+    ];
+
+    const createdUsers = [];
+    for (const userData of testUsers) {
+      const existingUser = await User.findOne({ email: userData.email });
+      if (!existingUser) {
+        const user = await User.create(userData);
+        createdUsers.push({ name: user.name, email: user.email, role: user.role });
+      }
+    }
+
+    res.json({
+      message: `${createdUsers.length} test users created`,
+      users: createdUsers
+    });
+  } catch (error) {
+    console.error("Error seeding users:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+module.exports = { getUsers, getUserById, createUser, updateUser, deleteUser, getDeletedUsers, getCompanyNames, cleanupDeletedUsers, searchUsers, getAllUsersDebug, seedUsers };

@@ -17,6 +17,7 @@ export const API_PATHS = {
 
   USERS: {
     GET_ALL_USERS: "/api/users", // Get all users (Admin only)
+    SEARCH_USERS: "/api/users/search", // Search users (Authenticated users)
     GET_COMPANIES: "/api/users/companies", // Get company names for autocomplete (Authenticated users)
     GET_USER_BY_ID: (userId) => `/api/users/${userId}`, // Get user by ID
     CREATE_USER: "/api/users", // Create a new user (Admin only)
@@ -24,6 +25,8 @@ export const API_PATHS = {
     DELETE_USER: (userId) => `/api/users/${userId}`, // Delete a user
     GET_DELETED_USERS: "/api/users/deleted", // Get deleted users (Admin only)
     CLEANUP_DELETED_USERS: "/api/users/cleanup-deleted", // Clean up orphaned deleted users (Admin only)
+    DEBUG_USERS: "/api/users/debug", // Debug: Get all users (Authenticated users)
+    SEED_USERS: "/api/users/seed", // Seed test users (Admin only)
   },
 
   CLIENTS: {
@@ -124,5 +127,13 @@ export const API_PATHS = {
     DELETE_MESSAGE: (messageId) => `/api/messages/${messageId}`,
     GET_UNREAD_COUNT: "/api/messages/unread/count",
     GET_RECENT_MESSAGES: "/api/messages/recent",
+  },
+  CHAT: {
+    GET_CONVERSATIONS: "/api/chat/conversations",
+    CREATE_CONVERSATION: "/api/chat/conversations",
+    GET_CONVERSATION_MESSAGES: (conversationId) => `/api/chat/conversations/${conversationId}/messages`,
+    SEND_MESSAGE: "/api/chat/messages",
+    ADD_PARTICIPANT: "/api/chat/conversations/participants",
+    REMOVE_PARTICIPANT: "/api/chat/conversations/participants",
   },
 };
