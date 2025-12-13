@@ -53,11 +53,21 @@ const UserProvider = ({ children }) => {
     bootstrap();
   }, []);
 
-  const updateUser = (sessionData) => {
-    if (sessionData?.user) {
-      setUser(sessionData.user);
+  const updateUser = (userData) => {
+    // Si c'est juste des données utilisateur partielles (ex: profileImageUrl)
+    if (userData && !userData.user && !userData.token) {
+      const updatedUser = { ...user, ...userData };
+      setUser(updatedUser);
+      setSession({
+        ...getSession(),
+        user: updatedUser,
+      });
     }
-    setSession(sessionData);
+    // Si c'est une session complète
+    else if (userData?.user) {
+      setUser(userData.user);
+      setSession(userData);
+    }
     setLoading(false);
   };
 

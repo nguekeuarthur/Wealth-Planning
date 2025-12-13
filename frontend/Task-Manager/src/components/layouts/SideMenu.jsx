@@ -9,11 +9,14 @@ import {
 import { UserContext } from "../../context/userContext";
 import { useNotifications } from "../../context/NotificationContext";
 import { useNavigate } from "react-router-dom";
+import { FiEdit2 } from "react-icons/fi";
+import ChangeProfilePhotoModal from "../ChangeProfilePhotoModal";
 
 const SideMenu = ({ activeMenu }) => {
-  const { user, logout } = useContext(UserContext);
+  const { user, logout, updateUser } = useContext(UserContext);
   const { unreadCount } = useNotifications();
   const [sideMenuData, setSideMenuData] = useState([]);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -52,14 +55,28 @@ const SideMenu = ({ activeMenu }) => {
     }
     return () => {};
   }, [user]);
+  const handlePhotoUpdateSuccess = (newProfileImageUrl) => {
+    if (updateUser) {
+      updateUser({ profileImageUrl: newProfileImageUrl });
+    }
+  };
+
   return <div className="w-64 h-screen bg-white border-r border-gray-200/50 fixed top-0 left-0 z-20">
       <div className="flex flex-col items-center justify-center mb-6 pt-12">
-        <div className="relative">
+        <div className="relative group">
           <img
             src={user?.profileImageUrl || null}
             alt="Profile Image"
-            className="w-20 h-20 bg-slate-400 rounded-full"
+            className="w-20 h-20 bg-slate-400 rounded-full cursor-pointer"
+            onClick={() => setIsPhotoModalOpen(true)}
           />
+          <button
+            onClick={() => setIsPhotoModalOpen(true)}
+            className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-blue-600"
+            title="Changer la photo de profil"
+          >
+            <FiEdit2 className="w-3 h-3" />
+          </button>
         </div>
 
         {user?.role === "admin" && (
@@ -97,6 +114,13 @@ const SideMenu = ({ activeMenu }) => {
           <span>{item.label}</span>
         </button>
       ))}
+
+      <ChangeProfilePhotoModal
+        isOpen={isPhotoModalOpen}
+        onClose={() => setIsPhotoModalOpen(false)}
+        currentImage={user?.profileImageUrl}
+        onSuccess={handlePhotoUpdateSuccess}
+      />
     </div>;
 };
 
