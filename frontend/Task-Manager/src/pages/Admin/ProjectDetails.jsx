@@ -37,15 +37,16 @@ import AddWeeklyUpdateModal from "../../components/AddWeeklyUpdateModal";
 import WeeklyUpdatesTimeline from "../../components/WeeklyUpdatesTimeline";
 import AddMilestoneModal from "../../components/AddMilestoneModal";
 import MilestonesList from "../../components/MilestonesList";
+import TaskDetailsModal from "../../components/TaskDetailsModal";
 
-const tabs = [
-  { id: "overview", label: "Vue d'ensemble", icon: FiFolder },
-  { id: "tasks", label: "Tâches", icon: FiCheckCircle },
-  { id: "weeklyUpdates", label: "Mises à jour hebdomadaires", icon: FiActivity },
-  { id: "milestones", label: "Jalons", icon: FiFlag },
-  { id: "documents", label: "Documents", icon: FiFileText },
-  { id: "invoices", label: "Finances", icon: FiDollarSign },
-  { id: "updates", label: "Messages", icon: FiMessageSquare }
+const allTabs = [
+  { id: "overview", label: "Vue d'ensemble", icon: FiFolder, roles: ["admin", "partner", "collaborator", "client"] },
+  { id: "tasks", label: "Tâches", icon: FiCheckCircle, roles: ["admin", "partner", "collaborator", "client"] },
+  { id: "weeklyUpdates", label: "Mises à jour hebdomadaires", icon: FiActivity, roles: ["admin"] },
+  { id: "milestones", label: "Jalons", icon: FiFlag, roles: ["admin", "partner", "collaborator", "client"] },
+  { id: "documents", label: "Documents", icon: FiFileText, roles: ["admin", "partner", "collaborator", "client"] },
+  { id: "invoices", label: "Finances", icon: FiDollarSign, roles: ["admin", "partner", "collaborator", "client"] },
+  { id: "updates", label: "Messages", icon: FiMessageSquare, roles: ["admin", "partner", "collaborator", "client"] }
 ];
 
 const getStatusBadgeClass = (status) => {
@@ -108,6 +109,8 @@ const ProjectDetails = () => {
   const [milestones, setMilestones] = useState([]);
   const [loadingMilestones, setLoadingMilestones] = useState(false);
   const [milestonesLoaded, setMilestonesLoaded] = useState(false);
+  const [showTaskDetailsModal, setShowTaskDetailsModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
 
   const handleTaskDragStart = (task) => {
     setDraggedTaskId(task._id);
@@ -151,6 +154,13 @@ const ProjectDetails = () => {
     const isOverdue =
       dueDate && dueDate < new Date() && task.status !== "Completed";
 
+    const handleTaskClick = (e) => {
+      // Ne pas ouvrir le modal si on drag la tâche
+      if (e.defaultPrevented) return;
+      setSelectedTask(task);
+      setShowTaskDetailsModal(true);
+    };
+
     return (
       <div
         draggable={!!onDragStart}
@@ -161,7 +171,8 @@ const ProjectDetails = () => {
         onDragEnd={() => {
           onDragEnd && onDragEnd();
         }}
-        className="p-4 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 transition-colors bg-white cursor-move"
+        onClick={handleTaskClick}
+        className="p-4 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 hover:shadow-md transition-all bg-white cursor-pointer"
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
@@ -530,7 +541,7 @@ const ProjectDetails = () => {
         </div>
 
         <div className="flex flex-wrap gap-3">
-            {tabs.map((tab) => {
+            {allTabs.filter(tab => tab.roles.includes(user?.role || "client")).map((tab) => {
               const Icon = tab.icon;
             const isActive = activeTab === tab.id;
               return (
@@ -586,50 +597,6 @@ const ProjectDetails = () => {
                     label="Tâches en retard"
                     value={metrics?.overdueTasks || 0}
                   />
-                      </div>
-
-                <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm">
-                  <div className="flex flex-col gap-6 lg:flex-row">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-[#1e4029] mb-3">
-                        Description
-                      </h3>
-                      <p className="text-[#4a5c52] whitespace-pre-wrap">
-                        {project.description || "Aucune description fournie."}
-                      </p>
-                      </div>
-                    <div className="lg:w-64 space-y-3">
-                      <div className="p-4 rounded-xl bg-[#f4f7f4]">
-                        <p className="text-xs text-[#7a8b7f] uppercase">
-                          Dates clés
-                        </p>
-                        <div className="mt-3 space-y-2 text-sm">
-                          <div className="flex items-center gap-2">
-                            <FiCalendar className="text-[#2d5f3f]" />
-                            <span>
-                              Début : {" "}
-                              {project.startDate
-                                ? new Date(project.startDate).toLocaleDateString()
-                                : "—"}
-                            </span>
-                    </div>
-                          <div className="flex items-center gap-2">
-                            <FiClock className="text-[#b76a28]" />
-                            <span>
-                              Fin : {" "}
-                              {project.endDate
-                                ? new Date(project.endDate).toLocaleDateString()
-                                : "—"}
-                            </span>
-                  </div>
-                      </div>
-                      </div>
-                      <div className="p-4 rounded-xl border border-dashed border-[#dfe8e1] text-xs text-[#7a8b7f]">
-                        Utilisez les messages pour documenter les décisions,
-                        jalons ou blocages.
-                    </div>
-                  </div>
-                      </div>
                       </div>
                     </div>
             )}
@@ -815,7 +782,7 @@ const ProjectDetails = () => {
               </div>
             )}
 
-            {activeTab === "weeklyUpdates" && (
+            {activeTab === "weeklyUpdates" && user?.role === "admin" && (
               <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm space-y-6">
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <div>
@@ -1549,6 +1516,41 @@ const ProjectDetails = () => {
       </div>
             </div>
 
+            {/* Dates clés */}
+            <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-[#1e4029] flex items-center gap-2 mb-4">
+                <FiCalendar /> Dates clés
+              </h3>
+              <div className="space-y-3">
+                <div className="p-3 border border-[#dfe8e1] rounded-xl flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-[#f4f7f4]">
+                    <FiCalendar className="text-[#2d5f3f]" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-[#7a8b7f] uppercase">Début</p>
+                    <p className="text-sm font-semibold text-[#1e4029]">
+                      {project.startDate
+                        ? new Date(project.startDate).toLocaleDateString()
+                        : "—"}
+                    </p>
+                  </div>
+                </div>
+                <div className="p-3 border border-[#dfe8e1] rounded-xl flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-[#fff6ea]">
+                    <FiClock className="text-[#b76a28]" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-[#7a8b7f] uppercase">Fin</p>
+                    <p className="text-sm font-semibold text-[#1e4029]">
+                      {project.endDate
+                        ? new Date(project.endDate).toLocaleDateString()
+                        : "—"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -1590,7 +1592,8 @@ const ProjectDetails = () => {
       )}
 
       {/* Add Weekly Update Modal */}
-      {project && (
+      {/* Add Weekly Update Modal - Admin only */}
+      {project && user?.role === "admin" && (
         <AddWeeklyUpdateModal
           isOpen={showWeeklyUpdateModal}
           onClose={() => setShowWeeklyUpdateModal(false)}
@@ -1641,6 +1644,27 @@ const ProjectDetails = () => {
           onUpdateCreated={(newUpdate) => {
             fetchProjectDetails(); // Refresh project data
             setActiveTab("updates"); // Switch to updates tab
+          }}
+        />
+      )}
+
+      {/* Task Details Modal */}
+      {selectedTask && (
+        <TaskDetailsModal
+          isOpen={showTaskDetailsModal}
+          onClose={() => {
+            setShowTaskDetailsModal(false);
+            setSelectedTask(null);
+          }}
+          task={selectedTask}
+          onTaskUpdated={(updatedTask) => {
+            fetchProjectDetails();
+            setSelectedTask(updatedTask);
+          }}
+          onTaskDeleted={() => {
+            fetchProjectDetails();
+            setShowTaskDetailsModal(false);
+            setSelectedTask(null);
           }}
         />
       )}

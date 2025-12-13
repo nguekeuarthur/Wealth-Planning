@@ -10,7 +10,8 @@ import {
   FiTrash2,
   FiFile,
   FiMoreVertical,
-  FiDownload
+  FiDownload,
+  FiArchive
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import CreateContractModal from "../../components/CreateContractModal";
@@ -29,7 +30,7 @@ const AllContracts = () => {
   const [allContracts, setAllContracts] = useState([]);
   const [filteredContracts, setFilteredContracts] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("name");
+  const [sortBy, setSortBy] = useState("createdAt");
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingContract, setEditingContract] = useState(null);
@@ -37,15 +38,14 @@ const AllContracts = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
 
   const sortOptions = [
-    { value: "name", label: "File name" },
-    { value: "createdAt", label: "Created time" },
-    { value: "project", label: "Project" }
+    { value: "createdAt", label: "Date de création" },
+    { value: "name", label: "Nom du fichier" },
+    { value: "project", label: "Projet" }
   ];
 
   const statusColors = {
     "signed": "bg-[#dff5e7] text-[#1e4029] border-[#dfe8e1]",
     "pending": "bg-[#fff7d6] text-[#7b6a25] border-[#dfe8e1]",
-    "draft": "bg-[#f4f7f4] text-[#7a8b7f] border-[#dfe8e1]",
     "expired": "bg-red-50 text-red-700 border-red-200"
   };
 
@@ -53,7 +53,6 @@ const AllContracts = () => {
     const statusMap = {
       'signed': 'Signé',
       'pending': 'En attente',
-      'draft': 'Brouillon',
       'expired': 'Expiré'
     };
     return statusMap[status] || status;
@@ -233,7 +232,7 @@ const AllContracts = () => {
   }
 
   return (
-    <DashboardLayout activeMenu="Contracts">
+    <DashboardLayout activeMenu="Contrats">
       {/* Header Section with Enhanced Design */}
       <div className="relative bg-gradient-to-br from-[#1e4029] via-[#2d5f3f] to-[#1e4029] rounded-2xl shadow-xl p-8 my-6 overflow-hidden">
         {/* Background Pattern */}
@@ -259,8 +258,17 @@ const AllContracts = () => {
             </p>
           </div>
 
-          {/* Action Button */}
+          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
+            <button
+              onClick={() => navigate("/admin/contracts/archived")}
+              className="group bg-white/10 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-white/20 border border-white/20"
+            >
+              <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+                <FiArchive className="text-lg" />
+              </div>
+              Contrats archivés
+            </button>
             <button
               onClick={handleAddContract}
               className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
@@ -370,8 +378,8 @@ const AllContracts = () => {
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${statusColors[contract.status] || statusColors["draft"]}`}>
-                            {getStatusLabel(contract.status || "draft")}
+                          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${statusColors[contract.status] || statusColors["pending"]}`}>
+                            {getStatusLabel(contract.status || "pending")}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">

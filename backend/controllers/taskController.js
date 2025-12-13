@@ -103,17 +103,41 @@ const createTask = async (req, res) => {
       description,
       priority,
       dueDate,
-      assignedTo,
-      attachments,
       todoChecklist,
       project,
       status
     } = req.body;
 
+    // Parser assignedTo si c'est une string JSON
+    let assignedTo = req.body.assignedTo;
+    if (typeof assignedTo === 'string') {
+      try {
+        assignedTo = JSON.parse(assignedTo);
+      } catch (e) {
+        assignedTo = [];
+      }
+    }
+
+    // Parser assignedRoles si c'est une string JSON
+    let assignedRoles = req.body.assignedRoles;
+    if (typeof assignedRoles === 'string') {
+      try {
+        assignedRoles = JSON.parse(assignedRoles);
+      } catch (e) {
+        assignedRoles = [];
+      }
+    }
+
     if (!Array.isArray(assignedTo)) {
       return res
         .status(400)
         .json({ message: "assignedTo must be an array of user IDs" });
+    }
+
+    // Gérer les fichiers uploadés
+    let attachments = [];
+    if (req.files && req.files.length > 0) {
+      attachments = req.files.map(file => `/uploads/${file.filename}`);
     }
 
     const task = await Task.create({
@@ -122,6 +146,7 @@ const createTask = async (req, res) => {
       priority,
       dueDate,
       assignedTo,
+      assignedRoles: assignedRoles || [],
       createdBy: req.user._id,
       todoChecklist,
       attachments,
@@ -155,21 +180,56 @@ const updateTask = async (req, res) => {
     task.title = req.body.title || task.title;
     task.description = req.body.description || task.description;
     task.priority = req.body.priority || task.priority;
+    task.status = req.body.status || task.status;
     task.dueDate = req.body.dueDate || task.dueDate;
     task.todoChecklist = req.body.todoChecklist || task.todoChecklist;
-    task.attachments = req.body.attachments || task.attachments;
+    
+    // Gérer les nouveaux fichiers uploadés
+    if (req.files && req.files.length > 0) {
+      const newAttachments = req.files.map(file => `/uploads/${file.filename}`);
+      task.attachments = [...task.attachments, ...newAttachments];
+    }
 
     if (req.body.assignedTo) {
-      if (!Array.isArray(req.body.assignedTo)) {
+      let assignedTo = req.body.assignedTo;
+      // Parser si c'est une string JSON
+      if (typeof assignedTo === 'string') {
+        try {
+          assignedTo = JSON.parse(assignedTo);
+        } catch (e) {
+          assignedTo = [];
+        }
+      }
+      
+      if (!Array.isArray(assignedTo)) {
         return res
           .status(400)
           .json({ message: "assignedTo must be an array of user IDs" });
       }
-      task.assignedTo = req.body.assignedTo;
+      task.assignedTo = assignedTo;
+    }
+
+    if (req.body.assignedRoles !== undefined) {
+      let assignedRoles = req.body.assignedRoles;
+      // Parser si c'est une string JSON
+      if (typeof assignedRoles === 'string') {
+        try {
+          assignedRoles = JSON.parse(assignedRoles);
+        } catch (e) {
+          assignedRoles = [];
+        }
+      }
+      
+      if (!Array.isArray(assignedRoles)) {
+        return res
+          .status(400)
+          .json({ message: "assignedRoles must be an array" });
+      }
+      task.assignedRoles = assignedRoles;
     }
 
     const updatedTask = await task.save();
-    res.json({ message: "Task updated successfully", updatedTask });
+    res.json({ message: "Task updated successfully", task: updatedTask });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }

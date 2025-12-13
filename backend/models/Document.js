@@ -12,6 +12,11 @@ const documentSchema = new mongoose.Schema({
     required: true
   },
   category: String,
+  status: {
+    type: String,
+    enum: ['pending', 'signed', 'expired'],
+    default: 'pending'
+  },
   filePath: { 
     type: String, 
     required: true 
@@ -40,6 +45,13 @@ const documentSchema = new mongoose.Schema({
   isArchived: { 
     type: Boolean, 
     default: false 
+  },
+  archived: {
+    type: Boolean,
+    default: false
+  },
+  archivedAt: {
+    type: Date
   },
   tags: [{
     type: String,

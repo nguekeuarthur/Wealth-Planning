@@ -156,7 +156,7 @@ const AllInvoices = () => {
   }
 
   return (
-    <DashboardLayout activeMenu="Invoices">
+    <DashboardLayout activeMenu="Factures">
       {/* Header Section with Enhanced Design */}
       <div className="relative bg-gradient-to-br from-[#1e4029] via-[#2d5f3f] to-[#1e4029] rounded-2xl shadow-xl p-8 my-6 overflow-hidden">
         {/* Background Pattern */}
@@ -366,7 +366,10 @@ const AllInvoices = () => {
 
       {/* View Invoice Modal */}
       {viewingInvoice && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={(e) => e.target === e.currentTarget && setViewingInvoice(null)}
+        >
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full border border-[#dfe8e1]">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">

@@ -13,6 +13,10 @@ const taskSchema = new mongoose.Schema(
         status: { type: String, enum: ["Pending", "In Progress", "Completed"], default: "Pending" },
         dueDate: { type: Date, required: true },
         assignedTo: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+        assignedRoles: [{
+            type: String,
+            enum: ['admin', 'partner', 'collaborator', 'client']
+        }],
         createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         attachments: [{ type: String }],
         todoChecklist: [todoSchema], 

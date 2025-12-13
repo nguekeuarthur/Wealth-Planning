@@ -162,7 +162,6 @@ const CreateContractModal = ({ isOpen, onClose, onContractCreated, editContract 
           fileFormData.append("name", formData.name);
           fileFormData.append("description", formData.description || "");
           fileFormData.append("category", formData.category || "");
-          fileFormData.append("status", formData.status);
           fileFormData.append("type", "contract");
 
         response = await axiosInstance.put(
@@ -180,7 +179,6 @@ const CreateContractModal = ({ isOpen, onClose, onContractCreated, editContract 
             name: formData.name,
             description: formData.description || "",
             category: formData.category || "",
-            status: formData.status,
             type: "contract"
           };
 
@@ -197,7 +195,6 @@ const CreateContractModal = ({ isOpen, onClose, onContractCreated, editContract 
         fileFormData.append("name", formData.name);
         fileFormData.append("description", formData.description || "");
         fileFormData.append("category", formData.category || "");
-        fileFormData.append("status", formData.status);
         fileFormData.append("type", "contract");
         if (formData.project) {
           fileFormData.append("project", formData.project);

@@ -91,6 +91,7 @@ import {
 } from "react-icons/fa";
 import CustomPieChart from "../../components/Charts/CustomPieChart";
 import CustomBarChart from "../../components/Charts/CustomBarChart";
+import CreateProjectModal from "../../components/CreateProjectModal";
 
 const COLORS = ["#2d5f3f", "#5a8f6f", "#a7c9ad"];
 
@@ -113,6 +114,7 @@ const Dashboard = () => {
   const [pieChartData, setPieChartData] = useState([]);
   const [barChartData, setBarChartData] = useState([]);
   const [invoiceChartData, setInvoiceChartData] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
 
   // Prepare Chart Data
@@ -286,7 +288,7 @@ const Dashboard = () => {
             </button>
 
             <button
-              onClick={() => navigate('/admin/create-project')}
+              onClick={() => setIsModalOpen(true)}
               className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
             >
               <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
@@ -582,6 +584,16 @@ const Dashboard = () => {
         </div>
       </div>
     </div>
+
+    {/* Modal de création de projet */}
+    <CreateProjectModal
+      isOpen={isModalOpen}
+      onClose={() => setIsModalOpen(false)}
+      onSuccess={() => {
+        setIsModalOpen(false);
+        getDashboardStats();
+      }}
+    />
     </DashboardLayout>
   );
 };
