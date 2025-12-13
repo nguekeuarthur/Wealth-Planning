@@ -133,10 +133,10 @@ const PatrimoineOverview = () => {
 
       {/* Statistiques principales */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
+        <div className="bg-gradient-to-br from-[#2d5f3f] to-[#1e4029] rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-blue-100 text-sm font-medium mb-2">Projets Actifs</p>
+              <p className="text-white/80 text-sm font-medium mb-2">Projets Actifs</p>
               <h3 className="text-3xl font-bold">
                 {patrimoineData?.activeProjects?.length || 0}
               </h3>
@@ -147,10 +147,10 @@ const PatrimoineOverview = () => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
+        <div className="bg-gradient-to-br from-[#5a8f6f] to-[#4a7a5f] rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-green-100 text-sm font-medium mb-2">Factures</p>
+              <p className="text-white/80 text-sm font-medium mb-2">Factures</p>
               <h3 className="text-3xl font-bold">
                 {invoiceStatusData.reduce((acc, curr) => acc + curr.value, 0)}
               </h3>
@@ -161,10 +161,10 @@ const PatrimoineOverview = () => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
+        <div className="bg-gradient-to-br from-[#7a9d7e] to-[#5a8f6f] rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-orange-100 text-sm font-medium mb-2">Tâches en Attente</p>
+              <p className="text-white/80 text-sm font-medium mb-2">Tâches en Attente</p>
               <h3 className="text-3xl font-bold">
                 {pendingTasks.length}
               </h3>
@@ -175,10 +175,10 @@ const PatrimoineOverview = () => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
+        <div className="bg-gradient-to-br from-[#3d6e4f] to-[#2d5f3f] rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-purple-100 text-sm font-medium mb-2">Messages Non Lus</p>
+              <p className="text-white/80 text-sm font-medium mb-2">Messages Non Lus</p>
               <h3 className="text-3xl font-bold">
                 {(discussionsData?.inboxMessages?.unread || 0) + 
                  (discussionsData?.projectMessages?.messages?.filter(m => !m.isRead)?.length || 0)}
