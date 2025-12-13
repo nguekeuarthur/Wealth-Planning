@@ -87,7 +87,12 @@ const MyTasks = () => {
   };
 
   const canModifyTask = (task) => {
-    return user?.role === 'admin' || task?.createdBy?._id === user?._id;
+    return (
+      user?.role === 'admin' || 
+      task?.createdBy?._id === user?._id ||
+      task?.assignedTo?.some(assignedUser => assignedUser._id === user?._id) ||
+      (task?.assignedRoles && task.assignedRoles.includes(user?.role))
+    );
   };
 
   useEffect(() => {

@@ -12,6 +12,11 @@ const documentSchema = new mongoose.Schema({
     required: true
   },
   category: String,
+  status: {
+    type: String,
+    enum: ['pending', 'signed', 'expired'],
+    default: 'pending'
+  },
   filePath: { 
     type: String, 
     required: true 

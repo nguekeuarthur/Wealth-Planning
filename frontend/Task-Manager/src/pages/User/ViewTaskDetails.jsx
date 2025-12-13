@@ -4,6 +4,7 @@ import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import AvatarGroup from "../../components/AvatarGroup";
+import EditTaskModal from "../../components/EditTaskModal";
 import { UserContext } from "../../context/userContext";
 import moment from "moment";
 import toast from "react-hot-toast";
@@ -15,6 +16,7 @@ const ViewTaskDetails = () => {
   const { user } = useContext(UserContext);
   const [task, setTask] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const getStatusTagColor = (status) => {
     switch (status) {
@@ -90,8 +92,23 @@ const ViewTaskDetails = () => {
     }
   };
 
-  // Check if user can edit/delete (admin or task creator)
-  const canModify = user?.role === 'admin' || task?.createdBy?._id === user?._id;
+  // Handle edit task
+  const handleEditTask = () => {
+    setShowEditModal(true);
+  };
+
+  // Handle task update success
+  const handleTaskUpdated = () => {
+    getTaskDetailsByID(); // Refresh task data
+    setShowEditModal(false);
+  };
+
+  // Check if user can edit/delete (admin, task creator, or assigned user)
+  const canModify = 
+    user?.role === 'admin' || 
+    task?.createdBy?._id === user?._id ||
+    task?.assignedTo?.some(assignedUser => assignedUser._id === user?._id) ||
+    (task?.assignedRoles && task.assignedRoles.includes(user?.role));
 
   useEffect(() => {
     if (id) {
@@ -123,7 +140,7 @@ const ViewTaskDetails = () => {
                   {canModify && (
                     <div className="flex gap-2">
                       <button
-                        onClick={() => navigate(`/admin/tasks/edit/${id}`)}
+                        onClick={handleEditTask}
                         className="flex items-center gap-1 px-3 py-1.5 bg-[#2d5f3f] text-white rounded-lg hover:bg-[#1e4029] transition-colors text-sm"
                       >
                         <LuPencil size={14} />
@@ -175,6 +192,29 @@ const ViewTaskDetails = () => {
               </div>
 
               <div className="mt-2">
+                <label className="text-xs font-medium text-slate-500">
+                  Roles assignés
+                </label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {task?.assignedRoles && task.assignedRoles.length > 0 ? (
+                    task.assignedRoles.map((role, index) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-[#e8f0e8] text-[#2d5f3f] text-xs font-medium rounded-lg border border-[#d5e8db]"
+                      >
+                        {role === 'admin' ? 'Administrateur' :
+                         role === 'partner' ? 'Partenaire' :
+                         role === 'collaborator' ? 'Collaborateur' :
+                         role === 'client' ? 'Client' : role}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-gray-500">Aucun rôle assigné</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4">
                 <label className="text-xs font-medium text-slate-500">
                   Todo Checklist
                 </label>
@@ -246,6 +286,15 @@ const ViewTaskDetails = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal d'édition */}
+      {showEditModal && task && (
+        <EditTaskModal
+          task={task}
+          onClose={() => setShowEditModal(false)}
+          onTaskUpdated={handleTaskUpdated}
+        />
       )}
     </DashboardLayout>
   );

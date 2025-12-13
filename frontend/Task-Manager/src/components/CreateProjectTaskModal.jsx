@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Modal from "./Modal";
-import { FiCalendar, FiUser, FiUsers, FiFileText } from "react-icons/fi";
+import { FiCalendar, FiUser, FiUsers, FiFileText, FiPaperclip, FiX } from "react-icons/fi";
 import axiosInstance from "../utils/axiosInstance";
 import { API_PATHS } from "../utils/apiPaths";
 import toast from "react-hot-toast";
@@ -14,6 +14,7 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
     assignedTo: [],
     status: "Pending"
   });
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [assignmentType, setAssignmentType] = useState("team_leader"); // "team_leader" ou "individual"
   const [users, setUsers] = useState([]);
   const [teams, setTeams] = useState([]);
@@ -94,17 +95,25 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
 
     setLoading(true);
     try {
-      const taskPayload = {
-        title: formData.title,
-        description: formData.description || "",
-        priority: formData.priority,
-        dueDate: new Date(formData.dueDate).toISOString(),
-        assignedTo: formData.assignedTo,
-        status: formData.status,
-        project: project._id
-      };
+      const formDataToSend = new FormData();
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('description', formData.description || '');
+      formDataToSend.append('priority', formData.priority);
+      formDataToSend.append('dueDate', new Date(formData.dueDate).toISOString());
+      formDataToSend.append('assignedTo', JSON.stringify(formData.assignedTo));
+      formDataToSend.append('status', formData.status);
+      formDataToSend.append('project', project._id);
+      
+      // Ajouter les fichiers
+      selectedFiles.forEach(file => {
+        formDataToSend.append('attachments', file);
+      });
 
-      const response = await axiosInstance.post(API_PATHS.TASKS.CREATE_TASK, taskPayload);
+      const response = await axiosInstance.post(API_PATHS.TASKS.CREATE_TASK, formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
 
       toast.success("Tâche créée avec succès !");
       onTaskCreated(response.data.task);
@@ -126,6 +135,7 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
       assignedTo: [],
       status: "Pending"
     });
+    setSelectedFiles([]);
     setAssignmentType("team_leader");
     setSelectedUserSearch("");
     setShowUserDropdown(false);
@@ -163,6 +173,23 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
     return u.name?.toLowerCase().includes(selectedUserSearch.toLowerCase()) ||
            u.email?.toLowerCase().includes(selectedUserSearch.toLowerCase());
   });
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setSelectedFiles(prev => [...prev, ...files]);
+  };
+
+  const removeFile = (index) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  };
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Ajouter une tâche">
@@ -570,6 +597,64 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* Upload de fichiers */}
+        <div>
+          <label className="block text-xs font-medium text-[#7a8b7f] mb-2">
+            <FiPaperclip className="inline mr-1" />
+            Pièces jointes (optionnel)
+          </label>
+          
+          <div className="border-2 border-dashed border-[#dfe8e1] rounded-xl p-4 hover:border-[#5a8f6f] transition-colors">
+            <input
+              type="file"
+              id="task-file-upload"
+              multiple
+              onChange={handleFileChange}
+              className="hidden"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+            />
+            <label
+              htmlFor="task-file-upload"
+              className="flex flex-col items-center justify-center cursor-pointer"
+            >
+              <FiPaperclip className="text-3xl text-[#7a8b7f] mb-2" />
+              <span className="text-sm text-[#4a5c52] font-medium">
+                Cliquez pour ajouter des fichiers
+              </span>
+              <span className="text-xs text-[#7a8b7f] mt-1">
+                PDF, Word, Excel, Images (Max 10MB par fichier)
+              </span>
+            </label>
+          </div>
+
+          {/* Liste des fichiers sélectionnés */}
+          {selectedFiles.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {selectedFiles.map((file, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-2 bg-[#f4f7f4] rounded-lg"
+                >
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <FiFileText className="text-[#2d5f3f] flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[#1e4029] truncate">{file.name}</p>
+                      <p className="text-xs text-[#7a8b7f]">{formatFileSize(file.size)}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeFile(index)}
+                    className="ml-2 p-1 text-[#7a8b7f] hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                  >
+                    <FiX size={18} />
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>

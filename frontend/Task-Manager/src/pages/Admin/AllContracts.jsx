@@ -30,7 +30,7 @@ const AllContracts = () => {
   const [allContracts, setAllContracts] = useState([]);
   const [filteredContracts, setFilteredContracts] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("name");
+  const [sortBy, setSortBy] = useState("createdAt");
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingContract, setEditingContract] = useState(null);
@@ -38,15 +38,14 @@ const AllContracts = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
 
   const sortOptions = [
-    { value: "name", label: "File name" },
-    { value: "createdAt", label: "Created time" },
-    { value: "project", label: "Project" }
+    { value: "createdAt", label: "Date de création" },
+    { value: "name", label: "Nom du fichier" },
+    { value: "project", label: "Projet" }
   ];
 
   const statusColors = {
     "signed": "bg-[#dff5e7] text-[#1e4029] border-[#dfe8e1]",
     "pending": "bg-[#fff7d6] text-[#7b6a25] border-[#dfe8e1]",
-    "draft": "bg-[#f4f7f4] text-[#7a8b7f] border-[#dfe8e1]",
     "expired": "bg-red-50 text-red-700 border-red-200"
   };
 
@@ -54,7 +53,6 @@ const AllContracts = () => {
     const statusMap = {
       'signed': 'Signé',
       'pending': 'En attente',
-      'draft': 'Brouillon',
       'expired': 'Expiré'
     };
     return statusMap[status] || status;
@@ -380,8 +378,8 @@ const AllContracts = () => {
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${statusColors[contract.status] || statusColors["draft"]}`}>
-                            {getStatusLabel(contract.status || "draft")}
+                          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${statusColors[contract.status] || statusColors["pending"]}`}>
+                            {getStatusLabel(contract.status || "pending")}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">

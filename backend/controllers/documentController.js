@@ -87,7 +87,7 @@ exports.uploadDocument = async (req, res) => {
       return res.status(400).json({ message: 'Aucun fichier fourni' });
     }
 
-    const { name, description, type, category, project } = req.body;
+    const { name, description, type, category, project, status } = req.body;
 
     // Check project access
     if (project) {
@@ -106,6 +106,7 @@ exports.uploadDocument = async (req, res) => {
       description,
       type,
       category,
+      status,
       filePath: req.file.path,
       fileUrl: `/uploads/${req.file.filename}`,
       fileType: req.file.mimetype,
@@ -153,6 +154,7 @@ exports.updateDocument = async (req, res) => {
     if (req.body.name) document.name = req.body.name;
     if (req.body.description !== undefined) document.description = req.body.description;
     if (req.body.category !== undefined) document.category = req.body.category;
+    if (req.body.status !== undefined) document.status = req.body.status;
     if (req.body.type) document.type = req.body.type;
 
     // If a new file is provided, update it
