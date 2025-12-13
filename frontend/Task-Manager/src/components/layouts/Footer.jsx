@@ -177,8 +177,8 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
                 <FaEnvelope className="text-[#5a8f6f] mt-1 flex-shrink-0" />
-                <a href="mailto:contact@genevawealthpartners.ch" className="text-gray-300 hover:text-white transition-colors font-light">
-                  contact@genevawealthpartners.ch
+                <a href="mailto:info@genevawealthpartners.ch" className="text-gray-300 hover:text-white transition-colors font-light">
+                  info@genevawealthpartners.ch
                 </a>
               </li>
               <li className="flex items-start gap-3">
