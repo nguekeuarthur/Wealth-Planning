@@ -39,6 +39,12 @@ import {
       path: "/admin/teams",
     },
     {
+      id: "04c",
+      label: "Messagerie",
+      icon: LuMessageSquare,
+      path: "/admin/chat",
+    },
+    {
       id: "05",
       label: "Factures",
       icon: LuFileText,
@@ -79,12 +85,18 @@ import {
     },
     {
       id: "03",
+      label: "Messagerie",
+      icon: LuMessageSquare,
+      path: "/user/chat",
+    },
+    {
+      id: "04",
       label: "Notifications",
       icon: LuBell,
       path: "/user/notifications",
     },
     {
-      id: "04",
+      id: "05",
       label: "Déconnexion",
       icon: LuLogOut,
       path: "logout",
@@ -124,8 +136,14 @@ import {
     },
     {
       id: "06",
-      label: "Messages",
+      label: "Messagerie",
       icon: LuMessageSquare,
+      path: "/client/chat",
+    },
+    {
+      id: "07",
+      label: "Notifications",
+      icon: LuBell,
       path: "/client/messages",
     },
     {
@@ -163,8 +181,14 @@ import {
     },
     {
       id: "05",
-      label: "Messages",
+      label: "Messagerie",
       icon: LuMessageSquare,
+      path: "/partner/chat",
+    },
+    {
+      id: "06",
+      label: "Notifications",
+      icon: LuBell,
       path: "/partner/messages",
     },
     {
@@ -208,8 +232,14 @@ import {
     },
     {
       id: "06",
-      label: "Messages",
+      label: "Messagerie",
       icon: LuMessageSquare,
+      path: "/collaborator/chat",
+    },
+    {
+      id: "07",
+      label: "Notifications",
+      icon: LuBell,
       path: "/collaborator/messages",
     },
     {
