@@ -229,7 +229,10 @@ const DeletedUsers = () => {
 
       {/* User Details Modal */}
       {isDetailsModalOpen && selectedUser && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={(e) => e.target === e.currentTarget && setIsDetailsModalOpen(false)}
+        >
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-[#dfe8e1] flex-shrink-0">
