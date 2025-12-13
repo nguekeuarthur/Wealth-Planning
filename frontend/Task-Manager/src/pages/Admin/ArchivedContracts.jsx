@@ -103,7 +103,7 @@ const ArchivedContracts = () => {
 
   if (loading) {
     return (
-      <DashboardLayout activeMenu="Contracts">
+      <DashboardLayout activeMenu="Contrats">
         <div className="flex items-center justify-center h-[80vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2d5f3f] mx-auto"></div>
@@ -115,7 +115,7 @@ const ArchivedContracts = () => {
   }
 
   return (
-    <DashboardLayout activeMenu="Contracts">
+    <DashboardLayout activeMenu="Contrats">
       {/* Header Section */}
       <div className="relative bg-gradient-to-br from-[#1e4029] via-[#2d5f3f] to-[#1e4029] rounded-2xl shadow-xl p-8 my-6 overflow-hidden">
         {/* Background Pattern */}

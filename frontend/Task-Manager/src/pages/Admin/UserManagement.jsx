@@ -299,7 +299,7 @@ const UserManagement = () => {
 
   if (loading) {
     return (
-      <DashboardLayout activeMenu="Team">
+      <DashboardLayout activeMenu="Utilisateurs">
         <div className="flex flex-col items-center justify-center h-96">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5a8f6f]"></div>
           <p className="mt-4 text-[#2d5f3f] font-medium">Chargement de l'équipe...</p>
@@ -309,7 +309,7 @@ const UserManagement = () => {
   }
 
   return (
-    <DashboardLayout activeMenu="Team">
+    <DashboardLayout activeMenu="Utilisateurs">
       {/* Header Section with Enhanced Design */}
       <div className="relative bg-gradient-to-br from-[#1e4029] via-[#2d5f3f] to-[#1e4029] rounded-2xl shadow-xl p-8 my-6 overflow-hidden">
         {/* Background Pattern */}
