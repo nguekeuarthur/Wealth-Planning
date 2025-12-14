@@ -230,7 +230,7 @@ const Chat = () => {
   return (
     <div className="h-screen flex bg-gray-50 pl-64">
       {/* Sidebar - Liste des conversations */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-sm">
+      <div className="w-72 bg-white border-r border-gray-200 flex flex-col shadow-sm">
         {/* Header de la sidebar */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
@@ -273,29 +273,25 @@ const Chat = () => {
                 <div
                   key={conversation._id}
                   onClick={() => selectConversation(conversation)}
-                  className={`px-4 py-3 cursor-pointer transition-all ${
-                    activeConversation?._id === conversation._id
-                      ? 'bg-[#2d5f3f] text-white border-l-4 border-l-[#1e4029]'
-                      : 'hover:bg-gray-50'
-                  }`}
+                  className={`px-4 py-3 cursor-pointer transition-all ${activeConversation?._id === conversation._id
+                    ? 'bg-[#2d5f3f] text-white border-l-4 border-l-[#1e4029]'
+                    : 'hover:bg-gray-50'
+                    }`}
                 >
                   <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      activeConversation?._id === conversation._id
-                        ? 'bg-white/20'
-                        : 'bg-[#2d5f3f]'
-                    }`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${activeConversation?._id === conversation._id
+                      ? 'bg-white/20'
+                      : 'bg-[#2d5f3f]'
+                      }`}>
                       <FaUsers className="text-white" size={16} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium truncate ${
-                        activeConversation?._id === conversation._id ? 'text-white' : 'text-gray-900'
-                      }`}>
+                      <p className={`text-sm font-medium truncate ${activeConversation?._id === conversation._id ? 'text-white' : 'text-gray-900'
+                        }`}>
                         {conversation.name}
                       </p>
-                      <p className={`text-xs truncate ${
-                        activeConversation?._id === conversation._id ? 'text-white/80' : 'text-gray-500'
-                      }`}>
+                      <p className={`text-xs truncate ${activeConversation?._id === conversation._id ? 'text-white/80' : 'text-gray-500'
+                        }`}>
                         {conversation.participants.length} participant{conversation.participants.length > 1 ? 's' : ''}
                       </p>
                     </div>
@@ -312,7 +308,7 @@ const Chat = () => {
         {activeConversation ? (
           <>
             {/* Chat Header */}
-            <div className="px-6 py-4 border-b border-gray-200 bg-white">
+            <div className="px-4 py-3 border-b border-gray-200 bg-white">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-[#2d5f3f] rounded-full flex items-center justify-center">
@@ -333,7 +329,7 @@ const Chat = () => {
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+            <div className="flex-1 overflow-y-auto p-3 bg-gray-50">
               <div className="space-y-4">
                 {messages.map((message) => (
                   <div
@@ -350,17 +346,15 @@ const Chat = () => {
                       )}
                       <div>
                         <div
-                          className={`px-4 py-2 rounded-lg ${
-                            message.sender._id === user?._id
-                              ? 'bg-[#2d5f3f] text-white rounded-br-none'
-                              : 'bg-white border border-gray-200 text-gray-900 rounded-bl-none'
-                          }`}
+                          className={`px-4 py-2 rounded-lg ${message.sender._id === user?._id
+                            ? 'bg-[#2d5f3f] text-white rounded-br-none'
+                            : 'bg-white border border-gray-200 text-gray-900 rounded-bl-none'
+                            }`}
                         >
                           <p className="text-sm">{message.content}</p>
                         </div>
-                        <p className={`text-xs mt-1 ${
-                          message.sender._id === user?._id ? 'text-right text-gray-500' : 'text-gray-500'
-                        }`}>
+                        <p className={`text-xs mt-1 ${message.sender._id === user?._id ? 'text-right text-gray-500' : 'text-gray-500'
+                          }`}>
                           {new Date(message.createdAt).toLocaleTimeString(lang === 'FR' ? 'fr-FR' : 'en-US', {
                             hour: '2-digit',
                             minute: '2-digit'
@@ -387,8 +381,8 @@ const Chat = () => {
                       <div className="bg-white border border-gray-200 rounded-lg rounded-bl-none px-4 py-2">
                         <div className="flex space-x-1">
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                         </div>
                       </div>
                     </div>
@@ -400,7 +394,7 @@ const Chat = () => {
             </div>
 
             {/* Message Input */}
-            <div className="p-4 border-t border-gray-200 bg-white">
+            <div className="p-3 border-t border-gray-200 bg-white">
               <form onSubmit={sendMessage} className="flex items-center space-x-3">
                 <button
                   type="button"
@@ -443,12 +437,12 @@ const Chat = () => {
               <p className="text-sm text-gray-600 mb-4">
                 {copy.startConversation}
               </p>
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className="px-4 py-2 bg-[#2d5f3f] text-white rounded-lg hover:bg-[#1e4029] transition-colors"
-                >
-                  {copy.newConversation}
-                </button>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="px-4 py-2 bg-[#2d5f3f] text-white rounded-lg hover:bg-[#1e4029] transition-colors"
+              >
+                {copy.newConversation}
+              </button>
             </div>
           </div>
         )}
