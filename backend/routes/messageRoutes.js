@@ -9,6 +9,9 @@ router.use(protect);
 // Get unread count
 router.get('/unread/count', messageController.getUnreadCount);
 
+// Mark all messages as read
+router.put('/read/all', messageController.markAllAsRead);
+
 // Get recent messages (last 15-24 hours)
 router.get('/recent', messageController.getRecentMessages);
 

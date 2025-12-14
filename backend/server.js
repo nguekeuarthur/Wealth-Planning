@@ -80,6 +80,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Configuration Socket.io pour le chat
+// userId -> Set(socketId)
 const connectedUsers = new Map();
 const jwt = require('jsonwebtoken');
 
@@ -97,8 +98,10 @@ io.use(async (socket, next) => {
     socket.userId = decoded.id;
     socket.user = decoded;
 
-    // Stocker la connexion utilisateur
-    connectedUsers.set(decoded.id, socket.id);
+    // Stocker la connexion utilisateur (multi-onglets)
+    const set = connectedUsers.get(decoded.id) || new Set();
+    set.add(socket.id);
+    connectedUsers.set(decoded.id, set);
 
     next();
   } catch (error) {
@@ -107,8 +110,17 @@ io.use(async (socket, next) => {
   }
 });
 
+function broadcastOnlineUsers() {
+  try {
+    io.emit('onlineUsers', Array.from(connectedUsers.keys()).map(String));
+  } catch (e) {
+    console.error('Error broadcasting online users:', e);
+  }
+}
+
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
+  broadcastOnlineUsers();
 
   // Joindre une conversation
   socket.on('joinConversation', (conversationId) => {
@@ -142,7 +154,17 @@ io.on('connection', (socket) => {
   // Déconnexion
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
-    // Nettoyer les connexions si nécessaire
+    // Nettoyer les connexions
+    const userId = socket.userId;
+    if (userId && connectedUsers.has(userId)) {
+      const set = connectedUsers.get(userId);
+      if (set && typeof set.delete === 'function') {
+        set.delete(socket.id);
+        if (set.size === 0) connectedUsers.delete(userId);
+        else connectedUsers.set(userId, set);
+      }
+    }
+    broadcastOnlineUsers();
   });
 });
 

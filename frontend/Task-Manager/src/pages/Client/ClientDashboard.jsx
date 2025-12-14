@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useUserAuth } from "../../hooks/useUserAuth";
 import { useContext } from "react";
 import { UserContext } from "../../context/userContext";
+import { useUnreadMessages } from "../../context/UnreadMessagesContext";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
@@ -25,6 +26,7 @@ moment.locale('fr');
 const ClientDashboard = () => {
   useUserAuth();
   const { user } = useContext(UserContext);
+  const { unreadCount } = useUnreadMessages();
   const navigate = useNavigate();
 
   const [stats, setStats] = useState({
@@ -43,19 +45,19 @@ const ClientDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
+
       // Récupérer les projets du client
       const projectsRes = await axiosInstance.get(API_PATHS.PROJECTS.GET_ALL_PROJECTS);
-      
+
       // Récupérer les factures du client
       const invoicesRes = await axiosInstance.get(API_PATHS.INVOICES.GET_ALL_INVOICES);
-      
+
       // Récupérer les tâches
       const tasksRes = await axiosInstance.get(API_PATHS.TASKS.GET_ALL_TASKS);
-      
+
       // Récupérer les messages récents
       const messagesRes = await axiosInstance.get('/api/messages/recent');
-      
+
       // Récupérer les fichiers tagués client
       const filesRes = await axiosInstance.get('/api/documents?tags=client');
 
@@ -212,14 +214,19 @@ const ClientDashboard = () => {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-xs uppercase tracking-wide text-[#7a8b7f] font-semibold mb-2">
-                Messages
+                Messages Non Lus
               </p>
               <h3 className="text-3xl font-bold text-[#1e4029]">
-                {stats.messages.length}
+                {unreadCount}
               </h3>
             </div>
-            <div className="p-3 rounded-xl bg-[#f0f5f1] text-[#2d5f3f] shadow-inner">
+            <div className="p-3 rounded-xl bg-green-50 text-green-500 shadow-inner relative">
               <FaEnvelope className="text-xl" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none animate-pulse">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </div>
           </div>
         </div>

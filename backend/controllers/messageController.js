@@ -44,7 +44,7 @@ exports.getAllMessages = async (req, res) => {
         const receiverRole = msg.receiver?.role;
         // Exclure les messages entre partner et admin
         return !(senderRole === 'partner' && receiverRole === 'admin') &&
-               !(senderRole === 'admin' && receiverRole === 'partner');
+          !(senderRole === 'admin' && receiverRole === 'partner');
       });
     }
 
@@ -104,7 +104,7 @@ exports.getProjectMessages = async (req, res) => {
         const receiverRole = msg.receiver?.role;
         // Exclure les messages entre partner et admin
         return !(senderRole === 'partner' && receiverRole === 'admin') &&
-               !(senderRole === 'admin' && receiverRole === 'partner');
+          !(senderRole === 'admin' && receiverRole === 'partner');
       });
     }
 
@@ -157,7 +157,7 @@ exports.getRecentMessages = async (req, res) => {
         const receiverRole = msg.receiver?.role;
         // Exclure les messages entre partner et admin
         return !(senderRole === 'partner' && receiverRole === 'admin') &&
-               !(senderRole === 'admin' && receiverRole === 'partner');
+          !(senderRole === 'admin' && receiverRole === 'partner');
       });
     }
 
@@ -226,7 +226,7 @@ exports.getCollaboratorMessages = async (req, res) => {
       const receiverRole = msg.receiver?.role;
       // Exclure les messages entre partner et admin
       return !(senderRole === 'partner' && receiverRole === 'admin') &&
-             !(senderRole === 'admin' && receiverRole === 'partner');
+        !(senderRole === 'admin' && receiverRole === 'partner');
     });
 
     res.json({ messages });
@@ -321,12 +321,43 @@ exports.deleteMessage = async (req, res) => {
 // Get unread count
 exports.getUnreadCount = async (req, res) => {
   try {
+    // Compter les messages de conversation où l'utilisateur n'est pas l'expéditeur
+    // et qui ne sont pas marqués comme lus par l'utilisateur
     const count = await Message.countDocuments({
-      receiver: req.user._id,
-      isRead: false
+      sender: { $ne: req.user._id },
+      'readBy.user': { $ne: req.user._id }
     });
 
     res.json({ unreadCount: count });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+// Mark all messages as read
+exports.markAllAsRead = async (req, res) => {
+  try {
+    // Mettre à jour tous les messages où l'utilisateur n'est pas l'expéditeur
+    // et qui ne sont pas encore marqués comme lus par l'utilisateur
+    const result = await Message.updateMany(
+      {
+        sender: { $ne: req.user._id },
+        'readBy.user': { $ne: req.user._id }
+      },
+      {
+        $push: {
+          readBy: {
+            user: req.user._id,
+            readAt: new Date()
+          }
+        }
+      }
+    );
+
+    res.json({
+      message: 'Tous les messages marqués comme lus',
+      count: result.modifiedCount
+    });
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
