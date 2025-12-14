@@ -15,6 +15,8 @@ import ManageUsers from "./pages/Admin/ManageUsers";
 import AllProjects from "./pages/Admin/AllProjects";
 import ArchivedProjects from "./pages/Admin/ArchivedProjects";
 import ProjectDetails from "./pages/Admin/ProjectDetails";
+import ClientProjectDetails from "./pages/Client/ProjectDetails";
+import UserProjectDetails from "./pages/User/ProjectDetails";
 import ClientDetails from "./pages/Admin/ClientDetails";
 import UserManagement from "./pages/Admin/UserManagement";
 import DeletedUsers from "./pages/Admin/DeletedUsers";
@@ -106,6 +108,7 @@ const App = () => {
                     path="/user/task-details/:id"
                     element={<ViewTaskDetails />}
                   />
+                  <Route path="/user/project/:id" element={<UserProjectDetails />} />
                   <Route path="/user/projects" element={<AllProjects />} />
                   <Route path="/user/documents" element={<UserDocuments />} />
                   <Route path="/user/invoices" element={<AllInvoices />} />
@@ -117,7 +120,7 @@ const App = () => {
                 <Route element={<PrivateRoute allowedRoles={["client"]} />}>
                   <Route path="/client/dashboard" element={<ClientDashboard />} />
                   <Route path="/client/projects" element={<AllProjects />} />
-                  <Route path="/client/project/:id" element={<ProjectDetails />} />
+                  <Route path="/client/project/:id" element={<ClientProjectDetails />} />
                   <Route path="/client/tasks" element={<MyTasks />} />
                   <Route path="/client/task-details/:id" element={<ViewTaskDetails />} />
                   <Route path="/client/chat" element={<DashboardLayout activeMenu="Messagerie" fullWidth={true}><Chat /></DashboardLayout>} />

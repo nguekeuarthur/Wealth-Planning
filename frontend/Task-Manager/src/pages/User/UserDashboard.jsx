@@ -76,6 +76,8 @@ const UserDashboard = () => {
   const getProjects = async () => {
     try {
       const response = await axiosInstance.get(API_PATHS.PROJECTS.GET_ALL_PROJECTS);
+      console.log("UserDashboard - Projects response:", response.data);
+      console.log("UserDashboard - Projects array:", response.data.projects);
       if (response.data) {
         setProjects(response.data.projects || []);
       }

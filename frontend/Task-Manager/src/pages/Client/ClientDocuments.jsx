@@ -9,7 +9,7 @@ import { API_PATHS } from "../../utils/apiPaths";
 import moment from "moment";
 import 'moment/locale/fr';
 import { addThousandsSeparator } from "../../utils/helper";
-import { LuArrowRight, LuPlus, LuSearch, LuFilter, LuDownload, LuEye, LuTrash2, LuFileText, LuFile, LuImage, LuFolderOpen } from "react-icons/lu";
+import { LuArrowRight, LuSearch, LuFilter, LuDownload, LuEye, LuTrash2, LuFileText, LuFile, LuImage, LuFolderOpen } from "react-icons/lu";
 import {
     FaFileAlt,
     FaFilePdf,
@@ -82,29 +82,6 @@ const ClientDocuments = () => {
         return matchesSearch && matchesFilter;
     }) : [];
 
-    const handleFileUpload = async (event) => {
-        const files = event.target.files;
-        if (files.length === 0) return;
-
-        const formData = new FormData();
-        Array.from(files).forEach(file => {
-            formData.append('documents', file);
-        });
-
-        try {
-            const response = await axiosInstance.post(API_PATHS.DOCUMENTS.UPLOAD_DOCUMENT, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-
-            if (response.data) {
-                getDocuments(); // Refresh the documents list
-            }
-        } catch (error) {
-            console.error("Error uploading documents:", error);
-        }
-    };
 
     const handleViewDocument = (doc) => {
         // Implement document viewing logic
@@ -182,22 +159,6 @@ const ClientDocuments = () => {
                                 {moment().format("dddd DD MMMM YYYY")}
                             </span>
                         </div>
-                    </div>
-                    <div className="relative">
-                        <input
-                            type="file"
-                            multiple
-                            onChange={handleFileUpload}
-                            className="hidden"
-                            id="file-upload"
-                        />
-                        <label
-                            htmlFor="file-upload"
-                            className="bg-white/10 backdrop-blur-sm text-white px-6 py-3 rounded-xl flex items-center gap-2 cursor-pointer hover:bg-white/20 transition-all border border-white/20"
-                        >
-                            <LuPlus className="text-lg" />
-                            Ajouter des documents
-                        </label>
                     </div>
                 </div>
             </div>
