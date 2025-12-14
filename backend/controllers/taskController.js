@@ -1,6 +1,6 @@
 const Task = require("../models/Task");
 
-// @desc    Get all tasks (Admin: all, User: only assigned tasks)
+// @desc    Get all tasks (Admin: all, User: only assigned tasks, Client: all tasks of their projects in read-only)
 // @route   GET /api/tasks/
 // @access  Private
 const getTasks = async (req, res) => {
@@ -22,6 +22,24 @@ const getTasks = async (req, res) => {
       tasks = await Task.find(filter)
         .populate("assignedTo", "name email profileImageUrl")
         .populate("project", "name");
+    } else if (req.user.role === "client") {
+      // Les clients voient toutes les tâches de leurs projets (en lecture seule)
+      const Project = require("../models/Project");
+      const userProjects = await Project.find({ client: req.user._id }).select("_id");
+      const projectIds = userProjects.map(p => p._id);
+      
+      tasks = await Task.find({ ...filter, project: { $in: projectIds } })
+        .populate("assignedTo", "name email profileImageUrl role")
+        .populate("project", "name");
+      
+      // Filtrer les assignedTo pour ne pas montrer les partenaires aux clients
+      tasks = tasks.map(task => {
+        const taskObj = task.toObject();
+        if (taskObj.assignedTo && Array.isArray(taskObj.assignedTo)) {
+          taskObj.assignedTo = taskObj.assignedTo.filter(user => user.role !== 'partner');
+        }
+        return taskObj;
+      });
     } else {
       tasks = await Task.find({ ...filter, assignedTo: req.user._id })
         .populate("assignedTo", "name email profileImageUrl")
@@ -80,12 +98,28 @@ const getTasks = async (req, res) => {
 // @access  Private
 const getTaskById = async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id).populate(
-      "assignedTo",
-      "name email profileImageUrl"
-    );
+    let task = await Task.findById(req.params.id)
+      .populate("assignedTo", "name email profileImageUrl role")
+      .populate("project", "name client");
 
     if (!task) return res.status(404).json({ message: "Task not found" });
+
+    // Vérifier les permissions pour les clients
+    if (req.user.role === "client") {
+      const Project = require("../models/Project");
+      const project = await Project.findById(task.project._id);
+      
+      if (!project || project.client.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: "Accès refusé" });
+      }
+      
+      // Filtrer les assignedTo pour ne pas montrer les partenaires aux clients
+      const taskObj = task.toObject();
+      if (taskObj.assignedTo && Array.isArray(taskObj.assignedTo)) {
+        taskObj.assignedTo = taskObj.assignedTo.filter(user => user.role !== 'partner');
+      }
+      return res.json(taskObj);
+    }
 
     res.json(task);
   } catch (error) {

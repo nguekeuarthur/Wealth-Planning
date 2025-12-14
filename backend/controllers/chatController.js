@@ -151,6 +151,19 @@ exports.createConversation = async (req, res) => {
 
     // Ajouter les autres participants (sans sauvegarder à chaque fois)
     if (participants && participants.length > 0) {
+      // Vérifier les rôles des participants pour empêcher les conversations Client <-> Partenaire
+      const participantUsers = await User.find({ _id: { $in: participants } }).select('role');
+      const participantRoles = participantUsers.map(u => u.role);
+      const hasClient = req.user.role === 'client' || participantRoles.includes('client');
+      const hasPartner = req.user.role === 'partner' || participantRoles.includes('partner');
+      
+      if (hasClient && hasPartner) {
+        console.log('❌ Cannot create conversation: Client and Partner cannot be in the same conversation');
+        return res.status(403).json({ 
+          message: 'Les clients et les partenaires ne peuvent pas être dans la même conversation' 
+        });
+      }
+      
       for (const participantId of participants) {
         console.log('➕ Adding participant:', participantId);
         if (participantId !== req.user._id.toString()) {
@@ -231,11 +244,24 @@ exports.getUserConversations = async (req, res) => {
 
     console.log('🔍 Filter applied:', filter);
 
-    const conversations = await Conversation.find(filter)
+    let conversations = await Conversation.find(filter)
       .populate('participants.user', 'name email profileImageUrl role')
       .populate('project', 'name')
       .populate('lastMessage')
       .sort({ updatedAt: -1 });
+
+    // Filtrer les conversations pour les clients : ne pas voir les conversations avec des Partenaires
+    if (userRole === 'client') {
+      conversations = conversations.filter(conv => {
+        // Vérifier si la conversation contient un partenaire
+        const hasPartner = conv.participants.some(p => 
+          p.user && p.user.role === 'partner'
+        );
+        // Ne garder que les conversations sans partenaire
+        return !hasPartner;
+      });
+      console.log('🔒 Client conversations filtered. Removed conversations with partners.');
+    }
 
     // Ajouter le compteur de messages non lus pour chaque conversation
     const conversationsWithUnread = await Promise.all(
@@ -425,13 +451,25 @@ exports.addParticipant = async (req, res) => {
 // Get conversations with unread counts
 exports.getConversations = async (req, res) => {
   try {
-    const conversations = await Conversation.find({
+    let conversations = await Conversation.find({
       isActive: true,
       'participants.user': req.user._id
     })
       .populate('participants.user', 'name email profileImageUrl role')
       .populate('project', 'name')
       .populate('lastMessage');
+
+    // Filtrer les conversations pour les clients : ne pas voir les conversations avec des Partenaires
+    if (req.user.role === 'client') {
+      conversations = conversations.filter(conv => {
+        // Vérifier si la conversation contient un partenaire
+        const hasPartner = conv.participants.some(p => 
+          p.user && p.user.role === 'partner'
+        );
+        // Ne garder que les conversations sans partenaire
+        return !hasPartner;
+      });
+    }
 
     // Ajouter le compteur de messages non lus pour chaque conversation
     const conversationsWithUnread = await Promise.all(
@@ -526,14 +564,20 @@ function canAccessConversation(user, conversation) {
     return allowed;
   }
 
-  // Les clients voient seulement leurs conversations privées et de projet
+  // Les clients voient seulement leurs conversations privées et de projet, SANS partenaires
   if (userRole === 'client') {
     const isParticipant = conversation.participants.some(p =>
       p.user.toString() === userId.toString()
     );
     const allowedType = ['private', 'project', 'group', 'support'].includes(conversation.type);
-    const result = isParticipant && allowedType;
-    console.log('👤 Client check:', { isParticipant, allowedType, result });
+    
+    // Vérifier qu'il n'y a pas de partenaire dans la conversation
+    const hasPartner = conversation.participants.some(p => 
+      p.user && (p.user.role === 'partner' || (typeof p.user === 'object' && p.user.role === 'partner'))
+    );
+    
+    const result = isParticipant && allowedType && !hasPartner;
+    console.log('👤 Client check:', { isParticipant, allowedType, hasPartner, result });
     return result;
   }
 
