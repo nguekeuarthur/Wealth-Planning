@@ -1,7 +1,8 @@
-require("dotenv").config({ path: "../.env" });
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+
 const express = require("express");
 const cors = require("cors");
-const path = require("path");
 const http = require("http");
 const socketIo = require("socket.io");
 const connectDB = require("./config/db");
@@ -48,12 +49,24 @@ app.use(
   })
 );
 
-// Connect Database
-connectDB().then(async () => {
+const PORT = process.env.PORT || 8000;
+
+async function start() {
+  // Connect Database
+  await connectDB();
+
   // Initialiser les conversations par défaut
   await initializeDefaultConversations();
-  console.log('Conversations par défaut initialisées');
-});
+  console.log("Conversations par défaut initialisées");
+
+  // Start Server (only after DB is ready)
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`WebSocket server ready for chat connections`);
+    console.log(`API available at: http://localhost:${PORT}/api`);
+    console.log(`Socket.io available at: http://localhost:${PORT}/socket.io`);
+  });
+}
 
 // Middleware
 app.use(express.json());
@@ -146,12 +159,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// Start Server
-const PORT = process.env.PORT || 8000;
-
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`WebSocket server ready for chat connections`);
-  console.log(`API available at: http://localhost:${PORT}/api`);
-  console.log(`Socket.io available at: http://localhost:${PORT}/socket.io`);
+start().catch((err) => {
+  console.error("[startup] Failed to start server:", err);
+  process.exit(1);
 });
