@@ -39,8 +39,8 @@ exports.getAllInvoices = async (req, res) => {
       // Admin voit toutes les factures
       // Pas de filtre client
     } else if (req.user.role === 'collaborator') {
-      // Collaborateur voit seulement ses factures concernées
-      filter.assignedTo = req.user._id;
+      // Collaborateur voit toutes les factures (en lecture seule)
+      // Pas de filtre
     } else if (req.user.role === 'client') {
       // Clients voient seulement leurs factures
       filter.client = req.user._id;
@@ -102,6 +102,7 @@ exports.getInvoiceById = async (req, res) => {
     // Check permissions selon le rôle
     let hasAccess = false;
     if (req.user.role === 'admin' || req.user.role === 'collaborator') {
+      // Admin et Collaborateur ont accès à toutes les factures
       hasAccess = true;
     } else if (req.user.role === 'client') {
       hasAccess = invoice.client && invoice.client.toString() === req.user._id.toString();

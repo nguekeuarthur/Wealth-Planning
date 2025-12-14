@@ -579,10 +579,21 @@ function canAccessConversation(user, conversation) {
   }
 
   // Les collaborateurs, utilisateurs et membres voient les conversations de projet, privées et de groupe
+  // Pour les conversations privées, ils doivent être participants
   if (['collaborator', 'user', 'member'].includes(userRole)) {
-    const allowed = ['private', 'project', 'group'].includes(conversation.type);
-    console.log('👷 User/Collaborator/Member check:', { allowed, conversationType: conversation.type });
-    return allowed;
+    const isParticipant = conversation.participants.some(p =>
+      p.user.toString() === userId.toString()
+    );
+    const allowedType = ['private', 'project', 'group'].includes(conversation.type);
+    
+    // Pour les conversations privées, vérifier qu'ils sont participants
+    if (conversation.type === 'private' && !isParticipant) {
+      console.log('👷 Collaborator/User/Member - Private conversation but not participant:', { isParticipant });
+      return false;
+    }
+    
+    console.log('👷 User/Collaborator/Member check:', { allowed: allowedType, conversationType: conversation.type, isParticipant });
+    return allowedType;
   }
 
   // Les clients voient seulement leurs conversations privées et de projet, SANS partenaires

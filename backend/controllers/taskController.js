@@ -18,7 +18,8 @@ const getTasks = async (req, res) => {
 
     let tasks;
 
-    if (req.user.role === "admin") {
+    if (req.user.role === "admin" || req.user.role === "collaborator") {
+      // Admin et Collaborateur voient toutes les tâches
       tasks = await Task.find(filter)
         .populate("assignedTo", "name email profileImageUrl")
         .populate("project", "name");
@@ -76,25 +77,25 @@ const getTasks = async (req, res) => {
 
     // Status summary counts
     const allTasks = await Task.countDocuments(
-      req.user.role === "admin" ? {} : { assignedTo: req.user._id }
+      (req.user.role === "admin" || req.user.role === "collaborator") ? {} : { assignedTo: req.user._id }
     );
 
     const pendingTasks = await Task.countDocuments({
       ...filter,
       status: "Pending",
-      ...(req.user.role !== "admin" && { assignedTo: req.user._id }),
+      ...((req.user.role !== "admin" && req.user.role !== "collaborator") && { assignedTo: req.user._id }),
     });
 
     const inProgressTasks = await Task.countDocuments({
       ...filter,
       status: "In Progress",
-      ...(req.user.role !== "admin" && { assignedTo: req.user._id }),
+      ...((req.user.role !== "admin" && req.user.role !== "collaborator") && { assignedTo: req.user._id }),
     });
 
     const completedTasks = await Task.countDocuments({
       ...filter,
       status: "Completed",
-      ...(req.user.role !== "admin" && { assignedTo: req.user._id }),
+      ...((req.user.role !== "admin" && req.user.role !== "collaborator") && { assignedTo: req.user._id }),
     });
 
     res.json({
