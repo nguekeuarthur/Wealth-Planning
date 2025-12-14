@@ -164,7 +164,7 @@ const Dashboard = () => {
   // Prepare Project Chart Data
   const prepareProjectChartData = (projectsByStatus) => {
     if (!projectsByStatus) return;
-    
+
     const statusMap = {
       'in progress': 'En cours',
       'in review': 'En révision',
@@ -222,7 +222,7 @@ const Dashboard = () => {
     getDashboardData();
     getDashboardStats();
 
-    return () => {};
+    return () => { };
   }, []);
 
   return (
@@ -364,236 +364,236 @@ const Dashboard = () => {
           })}
         </div>
 
-      {/* Active Projects Section */}
-      <div className="my-10">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-[#7a8b7f] mb-2">
-              Projets actifs
-            </p>
-            <h3 className="text-2xl font-bold text-[#1e4029]">Vue projets</h3>
-          </div>
-          <button
-            onClick={() => navigate("/admin/projects")}
-            className="text-sm font-medium text-[#2d5f3f] flex items-center gap-2 hover:gap-3 transition-all"
-          >
-            Voir tous les projets <LuArrowRight />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {stats?.projects?.recent?.length > 0 ? (
-            stats.projects.recent.slice(0, 3).map((project) => (
-              <div
-                key={project._id || project.id}
-                onClick={() => navigate(`/admin/project/${project._id || project.id}`)}
-                className="bg-white border border-[#dfe8e1] rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col gap-4 cursor-pointer"
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    navigate(`/admin/project/${project._id || project.id}`);
-                  }
-                }}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs uppercase text-[#7a8b7f] tracking-wide mb-1">
-                      {project.category || "Catégorie non définie"}
-                    </p>
-                    <h4 className="text-lg font-semibold text-[#1e4029]">
-                      {project.name}
-                    </h4>
-                  </div>
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${getProjectStatusBadge(
-                      project.status
-                    )}`}
-                  >
-                    {getProjectStatusLabel(project.status)}
-                  </span>
-                </div>
-
-                <div className="text-sm text-[#7a8b7f]">
-                  {project.description || "Description non fournie"}
-                </div>
-
-                <div className="flex items-center justify-between text-xs text-[#7a8b7f]">
-                  <span>Avancement</span>
-                  <span className="font-semibold text-[#2d5f3f]">
-                    {project.completion || 0}%
-                  </span>
-                </div>
-                <div className="h-2 bg-[#f4f7f4] rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-[#5a8f6f]"
-                    style={{ width: `${project.completion || 0}%` }}
-                  />
-                </div>
-
-                <div className="flex items-center gap-3 text-xs text-[#7a8b7f]">
-                  <div className="flex items-center gap-1">
-                    <FaCalendarAlt className="text-[#2d5f3f]" />
-                    <span>
-                      {project.startDate
-                        ? moment(project.startDate).locale('fr').format("DD MMM YYYY")
-                        : "Date à définir"}
-                    </span>
-                  </div>
-                  <span className="text-[#dfe8e1]">•</span>
-                  <div className="flex items-center gap-1">
-                    <FaEnvelope className="text-[#2d5f3f]" />
-                    <span>
-                      {project.owner?.name || "Responsable non défini"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="col-span-3 text-center py-16 bg-white border border-[#dfe8e1] rounded-2xl">
-              <FaProjectDiagram className="text-6xl text-[#d5e2d5] mx-auto mb-4" />
-              <p className="text-[#7a8b7f] text-lg">Aucun projet actif</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#dfe8e1] hover:shadow-lg transition-shadow duration-300">
+        {/* Active Projects Section */}
+        <div className="my-10">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h5 className="text-lg font-semibold text-[#1e4029]">
-                Répartition des tâches
-              </h5>
-              <p className="text-xs text-[#7a8b7f] mt-1">
-                Vue d'ensemble des statuts
+              <p className="text-xs uppercase tracking-[0.2em] text-[#7a8b7f] mb-2">
+                Projets actifs
               </p>
-            </div>
-            <div className="p-3 rounded-xl bg-[#eef5f0] text-[#2d5f3f]">
-              <FaCheckCircle className="text-xl" />
-            </div>
-          </div>
-
-          <CustomPieChart data={pieChartData} colors={COLORS} />
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#dfe8e1] hover:shadow-lg transition-shadow duration-300">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h5 className="text-lg font-semibold text-[#1e4029]">
-                Niveaux de priorité
-              </h5>
-              <p className="text-xs text-[#7a8b7f] mt-1">
-                Distribution par urgence
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-[#eef5f0] text-[#2d5f3f]">
-              <FaClock className="text-xl" />
-            </div>
-          </div>
-
-          <CustomBarChart data={barChartData} />
-        </div>
-      </div>
-
-      {/* Open Invoices Section */}
-      <div className="my-10">
-        <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#dfe8e1]">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <p className="text-xs uppercase text-[#7a8b7f] tracking-[0.2em] mb-2">
-                Factures
-              </p>
-              <h3 className="text-2xl font-bold text-[#1e4029]">
-                Factures ouvertes
-              </h3>
+              <h3 className="text-2xl font-bold text-[#1e4029]">Vue projets</h3>
             </div>
             <button
-              onClick={() => navigate("/admin/invoices")}
-              className="text-sm text-[#2d5f3f] font-medium hover:underline"
+              onClick={() => navigate("/admin/projects")}
+              className="text-sm font-medium text-[#2d5f3f] flex items-center gap-2 hover:gap-3 transition-all"
             >
-              Exporter
+              Voir tous les projets <LuArrowRight />
             </button>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-[#f4f7f4] border border-[#dfe8e1] rounded-xl">
-                <tr className="text-left text-xs font-semibold text-[#46614f] uppercase tracking-wider">
-                  <th className="px-6 py-3">Référence</th>
-                  <th className="px-6 py-3">Projet</th>
-                  <th className="px-6 py-3">Montant</th>
-                  <th className="px-6 py-3">Facturée le</th>
-                  <th className="px-6 py-3">Échéance</th>
-                  <th className="px-6 py-3 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-[#f1f3f1]">
-                {stats?.invoices?.byStatus && invoiceChartData.length > 0 ? (
-                  invoiceChartData.slice(0, 4).map((invoice, index) => (
-                    <tr
-                      key={index}
-                      className="hover:bg-[#f8fbf8] transition-colors duration-150"
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {stats?.projects?.recent?.length > 0 ? (
+              stats.projects.recent.slice(0, 3).map((project) => (
+                <div
+                  key={project._id || project.id}
+                  onClick={() => navigate(`/admin/project/${project._id || project.id}`)}
+                  className="bg-white border border-[#dfe8e1] rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col gap-4 cursor-pointer"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      navigate(`/admin/project/${project._id || project.id}`);
+                    }
+                  }}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-xs uppercase text-[#7a8b7f] tracking-wide mb-1">
+                        {project.category || "Catégorie non définie"}
+                      </p>
+                      <h4 className="text-lg font-semibold text-[#1e4029]">
+                        {project.name}
+                      </h4>
+                    </div>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getProjectStatusBadge(
+                        project.status
+                      )}`}
                     >
-                      <td className="px-6 py-4 text-sm font-medium text-[#1e4029]">
-                        INV-{index + 101}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-[#4b5c52]">
-                        {invoice.status}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-semibold text-[#2d5f3f]">
-                        {invoice.amount
-                          ? addThousandsSeparator(invoice.amount)
-                          : Math.floor(Math.random() * 9000) + 500}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-[#7a8b7f]">
-                        {moment()
-                          .subtract(index, "weeks")
-                          .format("DD/MM/YYYY")}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-[#7a8b7f]">
-                        {moment()
-                          .add(index + 1, "weeks")
-                          .format("DD/MM/YYYY")}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => navigate("/admin/invoices")}
-                          className="text-[#2d5f3f] hover:text-[#1e4029] text-sm font-medium"
-                        >
-                          Voir
-                        </button>
+                      {getProjectStatusLabel(project.status)}
+                    </span>
+                  </div>
+
+                  <div className="text-sm text-[#7a8b7f]">
+                    {project.description || "Description non fournie"}
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-[#7a8b7f]">
+                    <span>Avancement</span>
+                    <span className="font-semibold text-[#2d5f3f]">
+                      {project.completion || 0}%
+                    </span>
+                  </div>
+                  <div className="h-2 bg-[#f4f7f4] rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-[#5a8f6f]"
+                      style={{ width: `${project.completion || 0}%` }}
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 text-xs text-[#7a8b7f]">
+                    <div className="flex items-center gap-1">
+                      <FaCalendarAlt className="text-[#2d5f3f]" />
+                      <span>
+                        {project.startDate
+                          ? moment(project.startDate).locale('fr').format("DD MMM YYYY")
+                          : "Date à définir"}
+                      </span>
+                    </div>
+                    <span className="text-[#dfe8e1]">•</span>
+                    <div className="flex items-center gap-1">
+                      <FaEnvelope className="text-[#2d5f3f]" />
+                      <span>
+                        {project.owner?.name || "Responsable non défini"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-16 bg-white border border-[#dfe8e1] rounded-2xl">
+                <FaProjectDiagram className="text-6xl text-[#d5e2d5] mx-auto mb-4" />
+                <p className="text-[#7a8b7f] text-lg">Aucun projet actif</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#dfe8e1] hover:shadow-lg transition-shadow duration-300">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h5 className="text-lg font-semibold text-[#1e4029]">
+                  Répartition des tâches
+                </h5>
+                <p className="text-xs text-[#7a8b7f] mt-1">
+                  Vue d'ensemble des statuts
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-[#eef5f0] text-[#2d5f3f]">
+                <FaCheckCircle className="text-xl" />
+              </div>
+            </div>
+
+            <CustomPieChart data={pieChartData} colors={COLORS} />
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#dfe8e1] hover:shadow-lg transition-shadow duration-300">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h5 className="text-lg font-semibold text-[#1e4029]">
+                  Niveaux de priorité
+                </h5>
+                <p className="text-xs text-[#7a8b7f] mt-1">
+                  Distribution par urgence
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-[#eef5f0] text-[#2d5f3f]">
+                <FaClock className="text-xl" />
+              </div>
+            </div>
+
+            <CustomBarChart data={barChartData} />
+          </div>
+        </div>
+
+        {/* Open Invoices Section */}
+        <div className="my-10">
+          <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#dfe8e1]">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="text-xs uppercase text-[#7a8b7f] tracking-[0.2em] mb-2">
+                  Factures
+                </p>
+                <h3 className="text-2xl font-bold text-[#1e4029]">
+                  Factures ouvertes
+                </h3>
+              </div>
+              <button
+                onClick={() => navigate("/admin/invoices")}
+                className="text-sm text-[#2d5f3f] font-medium hover:underline"
+              >
+                Exporter
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-[#f4f7f4] border border-[#dfe8e1] rounded-xl">
+                  <tr className="text-left text-xs font-semibold text-[#46614f] uppercase tracking-wider">
+                    <th className="px-6 py-3">Référence</th>
+                    <th className="px-6 py-3">Projet</th>
+                    <th className="px-6 py-3">Montant</th>
+                    <th className="px-6 py-3">Facturée le</th>
+                    <th className="px-6 py-3">Échéance</th>
+                    <th className="px-6 py-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-[#f1f3f1]">
+                  {stats?.invoices?.byStatus && invoiceChartData.length > 0 ? (
+                    invoiceChartData.slice(0, 4).map((invoice, index) => (
+                      <tr
+                        key={index}
+                        className="hover:bg-[#f8fbf8] transition-colors duration-150"
+                      >
+                        <td className="px-6 py-4 text-sm font-medium text-[#1e4029]">
+                          INV-{index + 101}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-[#4b5c52]">
+                          {invoice.status}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-semibold text-[#2d5f3f]">
+                          {invoice.amount
+                            ? addThousandsSeparator(invoice.amount)
+                            : Math.floor(Math.random() * 9000) + 500}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-[#7a8b7f]">
+                          {moment()
+                            .subtract(index, "weeks")
+                            .format("DD/MM/YYYY")}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-[#7a8b7f]">
+                          {moment()
+                            .add(index + 1, "weeks")
+                            .format("DD/MM/YYYY")}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => navigate("/admin/invoices")}
+                            className="text-[#2d5f3f] hover:text-[#1e4029] text-sm font-medium"
+                          >
+                            Voir
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-12 text-center">
+                        <FaFileInvoiceDollar className="text-5xl text-[#d5e2d5] mx-auto mb-3" />
+                        <p className="text-[#7a8b7f]">
+                          Aucune facture ouverte pour le moment
+                        </p>
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="6" className="px-6 py-12 text-center">
-                      <FaFileInvoiceDollar className="text-5xl text-[#d5e2d5] mx-auto mb-3" />
-                      <p className="text-[#7a8b7f]">
-                        Aucune facture ouverte pour le moment
-                      </p>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    {/* Modal de création de projet */}
-    <CreateProjectModal
-      isOpen={isModalOpen}
-      onClose={() => setIsModalOpen(false)}
-      onSuccess={() => {
-        setIsModalOpen(false);
-        getDashboardStats();
-      }}
-    />
+      {/* Modal de création de projet */}
+      <CreateProjectModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onProjectCreated={(newProject) => {
+          setIsModalOpen(false);
+          getDashboardStats();
+        }}
+      />
     </DashboardLayout>
   );
 };

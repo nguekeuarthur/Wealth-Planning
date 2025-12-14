@@ -6,7 +6,7 @@ exports.getAllProjects = async (req, res) => {
   try {
     const { status, category } = req.query;
     const filter = { archived: { $ne: true } }; // Exclure les projets archivés
-    
+
     if (status) filter.status = status;
     if (category) filter.category = category;
 
@@ -20,15 +20,24 @@ exports.getAllProjects = async (req, res) => {
     } else if (req.user.role === 'partner') {
       // Partenaires voient les projets où ils sont assignés
       filter.assignedUsers = req.user._id;
+    } else if (req.user.role === 'user') {
+      // Utilisateurs voient les projets où ils sont client ou assignés
+      filter.$or = [
+        { client: req.user._id },
+        { assignedUsers: req.user._id }
+      ];
     } else {
-      // Autres rôles (member) : voir seulement leurs projets
-      filter.client = req.user._id;
+      // Autres rôles (member) : voir les projets où ils sont client ou assignés
+      filter.$or = [
+        { client: req.user._id },
+        { assignedUsers: req.user._id }
+      ];
     }
 
     const projects = await Project.find(filter)
-      .populate('client', 'fullName email role')
-      .populate('projectLead', 'fullName email role')
-      .populate('assignedUsers', 'fullName email role')
+      .populate('client', 'name email role company address profileImageUrl')
+      .populate('projectLead', 'name email role profileImageUrl')
+      .populate('assignedUsers', 'name email role profileImageUrl')
       .populate('tasks')
       .sort({ createdAt: -1 });
 
@@ -57,16 +66,16 @@ exports.getAllProjects = async (req, res) => {
 exports.getProjectById = async (req, res) => {
   try {
     const project = await Project.findById(req.params.id)
-      .populate('client', 'fullName email profilePic phoneNumber role')
-      .populate('projectLead', 'fullName email role')
-      .populate('assignedUsers', 'fullName email role')
+      .populate('client', 'name email profileImageUrl phoneNumber role company address')
+      .populate('projectLead', 'name email role')
+      .populate('assignedUsers', 'name email role profileImageUrl')
       .populate('tasks')
       .populate('documents')
       .populate('invoices')
       .populate('weeklyUpdates')
       .populate({
         path: 'messages',
-        populate: { path: 'sender receiver', select: 'fullName email role' }
+        populate: { path: 'sender receiver', select: 'name email role profileImageUrl' }
       });
 
     if (!project) {
@@ -83,6 +92,18 @@ exports.getProjectById = async (req, res) => {
       hasAccess = project.assignedUsers && project.assignedUsers.some(
         user => user._id.toString() === req.user._id.toString()
       );
+    } else if (req.user.role === 'user') {
+      // Utilisateurs ont accès s'ils sont client ou assignés au projet
+      hasAccess = (project.client && project.client._id.toString() === req.user._id.toString()) ||
+        (project.assignedUsers && project.assignedUsers.some(
+          user => user._id.toString() === req.user._id.toString()
+        ));
+    } else {
+      // Autres rôles (member) ont accès s'ils sont client ou assignés au projet
+      hasAccess = (project.client && project.client._id.toString() === req.user._id.toString()) ||
+        (project.assignedUsers && project.assignedUsers.some(
+          user => user._id.toString() === req.user._id.toString()
+        ));
     }
 
     if (!hasAccess) {

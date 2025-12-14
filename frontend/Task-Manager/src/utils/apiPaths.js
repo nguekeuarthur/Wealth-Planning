@@ -127,6 +127,7 @@ export const API_PATHS = {
     GET_PROJECT_MESSAGES: (projectId) => `/api/messages/project/${projectId}`,
     SEND_MESSAGE: "/api/messages",
     MARK_AS_READ: (messageId) => `/api/messages/${messageId}/read`,
+    MARK_ALL_AS_READ: "/api/messages/read/all",
     DELETE_MESSAGE: (messageId) => `/api/messages/${messageId}`,
     GET_UNREAD_COUNT: "/api/messages/unread/count",
     GET_RECENT_MESSAGES: "/api/messages/recent",

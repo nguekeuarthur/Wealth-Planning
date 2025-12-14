@@ -115,6 +115,27 @@ exports.createConversation = async (req, res) => {
       return res.status(403).json({ message: 'Permissions insuffisantes' });
     }
 
+    if (type === 'private' && Array.isArray(participants) && participants.length === 1) {
+      const otherUserId = participants[0];
+      const existingConversation = await Conversation.findOne({
+        type: 'private',
+        isActive: true,
+        'participants.user': { $all: [req.user._id, otherUserId] },
+        $expr: { $eq: [{ $size: '$participants' }, 2] }
+      })
+        .populate('participants.user', 'name email profileImageUrl role')
+        .populate('project', 'name')
+        .populate('lastMessage');
+
+      if (existingConversation) {
+        return res.status(200).json({
+          message: 'Conversation existante',
+          conversation: existingConversation,
+          existed: true
+        });
+      }
+    }
+
     console.log('🏗️ Creating conversation object...');
     const conversation = new Conversation({
       name,
@@ -211,17 +232,33 @@ exports.getUserConversations = async (req, res) => {
     console.log('🔍 Filter applied:', filter);
 
     const conversations = await Conversation.find(filter)
-    .populate('participants.user', 'name email profileImageUrl role')
-    .populate('project', 'name')
-    .populate('lastMessage')
-    .sort({ updatedAt: -1 });
+      .populate('participants.user', 'name email profileImageUrl role')
+      .populate('project', 'name')
+      .populate('lastMessage')
+      .sort({ updatedAt: -1 });
 
-    console.log('📋 Conversations found:', conversations.length);
-    conversations.forEach((conv, index) => {
+    // Ajouter le compteur de messages non lus pour chaque conversation
+    const conversationsWithUnread = await Promise.all(
+      conversations.map(async (conv) => {
+        const unreadCount = await Message.countDocuments({
+          conversation: conv._id,
+          sender: { $ne: req.user._id },
+          'readBy.user': { $ne: req.user._id }
+        });
+
+        return {
+          ...conv.toObject(),
+          unreadCount
+        };
+      })
+    );
+
+    console.log('📋 Conversations found:', conversationsWithUnread.length);
+    conversationsWithUnread.forEach((conv, index) => {
       console.log(`  ${index + 1}. ${conv.name} (${conv.type}) - Participants: ${conv.participants.length}`);
     });
 
-    res.json({ conversations });
+    res.json({ conversations: conversationsWithUnread });
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
@@ -385,6 +422,41 @@ exports.addParticipant = async (req, res) => {
   }
 };
 
+// Get conversations with unread counts
+exports.getConversations = async (req, res) => {
+  try {
+    const conversations = await Conversation.find({
+      isActive: true,
+      'participants.user': req.user._id
+    })
+      .populate('participants.user', 'name email profileImageUrl role')
+      .populate('project', 'name')
+      .populate('lastMessage');
+
+    // Ajouter le compteur de messages non lus pour chaque conversation
+    const conversationsWithUnread = await Promise.all(
+      conversations.map(async (conv) => {
+        const Message = require('../models/Message');
+        const unreadCount = await Message.countDocuments({
+          conversation: conv._id,
+          sender: { $ne: req.user._id },
+          'readBy.user': { $ne: req.user._id }
+        });
+
+        return {
+          ...conv.toObject(),
+          unreadCount
+        };
+      })
+    );
+
+    res.json({ conversations: conversationsWithUnread });
+  } catch (error) {
+    console.error('Erreur getConversations:', error);
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
 // Supprimer un participant
 exports.removeParticipant = async (req, res) => {
   try {
@@ -401,7 +473,7 @@ exports.removeParticipant = async (req, res) => {
     );
 
     if (!currentUserParticipant ||
-        (currentUserParticipant.role !== 'admin' && userId !== req.user._id.toString())) {
+      (currentUserParticipant.role !== 'admin' && userId !== req.user._id.toString())) {
       return res.status(403).json({ message: 'Permissions insuffisantes' });
     }
 
@@ -423,9 +495,9 @@ function canCreateConversation(userRole, conversationType) {
     case 'member': // Les membres/utilisateurs ont les mêmes permissions que les collaborateurs
       return ['private', 'project', 'group'].includes(conversationType);
     case 'client':
-      return conversationType === 'private';
+      return ['private', 'group'].includes(conversationType);
     case 'partner':
-      return conversationType === 'private';
+      return ['private', 'group'].includes(conversationType);
     default:
       return false;
   }

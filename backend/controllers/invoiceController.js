@@ -35,9 +35,12 @@ exports.getAllInvoices = async (req, res) => {
     if (project) filter.project = project;
 
     // Permissions selon le rôle
-    if (req.user.role === 'admin' || req.user.role === 'collaborator') {
-      // Admin et Collaborateur voient toutes les factures
+    if (req.user.role === 'admin') {
+      // Admin voit toutes les factures
       // Pas de filtre client
+    } else if (req.user.role === 'collaborator') {
+      // Collaborateur voit seulement ses factures concernées
+      filter.assignedTo = req.user._id;
     } else if (req.user.role === 'client') {
       // Clients voient seulement leurs factures
       filter.client = req.user._id;
@@ -92,9 +95,9 @@ exports.getInvoiceById = async (req, res) => {
     }
 
     // Vérifier et mettre à jour automatiquement si la date d'échéance est passée
-    if (invoice.dueDate && 
-        new Date(invoice.dueDate) < new Date() && 
-        (invoice.status === 'en attente' || invoice.status === 'partiellement payée')) {
+    if (invoice.dueDate &&
+      new Date(invoice.dueDate) < new Date() &&
+      (invoice.status === 'en attente' || invoice.status === 'partiellement payée')) {
       invoice.status = 'non payée';
       await invoice.save();
       // Recharger pour avoir les données à jour
@@ -128,7 +131,7 @@ exports.getInvoiceById = async (req, res) => {
 const generateUniqueInvoiceNumber = async () => {
   const year = new Date().getFullYear();
   const month = String(new Date().getMonth() + 1).padStart(2, '0');
-  
+
   // Chercher le dernier numéro de facture de ce mois
   const lastInvoice = await Invoice.findOne({
     invoiceNumber: new RegExp(`^INV-${year}${month}-`)
@@ -307,9 +310,9 @@ exports.getInvoiceStats = async (req, res) => {
       }
     ]);
 
-    res.json({ 
-      statusStats: stats, 
-      totalRevenue: totalRevenue[0]?.total || 0 
+    res.json({
+      statusStats: stats,
+      totalRevenue: totalRevenue[0]?.total || 0
     });
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur', error: error.message });

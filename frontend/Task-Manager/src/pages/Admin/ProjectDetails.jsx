@@ -3,11 +3,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS, BASE_URL } from "../../utils/apiPaths";
-import { 
-  FiArrowLeft, 
-  FiCalendar, 
-  FiUser, 
-  FiUsers, 
+import {
+  FiArrowLeft,
+  FiCalendar,
+  FiUser,
+  FiUsers,
   FiFolder,
   FiMessageSquare,
   FiFileText,
@@ -135,7 +135,7 @@ const ProjectDetails = () => {
       console.error("Erreur lors de la mise à jour du statut de la tâche:", error);
       toast.error(
         error.response?.data?.message ||
-          "Impossible de mettre à jour le statut de la tâche"
+        "Impossible de mettre à jour le statut de la tâche"
       );
     } finally {
       setDraggedTaskId(null);
@@ -147,8 +147,8 @@ const ProjectDetails = () => {
     const assignedUsers = Array.isArray(task.assignedTo)
       ? task.assignedTo
       : task.assignedTo
-      ? [task.assignedTo]
-      : [];
+        ? [task.assignedTo]
+        : [];
 
     const dueDate = task.dueDate ? new Date(task.dueDate) : null;
     const isOverdue =
@@ -181,23 +181,22 @@ const ProjectDetails = () => {
                 {task.title || "Tâche sans titre"}
               </h4>
               <span
-                className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                  task.priority === "Urgent"
-                    ? "bg-red-100 text-red-700"
-                    : task.priority === "High"
+                className={`px-2 py-1 rounded-full text-xs font-semibold ${task.priority === "Urgent"
+                  ? "bg-red-100 text-red-700"
+                  : task.priority === "High"
                     ? "bg-orange-100 text-orange-700"
                     : task.priority === "Medium"
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "bg-blue-100 text-blue-700"
-                }`}
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-blue-100 text-blue-700"
+                  }`}
               >
                 {task.priority === "Urgent"
                   ? "Urgente"
                   : task.priority === "High"
-                  ? "Haute"
-                  : task.priority === "Medium"
-                  ? "Moyenne"
-                  : "Basse"}
+                    ? "Haute"
+                    : task.priority === "Medium"
+                      ? "Moyenne"
+                      : "Basse"}
               </span>
             </div>
 
@@ -254,9 +253,8 @@ const ProjectDetails = () => {
               {/* Date d'échéance */}
               {dueDate && (
                 <div
-                  className={`flex items-center gap-2 ${
-                    isOverdue ? "text-red-600" : "text-[#7a8b7f]"
-                  }`}
+                  className={`flex items-center gap-2 ${isOverdue ? "text-red-600" : "text-[#7a8b7f]"
+                    }`}
                 >
                   <FiCalendar className="text-sm" />
                   <span className="text-xs font-medium">
@@ -273,19 +271,18 @@ const ProjectDetails = () => {
           </div>
 
           <span
-            className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
-              task.status === "Completed"
-                ? "bg-[#dff5e7] text-[#1e4029]"
-                : task.status === "In Progress"
+            className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${task.status === "Completed"
+              ? "bg-[#dff5e7] text-[#1e4029]"
+              : task.status === "In Progress"
                 ? "bg-[#fff6ea] text-[#b76a28]"
                 : "bg-[#f4f7f4] text-[#7a8b7f]"
-            }`}
+              }`}
           >
             {task.status === "Completed"
               ? "Terminée"
               : task.status === "In Progress"
-              ? "En cours"
-              : "En attente"}
+                ? "En cours"
+                : "En attente"}
           </span>
         </div>
       </div>
@@ -481,20 +478,20 @@ const ProjectDetails = () => {
               {project.status === "in progress"
                 ? "En cours"
                 : project.status === "in review"
-                ? "En revue"
-                : "Terminé"}
+                  ? "En revue"
+                  : "Terminé"}
             </span>
           </div>
 
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center justify-between">
             <div>
-          <button
-            onClick={() => navigate("/admin/projects")}
+              <button
+                onClick={() => navigate("/admin/projects")}
                 className="inline-flex items-center gap-2 text-white/70 text-xs uppercase tracking-[0.2em]"
-          >
+              >
                 <FiArrowLeft /> Retour aux projets
-          </button>
-          
+              </button>
+
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <h1 className="text-3xl lg:text-4xl font-bold text-white">
                   {project.name}
@@ -505,7 +502,7 @@ const ProjectDetails = () => {
                     className={`px-2 py-1 rounded-full text-xs font-medium ${tag.color}`}
                   >
                     {tag.label}
-                </span>
+                  </span>
                 ))}
               </div>
 
@@ -531,39 +528,38 @@ const ProjectDetails = () => {
                     Chef de projet
                   </p>
                   <p className="font-semibold">
-                    {project.projectLead?.name || "—"}
+                    {project.projectLead?.name || project.projectLead?.email || "—"}
                   </p>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
           </div>
         </div>
 
         <div className="flex flex-wrap gap-3">
-            {allTabs.filter(tab => tab.roles.includes(user?.role || "client")).map((tab) => {
-              const Icon = tab.icon;
+          {allTabs.filter(tab => tab.roles.includes(user?.role || "client")).map((tab) => {
+            const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  isActive
-                    ? "bg-[#e6f0ea] text-[#1e4029]"
-                    : "bg-white border border-[#dfe8e1] text-[#7a8b7f] hover:text-[#1e4029]"
-                }`}
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${isActive
+                  ? "bg-[#e6f0ea] text-[#1e4029]"
+                  : "bg-white border border-[#dfe8e1] text-[#7a8b7f] hover:text-[#1e4029]"
+                  }`}
               >
                 <Icon size={16} />
-                  {tab.label}
-                </button>
-              );
-            })}
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         <div className="grid xl:grid-cols-[2fr_1fr] gap-6">
-        <div className="space-y-6">
-          {activeTab === "overview" && (
+          <div className="space-y-6">
+            {activeTab === "overview" && (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                   <MetricCard
@@ -597,8 +593,8 @@ const ProjectDetails = () => {
                     label="Tâches en retard"
                     value={metrics?.overdueTasks || 0}
                   />
-                      </div>
-                    </div>
+                </div>
+              </div>
             )}
 
             {activeTab === "tasks" && (
@@ -857,14 +853,14 @@ const ProjectDetails = () => {
             {activeTab === "documents" && (
               <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm space-y-4">
                 <div className="flex items-center justify-between">
-                      <div>
+                  <div>
                     <h3 className="text-xl font-semibold text-[#1e4029]">
                       Documents
-                </h3>
+                    </h3>
                     <p className="text-sm text-[#7a8b7f]">
                       {project.documents?.length || 0} fichiers
-                        </p>
-                      </div>
+                    </p>
+                  </div>
                   {can("edit") && (
                     <button
                       onClick={() => setShowDocumentModal(true)}
@@ -873,7 +869,7 @@ const ProjectDetails = () => {
                       <FiPlus /> Ajouter un document
                     </button>
                   )}
-                    </div>
+                </div>
 
                 {project.documents?.length ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -905,7 +901,7 @@ const ProjectDetails = () => {
                           <div className="flex items-start gap-4">
                             <div className="p-3 bg-[#f4f7f4] rounded-xl text-2xl flex-shrink-0">
                               {getFileIcon(doc.fileType)}
-                      </div>
+                            </div>
                             <div className="flex-1 min-w-0">
                               <h4 className="font-semibold text-[#1e4029] mb-1 truncate">
                                 {doc.name || "Document"}
@@ -913,13 +909,13 @@ const ProjectDetails = () => {
                               <div className="flex flex-wrap items-center gap-2 mb-2">
                                 <span className="px-2 py-0.5 bg-[#e6f0ea] text-[#2d5f3f] rounded text-xs font-medium">
                                   {getTypeLabel(doc.type)}
-                            </span>
+                                </span>
                                 {doc.category && (
                                   <span className="text-xs text-[#7a8b7f]">
                                     {doc.category}
                                   </span>
                                 )}
-                          </div>
+                              </div>
                               {doc.description && (
                                 <p className="text-sm text-[#7a8b7f] mb-2 line-clamp-2">
                                   {doc.description}
@@ -929,10 +925,10 @@ const ProjectDetails = () => {
                                 <span className="text-xs text-[#7a8b7f]">
                                   {doc.createdAt
                                     ? new Date(doc.createdAt).toLocaleDateString('fr-FR', {
-                                        day: 'numeric',
-                                        month: 'short',
-                                        year: 'numeric'
-                                      })
+                                      day: 'numeric',
+                                      month: 'short',
+                                      year: 'numeric'
+                                    })
                                     : "Date inconnue"}
                                 </span>
                                 {doc.fileUrl && (() => {
@@ -947,17 +943,17 @@ const ProjectDetails = () => {
                                           responseType: 'blob'
                                         }
                                       );
-                                      
+
                                       // Déterminer le type MIME à partir du type de fichier ou du Content-Type de la réponse
                                       const contentType = response.headers['content-type'] || doc.fileType || 'application/octet-stream';
-                                      
+
                                       // Créer un blob avec le bon type MIME
                                       const blob = new Blob([response.data], { type: contentType });
                                       const url = window.URL.createObjectURL(blob);
-                                      
+
                                       // Préserver l'extension du fichier dans le nom
                                       let fileName = doc.name || 'document';
-                                      
+
                                       // S'assurer que le nom a la bonne extension
                                       if (doc.fileType) {
                                         const mimeToExt = {
@@ -974,7 +970,7 @@ const ProjectDetails = () => {
                                           'text/plain': '.txt',
                                           'text/csv': '.csv'
                                         };
-                                        
+
                                         // Vérifier si le nom a déjà une extension
                                         const hasExtension = /\.\w+$/.test(fileName);
                                         if (!hasExtension && mimeToExt[doc.fileType]) {
@@ -987,7 +983,7 @@ const ProjectDetails = () => {
                                           }
                                         }
                                       }
-                                      
+
                                       const link = document.createElement('a');
                                       link.href = url;
                                       link.download = fileName;
@@ -1010,24 +1006,24 @@ const ProjectDetails = () => {
                                     </button>
                                   );
                                 })()}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                    </div>
-                  </div>
                       );
                     })}
-                      </div>
+                  </div>
                 ) : (
                   <EmptyState
                     icon="📄"
                     title="Aucun document"
                     subtitle="Ajoutez des contrats, rapports ou pièces jointes."
                   />
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
 
-          {activeTab === "invoices" && (
+            {activeTab === "invoices" && (
               <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -1141,10 +1137,10 @@ const ProjectDetails = () => {
                               <span className="text-[#1e4029]">
                                 {invoice.issueDate
                                   ? new Date(invoice.issueDate).toLocaleDateString('fr-FR', {
-                                      day: 'numeric',
-                                      month: 'short',
-                                      year: 'numeric'
-                                    })
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric'
+                                  })
                                   : "—"}
                               </span>
                             </div>
@@ -1233,12 +1229,12 @@ const ProjectDetails = () => {
                         const now = new Date();
                         const messageDate = new Date(date);
                         const diffInSeconds = Math.floor((now - messageDate) / 1000);
-                        
+
                         if (diffInSeconds < 60) return "À l'instant";
                         if (diffInSeconds < 3600) return `Il y a ${Math.floor(diffInSeconds / 60)} min`;
                         if (diffInSeconds < 86400) return `Il y a ${Math.floor(diffInSeconds / 3600)} h`;
                         if (diffInSeconds < 604800) return `Il y a ${Math.floor(diffInSeconds / 86400)} j`;
-                        
+
                         return messageDate.toLocaleDateString('fr-FR', {
                           day: 'numeric',
                           month: 'short',
@@ -1286,7 +1282,7 @@ const ProjectDetails = () => {
                                   </span>
                                 )}
                               </div>
-                              
+
                               <p className="text-sm text-[#4a5c52] whitespace-pre-wrap break-words">
                                 {message.content || message.text || "—"}
                               </p>
@@ -1324,38 +1320,32 @@ const ProjectDetails = () => {
             <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm">
               <h3 className="text-lg font-semibold text-[#1e4029] flex items-center gap-2 mb-4">
                 <FiUser /> Client
-                  </h3>
+              </h3>
               {project.client ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                   <div>
                     <p className="text-[#7a8b7f] text-xs uppercase mb-1">Entreprise</p>
                     <p className="font-semibold text-[#1e4029]">{project.client.company || project.client.name || "—"}</p>
-              </div>
+                  </div>
                   <div>
-                    <p className="text-[#7a8b7f] text-xs uppercase mb-1">Contact</p>
-                    <p className="text-[#4a5c52]">{project.client.name || "—"}</p>
-                        </div>
-                  {project.client.address && (
-                    <div>
-                      <p className="text-[#7a8b7f] text-xs uppercase mb-1">Adresse</p>
-                      <p className="text-[#4a5c52]">{project.client.address}</p>
-                </div>
-              )}
+                    <p className="text-[#7a8b7f] text-xs uppercase mb-1">Adresse</p>
+                    <p className="text-[#4a8b7f]">{project.client.address || "—"}</p>
+                  </div>
                   <div>
                     <p className="text-[#7a8b7f] text-xs uppercase mb-1">Email</p>
-                    <p className="text-[#4a5c52] break-words">{project.client.email}</p>
+                    <p className="text-[#4a8b7f] break-words">{project.client.email}</p>
                   </div>
                   {project.client.phoneNumber && (
                     <div>
                       <p className="text-[#7a8b7f] text-xs uppercase mb-1">Téléphone</p>
                       <p className="text-[#4a5c52]">{project.client.phoneNumber}</p>
-            </div>
-          )}
-                          </div>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <p className="text-sm text-[#7a8b7f]">Aucun client assigné.</p>
               )}
-                        </div>
+            </div>
 
             <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
@@ -1369,7 +1359,7 @@ const ProjectDetails = () => {
                   >
                     Gérer
                   </button>
-                        )}
+                )}
               </div>
               <div className="space-y-4">
                 {/* Chef de projet */}
@@ -1384,16 +1374,16 @@ const ProjectDetails = () => {
                     ) : (
                       <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#2d5f3f] font-semibold">
                         {project.projectLead.name?.charAt(0).toUpperCase() || "P"}
-                </div>
-              )}
+                      </div>
+                    )}
                     <div>
                       <p className="text-sm font-semibold text-[#1e4029]">
-                        {project.projectLead.name || "Chef de projet"}
+                        {project.projectLead.name || project.projectLead.email || "Chef de projet"}
                       </p>
                       <p className="text-xs text-[#7a8b7f]">Chef de projet</p>
                     </div>
-            </div>
-          )}
+                  </div>
+                )}
 
                 {/* Équipes assignées */}
                 {project.teams && project.teams.length > 0 ? (
@@ -1415,7 +1405,7 @@ const ProjectDetails = () => {
                               style={{ backgroundColor: team.color || "#5a8f6f" }}
                             >
                               <FiUsers />
-                          </div>
+                            </div>
                             <div className="flex-1 text-left">
                               <h4 className="font-semibold text-[#1e4029]">{team.name}</h4>
                               {team.members && (
@@ -1430,8 +1420,8 @@ const ProjectDetails = () => {
                               <FiChevronUp className="text-[#7a8b7f] w-5 h-5" />
                             ) : (
                               <FiChevronDown className="text-[#7a8b7f] w-5 h-5" />
-                        )}
-                      </div>
+                            )}
+                          </div>
                         </button>
 
                         {/* Contenu déroulant */}
@@ -1443,7 +1433,7 @@ const ProjectDetails = () => {
                                 <div className="flex items-center gap-2 mb-2">
                                   <FiUser className="text-[#5a8f6f] text-sm" />
                                   <span className="text-xs text-[#7a8b7f] font-medium uppercase">Chef d'équipe</span>
-                    </div>
+                                </div>
                                 <div className="flex items-center gap-3">
                                   {team.leader.profileImageUrl ? (
                                     <img
@@ -1454,8 +1444,8 @@ const ProjectDetails = () => {
                                   ) : (
                                     <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">
                                       {team.leader.name?.charAt(0).toUpperCase() || "L"}
-                </div>
-              )}
+                                    </div>
+                                  )}
                                   <div>
                                     <p className="text-sm font-semibold text-[#1e4029]">
                                       {team.leader.name || team.leader.email}
@@ -1463,8 +1453,8 @@ const ProjectDetails = () => {
                                     <p className="text-xs text-[#7a8b7f]">{team.leader.email}</p>
                                   </div>
                                 </div>
-            </div>
-          )}
+                              </div>
+                            )}
 
                             {/* Membres de l'équipe */}
                             {team.members && team.members.length > 0 && (
@@ -1474,7 +1464,7 @@ const ProjectDetails = () => {
                                   <span className="text-xs text-[#7a8b7f] font-medium uppercase">
                                     Membres ({team.members.length})
                                   </span>
-              </div>
+                                </div>
                                 <div className="space-y-2">
                                   {team.members.map((member) => (
                                     <div
@@ -1490,22 +1480,22 @@ const ProjectDetails = () => {
                                       ) : (
                                         <div className="w-8 h-8 bg-[#f4f7f4] rounded-full flex items-center justify-center text-[#2d5f3f] text-xs font-semibold flex-shrink-0">
                                           {member.name?.charAt(0).toUpperCase() || "U"}
-                        </div>
+                                        </div>
                                       )}
                                       <div className="flex-1 min-w-0">
                                         <p className="text-sm font-medium text-[#1e4029] truncate">
                                           {member.name || "Membre"}
                                         </p>
                                         <p className="text-xs text-[#7a8b7f] truncate">{member.email}</p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
-                </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
                     );
                   })
                 ) : (
@@ -1513,7 +1503,7 @@ const ProjectDetails = () => {
                     Aucune équipe assignée. Cliquez sur "Gérer" pour ajouter des équipes.
                   </p>
                 )}
-      </div>
+              </div>
             </div>
 
             {/* Dates clés */}

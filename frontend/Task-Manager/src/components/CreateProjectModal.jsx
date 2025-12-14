@@ -32,6 +32,13 @@ const CreateProjectModal = ({
   const [leadSearch, setLeadSearch] = useState("");
   const [showMemberDropdown, setShowMemberDropdown] = useState(false);
   const [showLeadDropdown, setShowLeadDropdown] = useState(false);
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState("all");
+
+  const roleOptions = [
+    { value: "partner", label: "Partenaires" },
+    { value: "collaborator", label: "Collaborateurs" },
+    { value: "member", label: "Membres" }
+  ];
 
   const statusOptions = [
     { value: "in progress", label: "En cours" },
@@ -290,23 +297,23 @@ const CreateProjectModal = ({
                   <p className="text-xs text-[#7a8b7f] mb-1">Chef de projet</p>
                   {selectedLead ? (
                     <div className="flex items-center justify-between p-3 bg-[#f4f7f4] border border-[#dfe8e1] rounded-xl">
-                        <div className="flex items-center gap-2">
-                          {selectedLead.profileImageUrl ? (
-                            <img
-                              src={selectedLead.profileImageUrl}
-                              alt={selectedLead.name || "Avatar"}
-                              className="w-8 h-8 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                              {selectedLead.name?.charAt(0).toUpperCase() || "?"}
-                            </div>
-                          )}
-                          <div>
-                            <p className="text-sm text-[#1e4029] font-medium">{selectedLead.name || selectedLead.email}</p>
-                            <p className="text-xs text-[#7a8b7f]">{selectedLead.email}</p>
+                      <div className="flex items-center gap-2">
+                        {selectedLead.profileImageUrl ? (
+                          <img
+                            src={selectedLead.profileImageUrl}
+                            alt={selectedLead.name || "Avatar"}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                            {selectedLead.name?.charAt(0).toUpperCase() || "?"}
                           </div>
+                        )}
+                        <div>
+                          <p className="text-sm text-[#1e4029] font-medium">{selectedLead.name || selectedLead.email}</p>
+                          <p className="text-xs text-[#7a8b7f]">{selectedLead.email}</p>
                         </div>
+                      </div>
                       <button
                         type="button"
                         onClick={() => setFormData(prev => ({ ...prev, projectLead: "" }))}
@@ -331,51 +338,51 @@ const CreateProjectModal = ({
                       <FiSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#7a8b7f] w-4 h-4" />
                       {showLeadDropdown && (
                         <>
-                        <div className="absolute left-0 right-0 z-40 mt-2 bg-white border border-[#dfe8e1] rounded-xl shadow-xl max-h-56 overflow-y-auto">
-                          {users
-                            .filter(u => u.role !== 'admin' && u.role !== 'member')
-                            .filter(u =>
+                          <div className="absolute left-0 right-0 z-40 mt-2 bg-white border border-[#dfe8e1] rounded-xl shadow-xl max-h-56 overflow-y-auto">
+                            {users
+                              .filter(u => u.role !== 'admin' && u.role !== 'client')
+                              .filter(u =>
+                                u.name?.toLowerCase().includes(leadSearch.toLowerCase()) ||
+                                u.email?.toLowerCase().includes(leadSearch.toLowerCase())
+                              )
+                              .map(user => (
+                                <button
+                                  key={user._id}
+                                  type="button"
+                                  onClick={() => {
+                                    setFormData(prev => ({ ...prev, projectLead: user._id }));
+                                    setLeadSearch("");
+                                    setShowLeadDropdown(false);
+                                  }}
+                                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f4f7f4] text-left"
+                                >
+                                  {user.profileImageUrl ? (
+                                    <img
+                                      src={user.profileImageUrl}
+                                      alt={user.name || "Avatar"}
+                                      className="w-8 h-8 rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                                      {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
+                                    </div>
+                                  )}
+                                  <div>
+                                    <p className="text-sm font-medium text-[#1e4029]">{user.name || "Sans nom"}</p>
+                                    <p className="text-xs text-[#7a8b7f]">{user.email} - {user.role}</p>
+                                  </div>
+                                </button>
+                              ))}
+                            {users.filter(u => u.role !== 'admin' && u.role !== 'client').filter(u =>
                               u.name?.toLowerCase().includes(leadSearch.toLowerCase()) ||
                               u.email?.toLowerCase().includes(leadSearch.toLowerCase())
-                            )
-                            .map(user => (
-                              <button
-                                key={user._id}
-                                type="button"
-                                onClick={() => {
-                                  setFormData(prev => ({ ...prev, projectLead: user._id }));
-                                  setLeadSearch("");
-                                  setShowLeadDropdown(false);
-                                }}
-                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f4f7f4] text-left"
-                              >
-                                {user.profileImageUrl ? (
-                                  <img
-                                    src={user.profileImageUrl}
-                                    alt={user.name || "Avatar"}
-                                    className="w-8 h-8 rounded-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                                    {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
-                                  </div>
-                                )}
-                                <div>
-                                  <p className="text-sm font-medium text-[#1e4029]">{user.name || "Sans nom"}</p>
-                                  <p className="text-xs text-[#7a8b7f]">{user.email} - {user.role}</p>
+                            ).length === 0 && (
+                                <div className="px-4 py-3 text-sm text-[#7a8b7f] text-center">
+                                  Aucun chef de projet trouvé
                                 </div>
-                              </button>
-                            ))}
-                          {users.filter(u => u.role !== 'admin' && u.role !== 'member').filter(u =>
-                            u.name?.toLowerCase().includes(leadSearch.toLowerCase()) ||
-                            u.email?.toLowerCase().includes(leadSearch.toLowerCase())
-                          ).length === 0 && (
-                            <div className="px-4 py-3 text-sm text-[#7a8b7f] text-center">
-                              Aucun chef de projet trouvé
-                            </div>
-                          )}
-                        </div>
-                        <div className="fixed inset-0 z-30" onClick={() => setShowLeadDropdown(false)} />
+                              )}
+                          </div>
+                          <div className="fixed inset-0 z-30" onClick={() => setShowLeadDropdown(false)} />
                         </>
                       )}
                     </div>
@@ -384,75 +391,93 @@ const CreateProjectModal = ({
 
                 <div className="relative">
                   <p className="text-xs text-[#7a8b7f] mb-1">Membres du projet (Partenaires & Collaborateurs)</p>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Rechercher un membre..."
-                      value={memberSearch}
+                  <div className="space-y-3">
+                    <select
+                      value={selectedRoleFilter}
                       onChange={(e) => {
-                        setMemberSearch(e.target.value);
+                        setSelectedRoleFilter(e.target.value);
                         setShowMemberDropdown(true);
                       }}
-                      onFocus={() => setShowMemberDropdown(true)}
-                      className="w-full px-3 py-2.5 bg-[#fdfdfc] border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] text-sm text-[#1e4029] placeholder:text-[#7a8b7f]"
-                    />
-                    <FiSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#7a8b7f] w-4 h-4" />
+                      className="w-full px-3 py-2 bg-[#fdfdfc] border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] text-sm text-[#1e4029]"
+                    >
+                      {roleOptions.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Rechercher un membre..."
+                        value={memberSearch}
+                        onChange={(e) => {
+                          setMemberSearch(e.target.value);
+                          setShowMemberDropdown(true);
+                        }}
+                        onFocus={() => setShowMemberDropdown(true)}
+                        className="w-full px-3 py-2.5 bg-[#fdfdfc] border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] text-sm text-[#1e4029] placeholder:text-[#7a8b7f]"
+                      />
+                      <FiSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#7a8b7f] w-4 h-4" />
+                    </div>
                   </div>
                   {showMemberDropdown && (
                     <>
-                    <div className="absolute left-0 right-0 z-40 mt-2 bg-white border border-[#dfe8e1] rounded-xl shadow-xl max-h-56 overflow-y-auto">
-                      {users
-                        .filter(u => u.role === 'partner' || u.role === 'collaborator')
-                        .filter(u => !formData.assignedUsers.includes(u._id))
-                        .filter(u =>
-                          u.name?.toLowerCase().includes(memberSearch.toLowerCase()) ||
-                          u.email?.toLowerCase().includes(memberSearch.toLowerCase())
-                        )
-                        .map(user => (
-                          <button
-                            key={user._id}
-                            type="button"
-                            onClick={() => {
-                              setFormData(prev => ({
-                                ...prev,
-                                assignedUsers: [...prev.assignedUsers, user._id]
-                              }));
-                              setMemberSearch("");
-                              setShowMemberDropdown(false);
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f4f7f4] text-left"
-                          >
-                            {user.profileImageUrl ? (
-                              <img
-                                src={user.profileImageUrl}
-                                alt={user.name || "Avatar"}
-                                className="w-8 h-8 rounded-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                                {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
+                      <div className="absolute left-0 right-0 z-40 mt-2 bg-white border border-[#dfe8e1] rounded-xl shadow-xl max-h-56 overflow-y-auto">
+                        {users
+                          .filter(u => u.role !== 'admin')
+                          .filter(u => !formData.assignedUsers.includes(u._id))
+                          .filter(u => selectedRoleFilter === 'all' || u.role === selectedRoleFilter)
+                          .filter(u =>
+                            u.name?.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                            u.email?.toLowerCase().includes(memberSearch.toLowerCase())
+                          )
+                          .map(user => (
+                            <button
+                              key={user._id}
+                              type="button"
+                              onClick={() => {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  assignedUsers: [...prev.assignedUsers, user._id]
+                                }));
+                                setMemberSearch("");
+                                setShowMemberDropdown(false);
+                              }}
+                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f4f7f4] text-left"
+                            >
+                              {user.profileImageUrl ? (
+                                <img
+                                  src={user.profileImageUrl}
+                                  alt={user.name || "Avatar"}
+                                  className="w-8 h-8 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                                  {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <div>
+                                <p className="text-sm font-medium text-[#1e4029]">{user.name || "Sans nom"}</p>
+                                <p className="text-xs text-[#7a8b7f]">{user.email} - {user.role}</p>
                               </div>
-                            )}
-                            <div>
-                              <p className="text-sm font-medium text-[#1e4029]">{user.name || "Sans nom"}</p>
-                              <p className="text-xs text-[#7a8b7f]">{user.email} - {user.role === 'partner' ? 'Partenaire' : 'Collaborateur'}</p>
+                              <FiUser className="ml-auto text-[#7a8b7f] w-4 h-4" />
+                            </button>
+                          ))}
+                        {users
+                          .filter(u => u.role !== 'admin')
+                          .filter(u => !formData.assignedUsers.includes(u._id))
+                          .filter(u => selectedRoleFilter === 'all' || u.role === selectedRoleFilter)
+                          .filter(u =>
+                            u.name?.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                            u.email?.toLowerCase().includes(memberSearch.toLowerCase())
+                          ).length === 0 && (
+                            <div className="px-4 py-3 text-sm text-[#7a8b7f] text-center">
+                              Aucun utilisateur disponible
                             </div>
-                            <FiUser className="ml-auto text-[#7a8b7f] w-4 h-4" />
-                          </button>
-                        ))}
-                      {users
-                        .filter(u => u.role === 'partner' || u.role === 'collaborator')
-                        .filter(u => !formData.assignedUsers.includes(u._id))
-                        .filter(u =>
-                          u.name?.toLowerCase().includes(memberSearch.toLowerCase()) ||
-                          u.email?.toLowerCase().includes(memberSearch.toLowerCase())
-                        ).length === 0 && (
-                        <div className="px-4 py-3 text-sm text-[#7a8b7f] text-center">
-                          Aucun partenaire ou collaborateur disponible
-                        </div>
-                      )}
-                    </div>
-                    <div className="fixed inset-0 z-30" onClick={() => setShowMemberDropdown(false)} />
+                          )}
+                      </div>
+                      <div className="fixed inset-0 z-30" onClick={() => setShowMemberDropdown(false)} />
                     </>
                   )}
 
@@ -506,14 +531,14 @@ const CreateProjectModal = ({
               <div className="grid sm:grid-cols-2 gap-3">
                 <div>
                   <p className="text-xs text-[#7a8b7f] mb-1">Date de début *</p>
-                    <input
-                      type="date"
-                      name="startDate"
-                      value={formData.startDate}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2.5 bg-[#fdfdfc] border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] text-sm text-[#1e4029]"
-                      required
-                    />
+                  <input
+                    type="date"
+                    name="startDate"
+                    value={formData.startDate}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2.5 bg-[#fdfdfc] border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] text-sm text-[#1e4029]"
+                    required
+                  />
                 </div>
                 <div>
                   <p className="text-xs text-[#7a8b7f] mb-1">Date de fin</p>
