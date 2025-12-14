@@ -251,6 +251,7 @@ exports.getUserConversations = async (req, res) => {
       .sort({ updatedAt: -1 });
 
     // Filtrer les conversations pour les clients : ne pas voir les conversations avec des Partenaires
+    // Filtrer les conversations pour les partenaires : ne pas voir les conversations avec des Clients
     if (userRole === 'client') {
       conversations = conversations.filter(conv => {
         // Vérifier si la conversation contient un partenaire
@@ -261,6 +262,16 @@ exports.getUserConversations = async (req, res) => {
         return !hasPartner;
       });
       console.log('🔒 Client conversations filtered. Removed conversations with partners.');
+    } else if (userRole === 'partner') {
+      conversations = conversations.filter(conv => {
+        // Vérifier si la conversation contient un client
+        const hasClient = conv.participants.some(p => 
+          p.user && p.user.role === 'client'
+        );
+        // Ne garder que les conversations sans client
+        return !hasClient;
+      });
+      console.log('🔒 Partner conversations filtered. Removed conversations with clients.');
     }
 
     // Ajouter le compteur de messages non lus pour chaque conversation
@@ -460,6 +471,7 @@ exports.getConversations = async (req, res) => {
       .populate('lastMessage');
 
     // Filtrer les conversations pour les clients : ne pas voir les conversations avec des Partenaires
+    // Filtrer les conversations pour les partenaires : ne pas voir les conversations avec des Clients
     if (req.user.role === 'client') {
       conversations = conversations.filter(conv => {
         // Vérifier si la conversation contient un partenaire
@@ -468,6 +480,15 @@ exports.getConversations = async (req, res) => {
         );
         // Ne garder que les conversations sans partenaire
         return !hasPartner;
+      });
+    } else if (req.user.role === 'partner') {
+      conversations = conversations.filter(conv => {
+        // Vérifier si la conversation contient un client
+        const hasClient = conv.participants.some(p => 
+          p.user && p.user.role === 'client'
+        );
+        // Ne garder que les conversations sans client
+        return !hasClient;
       });
     }
 
@@ -581,14 +602,20 @@ function canAccessConversation(user, conversation) {
     return result;
   }
 
-  // Les partenaires voient seulement leurs conversations privées
+  // Les partenaires voient seulement leurs conversations privées, SANS clients
   if (userRole === 'partner') {
     const isParticipant = conversation.participants.some(p =>
       p.user.toString() === userId.toString()
     );
     const allowedType = ['private', 'group', 'support'].includes(conversation.type);
-    const result = isParticipant && allowedType;
-    console.log('🤝 Partner check:', { isParticipant, allowedType, result });
+    
+    // Vérifier qu'il n'y a pas de client dans la conversation
+    const hasClient = conversation.participants.some(p => 
+      p.user && (p.user.role === 'client' || (typeof p.user === 'object' && p.user.role === 'client'))
+    );
+    
+    const result = isParticipant && allowedType && !hasClient;
+    console.log('🤝 Partner check:', { isParticipant, allowedType, hasClient, result });
     return result;
   }
 

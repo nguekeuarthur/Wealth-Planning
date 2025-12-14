@@ -42,18 +42,25 @@ exports.getAllProjects = async (req, res) => {
       .sort({ createdAt: -1 });
 
     // Filtrer les membres de projet pour les clients : ne pas voir les Partenaires
+    // Filtrer les informations du client pour les partenaires : ne pas voir le Client
     const filteredProjects = projects.map(project => {
+      const projectObj = project.toObject();
+      
       if (req.user.role === 'client') {
-        const projectObj = project.toObject();
         // Filtrer assignedUsers pour exclure les partenaires
         if (projectObj.assignedUsers) {
           projectObj.assignedUsers = projectObj.assignedUsers.filter(
             user => user.role !== 'partner'
           );
         }
-        return projectObj;
+      } else if (req.user.role === 'partner') {
+        // Masquer les informations du client
+        if (projectObj.client) {
+          projectObj.client = null;
+        }
       }
-      return project;
+      
+      return projectObj;
     });
 
     res.json({ projects: filteredProjects });
@@ -111,11 +118,18 @@ exports.getProjectById = async (req, res) => {
     }
 
     // Filtrer les membres de projet pour les clients : ne pas voir les Partenaires
+    // Masquer les informations du client pour les partenaires
     const projectObj = project.toObject();
+    
     if (req.user.role === 'client' && projectObj.assignedUsers) {
       projectObj.assignedUsers = projectObj.assignedUsers.filter(
         user => user.role !== 'partner'
       );
+    } else if (req.user.role === 'partner') {
+      // Masquer les informations du client
+      if (projectObj.client) {
+        projectObj.client = null;
+      }
     }
 
     res.json({ project: projectObj });

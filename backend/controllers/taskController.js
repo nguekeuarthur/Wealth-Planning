@@ -40,6 +40,24 @@ const getTasks = async (req, res) => {
         }
         return taskObj;
       });
+    } else if (req.user.role === "partner") {
+      // Les partenaires voient toutes les tâches des projets où ils sont assignés
+      const Project = require("../models/Project");
+      const userProjects = await Project.find({ assignedUsers: req.user._id }).select("_id");
+      const projectIds = userProjects.map(p => p._id);
+      
+      tasks = await Task.find({ ...filter, project: { $in: projectIds } })
+        .populate("assignedTo", "name email profileImageUrl role")
+        .populate("project", "name");
+      
+      // Filtrer les assignedTo pour ne pas montrer les clients aux partenaires
+      tasks = tasks.map(task => {
+        const taskObj = task.toObject();
+        if (taskObj.assignedTo && Array.isArray(taskObj.assignedTo)) {
+          taskObj.assignedTo = taskObj.assignedTo.filter(user => user.role !== 'client');
+        }
+        return taskObj;
+      });
     } else {
       tasks = await Task.find({ ...filter, assignedTo: req.user._id })
         .populate("assignedTo", "name email profileImageUrl")
@@ -117,6 +135,21 @@ const getTaskById = async (req, res) => {
       const taskObj = task.toObject();
       if (taskObj.assignedTo && Array.isArray(taskObj.assignedTo)) {
         taskObj.assignedTo = taskObj.assignedTo.filter(user => user.role !== 'partner');
+      }
+      return res.json(taskObj);
+    } else if (req.user.role === "partner") {
+      const Project = require("../models/Project");
+      const project = await Project.findById(task.project._id);
+      
+      // Vérifier que le partenaire est assigné au projet
+      if (!project || !project.assignedUsers.some(userId => userId.toString() === req.user._id.toString())) {
+        return res.status(403).json({ message: "Accès refusé" });
+      }
+      
+      // Filtrer les assignedTo pour ne pas montrer les clients aux partenaires
+      const taskObj = task.toObject();
+      if (taskObj.assignedTo && Array.isArray(taskObj.assignedTo)) {
+        taskObj.assignedTo = taskObj.assignedTo.filter(user => user.role !== 'client');
       }
       return res.json(taskObj);
     }

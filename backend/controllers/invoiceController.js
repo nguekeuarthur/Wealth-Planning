@@ -45,9 +45,9 @@ exports.getAllInvoices = async (req, res) => {
       // Clients voient seulement leurs factures
       filter.client = req.user._id;
     } else if (req.user.role === 'partner') {
-      // Partenaires ne voient PAS les factures taguées "client"
-      // On va filtrer après la requête car MongoDB ne gère pas bien $ne sur les tableaux
-      // Pas de filtre ici, on filtrera après
+      // Partenaires n'ont AUCUN accès aux factures
+      // Retourner un tableau vide
+      return res.json({ invoices: [] });
     } else {
       // Autres rôles : voir seulement leurs factures
       filter.client = req.user._id;
@@ -69,13 +69,6 @@ exports.getAllInvoices = async (req, res) => {
       .populate('client', 'companyName contactName email industry')
       .populate('project', 'name category')
       .sort({ issueDate: -1 });
-
-    // Filtrer les factures taguées "client" pour les partenaires
-    if (req.user.role === 'partner') {
-      invoices = invoices.filter(invoice => {
-        return !invoice.tags || !invoice.tags.includes('client');
-      });
-    }
 
     res.json({ invoices });
   } catch (error) {
@@ -113,8 +106,8 @@ exports.getInvoiceById = async (req, res) => {
     } else if (req.user.role === 'client') {
       hasAccess = invoice.client && invoice.client.toString() === req.user._id.toString();
     } else if (req.user.role === 'partner') {
-      // Partenaires ne peuvent pas voir les factures taguées "client"
-      hasAccess = !invoice.tags || !invoice.tags.includes('client');
+      // Partenaires n'ont AUCUN accès aux factures
+      return res.status(403).json({ message: 'Accès refusé - Les partenaires n\'ont pas accès aux factures' });
     }
 
     if (!hasAccess) {
