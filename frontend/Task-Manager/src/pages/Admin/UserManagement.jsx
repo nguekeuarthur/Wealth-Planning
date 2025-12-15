@@ -8,6 +8,7 @@ import {
   FiEdit3, FiTrash2, FiExternalLink, FiFlag, FiCalendar, FiUsers, FiX, FiBriefcase, FiMapPin, FiGlobe, FiStar
 } from "react-icons/fi";
 import toast from "react-hot-toast";
+import DeleteUserModal from "../../components/DeleteUserModal";
 import CreateTeamMemberModal from "../../components/CreateTeamMemberModal";
 
 const UserManagement = () => {
@@ -20,6 +21,8 @@ const UserManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [deletingUser, setDeletingUser] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -177,83 +180,12 @@ const UserManagement = () => {
     }
   };
 
-  const handleSaveUserEdit = async () => {
-    try {
-      await axiosInstance.put(API_PATHS.USERS.UPDATE_USER(selectedUser._id), editFormData);
-
-      // Mettre à jour la liste des utilisateurs localement
-      const updatedUsers = allUsers.map(user =>
-        user._id === selectedUser._id ? { ...user, ...editFormData } : user
-      );
-      setAllUsers(updatedUsers);
-
-      // Re-filtrer les utilisateurs
-      let filtered = updatedUsers;
-      if (searchQuery.trim() !== "") {
-        const query = searchQuery.toLowerCase();
-        filtered = filtered.filter((user) =>
-          user.name?.toLowerCase().includes(query) ||
-          user.email?.toLowerCase().includes(query) ||
-          user.phoneNumber?.toLowerCase().includes(query) ||
-          user.company?.toLowerCase().includes(query)
-        );
-      }
-      if (selectedRole !== "all") {
-        filtered = filtered.filter((user) => user.role === selectedRole);
-      }
-      setFilteredUsers(filtered);
-
-      setIsEditMode(false);
-      toast.success("Utilisateur modifié avec succès");
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Échec de la modification");
-    }
+  const handleDeleteUser = (user) => {
+    setUserToDelete(user);
+    setIsDeleteModalOpen(true);
   };
 
-  const handleReactivateUser = async (userId) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir réactiver cet utilisateur ?")) return;
-    try {
-      setDeletingUser(userId);
-      await axiosInstance.put(API_PATHS.USERS.UPDATE_USER(userId), {
-        status: "active"
-      });
-
-      // Mettre à jour la liste des utilisateurs localement
-      const updatedUsers = allUsers.map(user =>
-        user._id === userId ? { ...user, status: "active" } : user
-      );
-      setAllUsers(updatedUsers);
-
-      // Re-filtrer les utilisateurs
-      let filtered = updatedUsers;
-      if (searchQuery.trim() !== "") {
-        const query = searchQuery.toLowerCase();
-        filtered = filtered.filter((user) =>
-          user.name?.toLowerCase().includes(query) ||
-          user.email?.toLowerCase().includes(query) ||
-          user.phoneNumber?.toLowerCase().includes(query) ||
-          user.company?.toLowerCase().includes(query)
-        );
-      }
-      if (selectedRole !== "all") {
-        filtered = filtered.filter((user) => user.role === selectedRole);
-      }
-      setFilteredUsers(filtered);
-
-      toast.success("Utilisateur réactivé avec succès");
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Échec de la réactivation");
-    } finally {
-      setDeletingUser(null);
-    }
-  };
-
-  const handleDeleteUser = async (userId) => {
-    const reason = window.prompt("Raison de la suppression (optionnel) :", "Supprimé par l'administrateur");
-    if (reason === null) return; // Annulé par l'utilisateur
-
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer définitivement cet utilisateur ? Cette action ne peut pas être annulée.")) return;
-
+  const confirmDeleteUser = async (userId, reason) => {
     try {
       setDeletingUser(userId);
       // D'abord marquer comme inactif
@@ -266,33 +198,15 @@ const UserManagement = () => {
         data: { reason: reason || "Désactivé par l'administrateur" }
       });
 
-      // Mettre à jour la liste des utilisateurs localement
-      const updatedUsers = allUsers.map(user =>
-        user._id === userId ? { ...user, status: "inactive" } : user
-      );
-      setAllUsers(updatedUsers);
-
-      // Re-filtrer les utilisateurs
-      let filtered = updatedUsers;
-      if (searchQuery.trim() !== "") {
-        const query = searchQuery.toLowerCase();
-        filtered = filtered.filter((user) =>
-          user.name?.toLowerCase().includes(query) ||
-          user.email?.toLowerCase().includes(query) ||
-          user.phoneNumber?.toLowerCase().includes(query) ||
-          user.company?.toLowerCase().includes(query)
-        );
-      }
-      if (selectedRole !== "all") {
-        filtered = filtered.filter((user) => user.role === selectedRole);
-      }
-      setFilteredUsers(filtered);
-
+      // Refresh list from server
+      await getAllUsers();
       toast.success("Utilisateur supprimé avec succès");
     } catch (error) {
       toast.error(error.response?.data?.message || "Échec de la désactivation");
     } finally {
       setDeletingUser(null);
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
     }
   };
 
@@ -381,6 +295,7 @@ const UserManagement = () => {
           <div>
             <select
               value={selectedRole}
+
               onChange={(e) => setSelectedRole(e.target.value)}
               className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] cursor-pointer transition-colors"
             >
@@ -570,7 +485,7 @@ const UserManagement = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteUser(user._id);
+                            handleDeleteUser(user);
                           }}
                           disabled={deletingUser === user._id}
                           className="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs font-medium disabled:opacity-50 flex items-center justify-center gap-1"
@@ -1062,6 +977,15 @@ const UserManagement = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {isDeleteModalOpen && userToDelete && (
+        <DeleteUserModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          user={userToDelete}
+          onConfirm={confirmDeleteUser}
+        />
       )}
 
       <CreateTeamMemberModal

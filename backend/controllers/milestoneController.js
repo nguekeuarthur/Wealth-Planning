@@ -11,27 +11,19 @@ exports.getProjectMilestones = async (req, res) => {
       return res.status(404).json({ message: 'Projet non trouvé' });
     }
 
-    // Check permissions - Admin, Client du projet et Partenaires assignés ont accès
-    if (req.user.role !== 'admin' && 
-        req.user.role !== 'client' &&
-        req.user.role !== 'partner' &&
-        project.client.toString() !== req.user._id.toString()) {
+    // Check permissions - allow admin, client, project lead, and assigned users
+    const isAdmin = req.user.role === 'admin';
+    const isClient = project.client && project.client.toString() === req.user._id.toString();
+    const isProjectLead = project.projectLead && project.projectLead.toString() === req.user._id.toString();
+    const isAssignedUser = project.assignedUsers && project.assignedUsers.some(
+      user => user._id.toString() === req.user._id.toString()
+    );
+    const isAssignedTeam = project.teams && project.teams.some(team =>
+      team.members && team.members.some(member => member._id.toString() === req.user._id.toString())
+    );
+
+    if (!isAdmin && !isClient && !isProjectLead && !isAssignedUser && !isAssignedTeam) {
       return res.status(403).json({ message: 'Accès refusé' });
-    }
-    
-    // Si client, vérifier que c'est bien son projet
-    if (req.user.role === 'client' && project.client.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Accès refusé' });
-    }
-    
-    // Si partenaire, vérifier qu'il est assigné au projet
-    if (req.user.role === 'partner') {
-      const isAssigned = project.assignedUsers && project.assignedUsers.some(
-        userId => userId.toString() === req.user._id.toString()
-      );
-      if (!isAssigned) {
-        return res.status(403).json({ message: 'Accès refusé' });
-      }
     }
 
     const milestones = await Milestone.find({ project: projectId })

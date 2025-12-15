@@ -6,6 +6,11 @@ const { protect } = require('../middlewares/authMiddleware');
 // Apply auth middleware to all routes
 router.use(protect);
 
+// Add or assign users to a project
+router.post('/:id/users', projectController.addUsersToProject);
+// Remove a user from a project (Admin only)
+router.delete('/:id/users/:userId', projectController.removeUserFromProject);
+
 // Get project statistics
 router.get('/stats', projectController.getProjectStats);
 

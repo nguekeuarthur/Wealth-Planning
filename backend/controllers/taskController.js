@@ -251,7 +251,7 @@ const updateTask = async (req, res) => {
     task.status = req.body.status || task.status;
     task.dueDate = req.body.dueDate || task.dueDate;
     task.todoChecklist = req.body.todoChecklist || task.todoChecklist;
-    
+
     // Gérer les nouveaux fichiers uploadés
     if (req.files && req.files.length > 0) {
       const newAttachments = req.files.map(file => `/uploads/${file.filename}`);
@@ -268,7 +268,7 @@ const updateTask = async (req, res) => {
           assignedTo = [];
         }
       }
-      
+
       if (!Array.isArray(assignedTo)) {
         return res
           .status(400)
@@ -287,7 +287,7 @@ const updateTask = async (req, res) => {
           assignedRoles = [];
         }
       }
-      
+
       if (!Array.isArray(assignedRoles)) {
         return res
           .status(400)
@@ -363,9 +363,37 @@ const updateTaskStatus = async (req, res) => {
     }
 
     const oldStatus = task.status;
-    task.status = req.body.status || task.status;
+    const newStatus = req.body.status;
 
-    if (task.status === "completed") {
+    if (!newStatus) {
+      return res.status(400).json({ message: "Status is required" });
+    }
+
+    // Normalize status values coming from different frontends
+    const normalizeStatus = (status) => {
+      if (!status) return status;
+      const raw = String(status).trim();
+      const allowed = ["Pending", "In Progress", "Completed"];
+      if (allowed.includes(raw)) return raw;
+
+      const lowered = raw.toLowerCase();
+      const map = {
+        pending: "Pending",
+        "in-progress": "In Progress",
+        "in progress": "In Progress",
+        completed: "Completed",
+      };
+      return map[lowered] || raw;
+    };
+
+    const normalizedStatus = normalizeStatus(newStatus);
+    if (!["Pending", "In Progress", "Completed"].includes(normalizedStatus)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    task.status = normalizedStatus;
+
+    if (task.status === "Completed") {
       task.todoChecklist.forEach((item) => (item.completed = true));
       task.progress = 100;
     }
@@ -374,24 +402,31 @@ const updateTaskStatus = async (req, res) => {
 
     // Mettre à jour automatiquement la progression du projet parent
     if (task.project && (oldStatus !== task.status)) {
-      const Project = require('../models/Project');
-      const project = await Project.findById(task.project._id || task.project).populate('tasks');
+      try {
+        const Project = require('../models/Project');
+        const project = await Project.findById(task.project);
 
-      if (project && project.tasks.length > 0) {
-        const totalTasks = project.tasks.length;
-        const completedTasks = project.tasks.filter(t => t.status === 'Completed').length;
-        const calculatedCompletion = Math.round((completedTasks / totalTasks) * 100);
+        if (project) {
+          // Récupérer toutes les tâches du projet
+          const allTasks = await Task.find({ project: task.project });
+          const totalTasks = allTasks.length;
+          const completedTasks = allTasks.filter(t => t.status === 'Completed').length;
+          const calculatedCompletion = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-        if (project.completion !== calculatedCompletion) {
-          project.completion = calculatedCompletion;
-          await project.save();
+          if (project.completion !== calculatedCompletion) {
+            project.completion = calculatedCompletion;
+            await project.save();
+          }
         }
+      } catch (projectError) {
+        console.error("Error updating project progress:", projectError);
+        // Ne pas échouer la mise à jour de la tâche si la mise à jour du projet échoue
       }
     }
 
     res.json({ message: "Task status updated", task });
   } catch (error) {
-    console.error("Error updating task status:", error);
+    console.error("Error in updateTaskStatus:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -455,7 +490,7 @@ const updateTaskChecklist = async (req, res) => {
       "name email profileImageUrl"
     );
 
-    res.json({ message: "Task checklist updated", task:updatedTask });
+    res.json({ message: "Task checklist updated", task: updatedTask });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -549,7 +584,7 @@ const getUserDashboardData = async (req, res) => {
       status: { $ne: "Completed" },
       dueDate: { $lt: new Date() },
     });
-    
+
 
     // Task distribution by status
     const taskStatuses = ["Pending", "In Progress", "Completed"];

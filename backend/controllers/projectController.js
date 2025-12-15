@@ -1,5 +1,6 @@
 const Project = require('../models/Project');
 const Task = require('../models/Task');
+const User = require('../models/User');
 
 // Get all projects
 exports.getAllProjects = async (req, res) => {
@@ -131,6 +132,13 @@ exports.getProjectById = async (req, res) => {
       .populate({
         path: 'messages',
         populate: { path: 'sender receiver', select: 'name email role profileImageUrl' }
+      })
+      .populate({
+        path: 'teams',
+        populate: [
+          { path: 'members', select: 'name email role profileImageUrl' },
+          { path: 'leader', select: 'name email role profileImageUrl' }
+        ]
       });
 
     if (!project) {
@@ -299,6 +307,114 @@ exports.restoreProject = async (req, res) => {
     res.json({ message: 'Projet restauré avec succès', project });
   } catch (error) {
     res.status(500).json({ message: 'Erreur lors de la restauration', error: error.message });
+  }
+};
+
+// Add or assign users to a project
+exports.addUsersToProject = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+
+    // Only admin can add/assign users to projects
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Accès refusé - Admin uniquement' });
+    }
+
+    const project = await Project.findById(projectId);
+    if (!project) return res.status(404).json({ message: 'Projet non trouvé' });
+
+    const { existingUserIds, newUsers } = req.body;
+
+    const assignedUserIds = [];
+
+    // Assign existing users
+    if (existingUserIds && Array.isArray(existingUserIds)) {
+      for (const userId of existingUserIds) {
+        const u = await User.findById(userId);
+        if (u) assignedUserIds.push(u._id);
+      }
+    }
+
+    // Create new users and assign
+    if (newUsers && Array.isArray(newUsers)) {
+      for (const nu of newUsers) {
+        // Expected fields: name, email, role (member|collaborator|partner)
+        if (!nu.email || !nu.name) continue;
+        const exists = await User.findOne({ email: nu.email });
+        if (exists) {
+          assignedUserIds.push(exists._id);
+          continue;
+        }
+
+        // Generate a random temporary password
+        const tempPassword = Math.random().toString(36).slice(-8);
+
+        const created = await User.create({
+          name: nu.name,
+          email: nu.email,
+          password: tempPassword,
+          role: nu.role || 'member'
+        });
+
+        assignedUserIds.push(created._id);
+      }
+    }
+
+    if (assignedUserIds.length === 0) {
+      return res.status(400).json({ message: 'Aucun utilisateur à assigner' });
+    }
+
+    // Add to project.assignedUsers without duplicates
+    await Project.findByIdAndUpdate(projectId, {
+      $addToSet: { assignedUsers: { $each: assignedUserIds } }
+    });
+
+    const updated = await Project.findById(projectId)
+      .populate('assignedUsers', 'name email role profileImageUrl')
+      .populate({
+        path: 'teams',
+        populate: [
+          { path: 'members', select: 'name email role profileImageUrl' },
+          { path: 'leader', select: 'name email role profileImageUrl' }
+        ]
+      })
+      .populate('projectLead', 'name email role profileImageUrl');
+
+    res.json({ message: 'Utilisateurs assignés au projet', project: updated });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+// Remove a user from a project
+exports.removeUserFromProject = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const userId = req.params.userId;
+
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Accès refusé - Admin uniquement' });
+    }
+
+    const project = await Project.findById(projectId);
+    if (!project) return res.status(404).json({ message: 'Projet non trouvé' });
+
+    await Project.findByIdAndUpdate(projectId, { $pull: { assignedUsers: userId } });
+
+    const updated = await Project.findById(projectId)
+      .populate('assignedUsers', 'name email role profileImageUrl')
+      .populate({
+        path: 'teams',
+        populate: [
+          { path: 'members', select: 'name email role profileImageUrl' },
+          { path: 'leader', select: 'name email role profileImageUrl' }
+        ]
+      })
+      .populate('projectLead', 'name email role profileImageUrl');
+
+    res.json({ message: 'Utilisateur retiré du projet', project: updated });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
 };
 

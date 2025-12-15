@@ -87,6 +87,8 @@ export const API_PATHS = {
     RESTORE_PROJECT: (projectId) => `/api/projects/${projectId}/restore`,
     DELETE_PROJECT: (projectId) => `/api/projects/${projectId}`,
     GET_STATS: "/api/projects/stats",
+    ADD_USERS_TO_PROJECT: (projectId) => `/api/projects/${projectId}/users`,
+    REMOVE_USER_FROM_PROJECT: (projectId, userId) => `/api/projects/${projectId}/users/${userId}`,
   },
 
   INVOICES: {

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import Modal from "./Modal";
-import { FiUpload, FiFile, FiX } from "react-icons/fi";
+import { FiUpload, FiFile, FiX, FiSearch } from "react-icons/fi";
 import axiosInstance from "../utils/axiosInstance";
 import { API_PATHS } from "../utils/apiPaths";
 import toast from "react-hot-toast";
@@ -15,6 +15,26 @@ const CreateProjectDocumentModal = ({ isOpen, onClose, project, onDocumentCreate
   const [file, setFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [assignedUserIds, setAssignedUserIds] = useState([]);
+  const [assignedTeamIds, setAssignedTeamIds] = useState([]);
+  const [allowedRoles, setAllowedRoles] = useState([]);
+  const [userSearch, setUserSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+
+  const filteredProjectUsers = useMemo(() => {
+    const users = Array.isArray(project?.assignedUsers) ? project.assignedUsers : [];
+    const q = (userSearch || "").trim().toLowerCase();
+    let filtered = users;
+    if (roleFilter !== "all") {
+      filtered = filtered.filter(u => u.role === roleFilter);
+    }
+    if (!q) return filtered;
+    return filtered.filter((u) => {
+      const name = (u?.name || "").toLowerCase();
+      const email = (u?.email || "").toLowerCase();
+      return name.includes(q) || email.includes(q);
+    });
+  }, [project?.assignedUsers, userSearch, roleFilter]);
 
   const documentTypes = [
     { value: "contract", label: "Contrat" },
@@ -56,7 +76,7 @@ const CreateProjectDocumentModal = ({ isOpen, onClose, project, onDocumentCreate
         return;
       }
       setFile(selectedFile);
-      
+
       // Prévisualisation pour les images
       if (selectedFile.type.startsWith('image/')) {
         const reader = new FileReader();
@@ -102,6 +122,16 @@ const CreateProjectDocumentModal = ({ isOpen, onClose, project, onDocumentCreate
       formDataToSend.append("type", formData.type);
       formDataToSend.append("category", formData.category || "");
       formDataToSend.append("project", project._id);
+      // Attach assignments: send as JSON strings
+      if (assignedUserIds && assignedUserIds.length) {
+        formDataToSend.append('assignedUserIds', JSON.stringify(assignedUserIds));
+      }
+      if (assignedTeamIds && assignedTeamIds.length) {
+        formDataToSend.append('assignedTeamIds', JSON.stringify(assignedTeamIds));
+      }
+      if (allowedRoles && allowedRoles.length) {
+        formDataToSend.append('allowedRoles', JSON.stringify(allowedRoles));
+      }
 
       const response = await axiosInstance.post(
         API_PATHS.DOCUMENTS.UPLOAD_DOCUMENT,
@@ -222,7 +252,7 @@ const CreateProjectDocumentModal = ({ isOpen, onClose, project, onDocumentCreate
           <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">
             Fichier <span className="text-red-500">*</span>
           </label>
-          
+
           {file ? (
             <div className="relative">
               {filePreview ? (
@@ -281,6 +311,193 @@ const CreateProjectDocumentModal = ({ isOpen, onClose, project, onDocumentCreate
         </div>
 
         {/* Actions */}
+        {/* Assignements: users, teams, roles (admin only UI for assignment) */}
+        {project && project._id && (
+          <div className="bg-[#fbfff9] p-4 rounded-xl border border-[#e6f0ea] space-y-4">
+            <div>
+              <h4 className="text-sm font-semibold text-[#1e4029]">Attribuer ce document</h4>
+              <p className="text-xs text-[#7a8b7f] mt-1">Vous pouvez attribuer ce document à des utilisateurs, des équipes ou des rôles.</p>
+            </div>
+
+            {/* Users list */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-[#7a8b7f]">Utilisateurs du projet</div>
+                <div className="text-xs text-[#99aca2]">{assignedUserIds.length} sélectionné(s)</div>
+              </div>
+
+              {/* Filtre par rôle */}
+              <div>
+                <label className="block text-xs font-medium text-[#7a8b7f] mb-1.5">Filtrer par rôle</label>
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setRoleFilter("all")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${roleFilter === "all"
+                      ? "bg-[#2d5f3f] text-white"
+                      : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
+                      }`}
+                  >
+                    Tous
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRoleFilter("client")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${roleFilter === "client"
+                      ? "bg-[#2d5f3f] text-white"
+                      : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
+                      }`}
+                  >
+                    Clients
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRoleFilter("partner")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${roleFilter === "partner"
+                      ? "bg-[#2d5f3f] text-white"
+                      : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
+                      }`}
+                  >
+                    Partenaires
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRoleFilter("collaborator")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${roleFilter === "collaborator"
+                      ? "bg-[#2d5f3f] text-white"
+                      : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
+                      }`}
+                  >
+                    Collaborateurs
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRoleFilter("member")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${roleFilter === "member"
+                      ? "bg-[#2d5f3f] text-white"
+                      : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
+                      }`}
+                  >
+                    Membres
+                  </button>
+                </div>
+              </div>
+
+              {/* Recherche */}
+              <div className="relative">
+                <input
+                  type="text"
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  placeholder="Rechercher un membre..."
+                  className="w-full px-3 py-2.5 bg-[#fdfdfc] border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] text-sm text-[#1e4029] placeholder:text-[#7a8b7f]"
+                />
+                <FiSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#7a8b7f] w-4 h-4" />
+              </div>
+
+              {/* Liste des utilisateurs */}
+              <div className="bg-white border border-[#dfe8e1] rounded-xl max-h-44 overflow-y-auto">
+                {(Array.isArray(project.assignedUsers) && project.assignedUsers.length > 0) ? (
+                  filteredProjectUsers.length > 0 ? (
+                    filteredProjectUsers.map((u) => {
+                      const isSelected = assignedUserIds.includes(u._id);
+                      return (
+                        <label
+                          key={u._id}
+                          className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${isSelected ? "bg-[#f4f7f4]" : "hover:bg-[#f4f7f4]"}`}
+                        >
+                          <div className="relative">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {
+                                setAssignedUserIds((prev) =>
+                                  prev.includes(u._id) ? prev.filter((x) => x !== u._id) : [...prev, u._id]
+                                );
+                              }}
+                              className="h-4 w-4 rounded border-[#dfe8e1] text-[#2d5f3f] focus:ring-[#5a8f6f] focus:ring-offset-0 sr-only peer"
+                            />
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${isSelected
+                              ? "bg-[#2d5f3f] border-[#2d5f3f]"
+                              : "border-[#dfe8e1] bg-white peer-hover:border-[#5a8f6f]"
+                              }`}>
+                              {isSelected && (
+                                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                          {u.profileImageUrl ? (
+                            <img src={u.profileImageUrl} alt={u.name || u.email} className="w-7 h-7 rounded-full object-cover" />
+                          ) : (
+                            <div className="w-7 h-7 rounded-full bg-[#5a8f6f] text-white flex items-center justify-center text-xs font-semibold">
+                              {(u.name || u.email || "").charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-[#1e4029] truncate">{u.name || "Sans nom"}</p>
+                            <p className="text-xs text-[#7a8b7f] truncate">{u.email}</p>
+                          </div>
+                        </label>
+                      );
+                    })
+                  ) : (
+                    <div className="px-3 py-3 text-sm text-[#7a8b7f] text-center">Aucun utilisateur trouvé</div>
+                  )
+                ) : (
+                  <div className="px-3 py-3 text-sm text-[#7a8b7f] text-center">Aucun utilisateur assigné au projet</div>
+                )}
+              </div>
+            </div>
+
+            {/* Teams list */}
+            {project.teams && project.teams.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-[#7a8b7f]">Équipes</div>
+                  <div className="text-xs text-[#99aca2]">{assignedTeamIds.length} sélectionnée(s)</div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {project.teams.map((t) => {
+                    const isSelected = assignedTeamIds.includes(t._id);
+                    return (
+                      <label
+                        key={t._id}
+                        className={`flex items-center gap-2 p-2 rounded-xl border cursor-pointer transition-colors ${isSelected ? "border-[#5a8f6f] bg-[#f4f7f4]" : "border-[#dfe8e1] bg-white hover:bg-[#f4f7f4]"}`}
+                      >
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {
+                              setAssignedTeamIds((prev) =>
+                                prev.includes(t._id) ? prev.filter((x) => x !== t._id) : [...prev, t._id]
+                              );
+                            }}
+                            className="h-4 w-4 rounded border-[#dfe8e1] text-[#2d5f3f] focus:ring-[#5a8f6f] focus:ring-offset-0 sr-only peer"
+                          />
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${isSelected
+                            ? "bg-[#2d5f3f] border-[#2d5f3f]"
+                            : "border-[#dfe8e1] bg-white peer-hover:border-[#5a8f6f]"
+                            }`}>
+                            {isSelected && (
+                              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-xs font-medium text-[#1e4029] truncate">{t.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+          </div>
+        )}
         <div className="flex justify-end gap-3 pt-4 border-t border-[#dfe8e1]">
           <button
             type="button"

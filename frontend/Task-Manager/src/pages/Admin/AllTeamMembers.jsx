@@ -8,6 +8,7 @@ import {
   FiEdit3, FiTrash2, FiExternalLink, FiFlag, FiCalendar
 } from "react-icons/fi";
 import toast from "react-hot-toast";
+import DeleteUserModal from "../../components/DeleteUserModal";
 import CreateTeamMemberModal from "../../components/CreateTeamMemberModal";
 
 const UserManagement = () => {
@@ -21,6 +22,8 @@ const UserManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [deletingUser, setDeletingUser] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
 
   const roles = [
     { value: "all", label: "Tous les rôles" },
@@ -91,12 +94,8 @@ const UserManagement = () => {
     setFilteredUsers(filtered);
   }, [searchQuery, selectedRole, selectedStatus, allUsers]);
 
-  const groupedClients = filteredClients.reduce((acc, client) => {
-    const industry = client.industry?.toUpperCase() || "OTHER";
-    if (!acc[industry]) acc[industry] = [];
-    acc[industry].push(client);
-    return acc;
-  }, {});
+  // placeholder for compatibility (no grouped clients used here)
+  const groupedClients = {};
 
   // Statistiques des utilisateurs
   const userStats = {
@@ -127,18 +126,24 @@ const UserManagement = () => {
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action ne peut pas être annulée.")) return;
+  const handleDeleteUser = (user) => {
+    setUserToDelete(user);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteUser = async (userId, reason) => {
     try {
       setDeletingUser(userId);
-      await axiosInstance.delete(API_PATHS.USERS.DELETE_USER(userId));
-      setAllUsers(allUsers.filter(u => u._id !== userId));
-      setFilteredUsers(filteredUsers.filter(u => u._id !== userId));
+      // call delete endpoint (server may expect data payload)
+      await axiosInstance.delete(API_PATHS.USERS.DELETE_USER(userId), { data: { reason: reason || "Supprimé par l'administrateur" } });
+      await getAllUsers();
       toast.success("Utilisateur supprimé avec succès");
     } catch (error) {
       toast.error(error.response?.data?.message || "Échec de la suppression");
     } finally {
       setDeletingUser(null);
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
     }
   };
 
@@ -214,6 +219,8 @@ const UserManagement = () => {
           <div>
             <select
               value={selectedRole}
+
+      
               onChange={(e) => setSelectedRole(e.target.value)}
               className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] cursor-pointer transition-colors"
             >
@@ -367,7 +374,7 @@ const UserManagement = () => {
                         <FiEdit3 size={14} className="mx-auto" />
                                 </button>
                                 <button
-                        onClick={(e) => { e.stopPropagation(); handleDeleteUser(user._id); }}
+                              onClick={(e) => { e.stopPropagation(); handleDeleteUser(user); }}
                         disabled={deletingUser === user._id}
                         className="flex-1 p-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors text-xs font-medium disabled:opacity-50"
                         title="Supprimer"
@@ -420,6 +427,14 @@ const UserManagement = () => {
         onClientCreated={handleUserCreated}
         editClient={editingUser}
       />
+      {isDeleteModalOpen && userToDelete && (
+        <DeleteUserModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          user={userToDelete}
+          onConfirm={confirmDeleteUser}
+        />
+      )}
     </DashboardLayout>
   );
 };

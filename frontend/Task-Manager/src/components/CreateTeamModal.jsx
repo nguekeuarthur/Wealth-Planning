@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axiosInstance from "../utils/axiosInstance";
 import { API_PATHS } from "../utils/apiPaths";
 import toast from "react-hot-toast";
@@ -27,6 +27,10 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
   const [showLeaderDropdown, setShowLeaderDropdown] = useState(false);
   const [showMemberDropdown, setShowMemberDropdown] = useState(false);
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
+
+  const leaderContainerRef = useRef(null);
+  const memberContainerRef = useRef(null);
+  const companyContainerRef = useRef(null);
 
   const teamColors = [
     "#5a8f6f", // Primary green
@@ -66,6 +70,9 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
       setLeaderSearch("");
       setMemberSearch("");
       setCompanySearch("");
+      setShowLeaderDropdown(false);
+      setShowMemberDropdown(false);
+      setShowCompanyDropdown(false);
 
       // Charger les entreprises si la modal est ouverte
       if (isOpen) {
@@ -87,22 +94,39 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
     }
   };
 
-  // Fermer les dropdowns quand on clique ailleurs
+  // Fermer les dropdowns quand on clique ailleurs (company, leader, members)
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest('.company-dropdown-container')) {
+      const leaderRef = leaderContainerRef.current;
+      const memberRef = memberContainerRef.current;
+      const companyRef = companyContainerRef.current;
+
+      if (companyRef && !companyRef.contains(event.target)) {
         setShowCompanyDropdown(false);
+      }
+      if (leaderRef && !leaderRef.contains(event.target)) {
+        setShowLeaderDropdown(false);
+      }
+      if (memberRef && !memberRef.contains(event.target)) {
+        setShowMemberDropdown(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    // use capture phase to catch clicks before other handlers; listen to mouse and touch events
+    document.addEventListener('mousedown', handleClickOutside, true);
+    document.addEventListener('touchstart', handleClickOutside, true);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside, true);
+      document.removeEventListener('touchstart', handleClickOutside, true);
+    };
   }, []);
+
 
   const getAvailableUsers = async () => {
     try {
       const response = await axiosInstance.get("/api/users?role=member");
-      setAvailableUsers(response.data?.users || []);
+      const users = response.data?.users || [];
+      setAvailableUsers(users.filter(u => u.role === 'member'));
     } catch (error) {
       console.error("Erreur lors du chargement des utilisateurs:", error);
       toast.error("Échec du chargement des utilisateurs");
@@ -128,12 +152,20 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
   };
 
   const handleLeaderSelect = (user) => {
+    if (user.role === 'admin') {
+      toast.error("Impossible de sélectionner un administrateur comme chef d'équipe");
+      return;
+    }
     setFormData(prev => ({ ...prev, leader: user._id }));
     setLeaderSearch(user.name);
     setShowLeaderDropdown(false);
   };
 
   const handleAddMember = (user) => {
+    if (user.role === 'admin') {
+      toast.error("Impossible d'ajouter un administrateur comme membre");
+      return;
+    }
     if (!formData.members.includes(user._id)) {
       setFormData(prev => ({
         ...prev,
@@ -151,6 +183,11 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
     }));
   };
 
+  const handleClearLeader = () => {
+    setFormData(prev => ({ ...prev, leader: "" }));
+    setLeaderSearch("");
+  };
+
   const getSelectedLeader = () => {
     return availableUsers.find(u => u._id === formData.leader);
   };
@@ -163,8 +200,9 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
     return availableUsers.filter(user =>
       user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    ).filter(user => !excludeIds.includes(user._id));
+    ).filter(user => !excludeIds.includes(user._id)).filter(user => user.role !== 'admin');
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -260,7 +298,7 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
                 />
               </div>
 
-            <div className="company-dropdown-container">
+            <div className="company-dropdown-container" ref={companyContainerRef}>
               <label className="block text-sm font-semibold text-[#1e4029] mb-2">
                 Entreprise
               </label>
@@ -346,7 +384,7 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
             </div>
 
             {/* Team Leader */}
-            <div>
+            <div className="leader-dropdown-container" ref={leaderContainerRef}>
               <label className="block text-sm font-semibold text-[#1e4029] mb-2">
                 Chef d'équipe *
               </label>
@@ -360,7 +398,7 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
                       setLeaderSearch(e.target.value);
                       setShowLeaderDropdown(true);
                     }}
-                    onFocus={() => setShowLeaderDropdown(true)}
+                    onFocus={() => leaderSearch && setShowLeaderDropdown(true)}
                     className="w-full pl-10 pr-4 py-3 border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors"
                     placeholder="Rechercher un utilisateur..."
                   />
@@ -374,11 +412,19 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
                         onClick={() => handleLeaderSelect(user)}
                         className="flex items-center gap-3 p-3 hover:bg-[#f4f7f4] cursor-pointer"
                       >
-                        <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center">
-                          <span className="text-white text-sm font-semibold">
-                            {user.name?.charAt(0).toUpperCase() || '?'}
-                          </span>
-                        </div>
+                        {user.profileImageUrl ? (
+                          <img
+                            src={user.profileImageUrl}
+                            alt={user.name || 'Avatar'}
+                            className="w-8 h-8 rounded-full"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center">
+                            <span className="text-white text-sm font-semibold">
+                              {user.name?.charAt(0).toUpperCase() || '?'}
+                            </span>
+                          </div>
+                        )}
                         <div>
                           <p className="font-medium text-[#1e4029]">{user.name}</p>
                           <p className="text-sm text-[#7a8b7f]">{user.email}</p>
@@ -395,21 +441,37 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
 
                 {getSelectedLeader() && (
                   <div className="mt-2 flex items-center gap-2 p-2 bg-[#f4f7f4] rounded-lg">
-                    <FiStar className="text-[#5a8f6f]" />
+                    {getSelectedLeader().profileImageUrl ? (
+                      <img
+                        src={getSelectedLeader().profileImageUrl}
+                        alt={getSelectedLeader().name}
+                        className="w-8 h-8 rounded-full"
+                      />
+                    ) : (
+                      <FiStar className="text-[#5a8f6f]" />
+                    )}
                     <span className="font-medium text-[#1e4029]">
                       {getSelectedLeader().name}
                     </span>
+                    <button
+                      type="button"
+                      onClick={handleClearLeader}
+                      className="ml-auto text-[#7a8b7f] hover:text-[#e74c3c]"
+                      title="Retirer le chef"
+                    >
+                      <FiX />
+                    </button>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Team Members */}
-            <div>
+            <div className="member-dropdown-container" ref={memberContainerRef}>
               <label className="block text-sm font-semibold text-[#1e4029] mb-2">
                 Membres de l'équipe
               </label>
-              <div className="relative">
+                  <div className="relative">
                 <div className="relative">
                   <FiUserPlus className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#7a8b7f]" />
                   <input
@@ -419,7 +481,7 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
                       setMemberSearch(e.target.value);
                       setShowMemberDropdown(true);
                     }}
-                    onFocus={() => setShowMemberDropdown(true)}
+                    onFocus={() => memberSearch && setShowMemberDropdown(true)}
                     className="w-full pl-10 pr-4 py-3 border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors"
                     placeholder="Ajouter un membre..."
                   />
@@ -433,11 +495,19 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
                         onClick={() => handleAddMember(user)}
                         className="flex items-center gap-3 p-3 hover:bg-[#f4f7f4] cursor-pointer"
                       >
-                        <div className="w-8 h-8 bg-[#7a8b7f] rounded-full flex items-center justify-center">
-                          <span className="text-white text-sm font-semibold">
-                            {user.name?.charAt(0).toUpperCase() || '?'}
-                          </span>
-                        </div>
+                        {user.profileImageUrl ? (
+                          <img
+                            src={user.profileImageUrl}
+                            alt={user.name || 'Avatar'}
+                            className="w-8 h-8 rounded-full"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 bg-[#7a8b7f] rounded-full flex items-center justify-center">
+                            <span className="text-white text-sm font-semibold">
+                              {user.name?.charAt(0).toUpperCase() || '?'}
+                            </span>
+                          </div>
+                        )}
                         <div>
                           <p className="font-medium text-[#1e4029]">{user.name}</p>
                           <p className="text-sm text-[#7a8b7f]">{user.email}</p>
@@ -460,11 +530,15 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
                   {getSelectedMembers().map(member => (
                     <div key={member._id} className="flex items-center justify-between p-2 bg-[#f4f7f4] rounded-lg">
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-[#7a8b7f] rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-semibold">
-                            {member.name?.charAt(0).toUpperCase() || '?'}
-                          </span>
-                        </div>
+                        {member.profileImageUrl ? (
+                          <img src={member.profileImageUrl} alt={member.name} className="w-6 h-6 rounded-full" />
+                        ) : (
+                          <div className="w-6 h-6 bg-[#7a8b7f] rounded-full flex items-center justify-center">
+                            <span className="text-white text-xs font-semibold">
+                              {member.name?.charAt(0).toUpperCase() || '?'}
+                            </span>
+                          </div>
+                        )}
                         <span className="text-sm font-medium text-[#1e4029]">
                           {member.name}
                         </span>

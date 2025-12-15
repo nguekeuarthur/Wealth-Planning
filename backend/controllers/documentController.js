@@ -1,5 +1,6 @@
 const Document = require('../models/Document');
 const Project = require('../models/Project');
+const Team = require('../models/Team');
 const path = require('path');
 const fs = require('fs').promises;
 
@@ -13,30 +14,29 @@ exports.getAllDocuments = async (req, res) => {
     if (type) filter.type = type;
     if (category) filter.category = category;
 
-    // Permissions selon le rôle
+    // Admin & collaborator: can see all (optionally filter by tags/allowedRoles)
     if (req.user.role === 'admin' || req.user.role === 'collaborator') {
-      // Admin et Collaborateur voient tous les fichiers
-      // Si un tag est spécifié dans la requête, filtrer par tag
       if (tags) {
-        filter.tags = tags;
+        filter.allowedRoles = tags;
       }
-    } else if (req.user.role === 'client') {
-      // Clients voient seulement les fichiers tagués "client" de leurs projets
-      const userProjects = await Project.find({ client: req.user._id }).select('_id');
-      filter.project = { $in: userProjects.map(p => p._id) };
-      filter.tags = 'client';
-    } else if (req.user.role === 'partner') {
-      // Partenaires voient seulement les fichiers tagués "partner"
-      filter.tags = 'partner';
     } else {
-      // Autres rôles : voir seulement leurs documents
-      const userProjects = await Project.find({ client: req.user._id }).select('_id');
-      filter.project = { $in: userProjects.map(p => p._id) };
+      // For other roles we build an OR filter: documents targeted to user's role, assigned to the user, assigned to one of user's teams, or belong to user's projects
+      const userProjectIds = (await Project.find({ client: req.user._id }).select('_id')).map(p => p._id);
+      const userTeamIds = (await Team.find({ members: req.user._id }).select('_id')).map(t => t._id);
+
+      filter.$or = [
+        { allowedRoles: req.user.role },
+        { assignedUsers: req.user._id },
+        { assignedTeams: { $in: userTeamIds } },
+        { project: { $in: userProjectIds } }
+      ];
     }
 
     const documents = await Document.find(filter)
-      .populate('uploadedBy', 'fullName email')
+      .populate('uploadedBy', 'name email profileImageUrl')
       .populate('project', 'name category')
+      .populate('assignedUsers', 'name email role profileImageUrl')
+      .populate('assignedTeams', 'name members leader')
       .sort({ createdAt: -1 });
 
     res.json({ documents });
@@ -56,18 +56,33 @@ exports.getDocumentById = async (req, res) => {
       return res.status(404).json({ message: 'Document non trouvé' });
     }
 
-    // Check permissions selon le rôle
+    // Check permissions selon le rôle and explicit assignments
     let hasAccess = false;
     if (req.user.role === 'admin' || req.user.role === 'collaborator') {
       hasAccess = true;
-    } else if (req.user.role === 'client') {
-      // Clients voient seulement les fichiers tagués "client" de leurs projets
-      hasAccess = document.project && 
-                  document.project.client.toString() === req.user._id.toString() &&
-                  document.tags && document.tags.includes('client');
-    } else if (req.user.role === 'partner') {
-      // Partenaires voient seulement les fichiers tagués "partner"
-      hasAccess = document.tags && document.tags.includes('partner');
+    } else {
+      // Access if document allowedRoles contains user's role OR assignedUsers includes user
+      if (document.allowedRoles && document.allowedRoles.includes(req.user.role)) {
+        hasAccess = true;
+      }
+
+      if (!hasAccess && document.assignedUsers && document.assignedUsers.some(u => u.toString() === req.user._id.toString())) {
+        hasAccess = true;
+      }
+
+      // Check assigned teams: if any team includes the user
+      if (!hasAccess && document.assignedTeams && document.assignedTeams.length) {
+        const userTeams = await Team.find({ members: req.user._id }).select('_id');
+        const userTeamIds = userTeams.map(t => t._id.toString());
+        if (document.assignedTeams.some(tid => userTeamIds.includes(tid.toString()))) {
+          hasAccess = true;
+        }
+      }
+
+      // Fallback: clients can access documents for their projects if project.client matches and allowedRoles contains 'client'
+      if (!hasAccess && req.user.role === 'client' && document.project && document.project.client && document.project.client.toString() === req.user._id.toString() && document.allowedRoles && document.allowedRoles.includes('client')) {
+        hasAccess = true;
+      }
     }
 
     if (!hasAccess) {
@@ -101,6 +116,8 @@ exports.uploadDocument = async (req, res) => {
       }
     }
 
+    const { assignedUserIds, assignedTeamIds, allowedRoles } = req.body;
+
     const document = new Document({
       name: name || req.file.originalname,
       description,
@@ -120,6 +137,35 @@ exports.uploadDocument = async (req, res) => {
         uploadedBy: req.user._id
       }]
     });
+
+    // Assign users/teams/roles if provided
+    if (assignedUserIds) {
+      try {
+        const parsed = Array.isArray(assignedUserIds) ? assignedUserIds : JSON.parse(assignedUserIds);
+        document.assignedUsers = parsed;
+      } catch (e) {
+        // fallback if it's a single id string
+        document.assignedUsers = Array.isArray(assignedUserIds) ? assignedUserIds : [assignedUserIds];
+      }
+    }
+
+    if (assignedTeamIds) {
+      try {
+        const parsed = Array.isArray(assignedTeamIds) ? assignedTeamIds : JSON.parse(assignedTeamIds);
+        document.assignedTeams = parsed;
+      } catch (e) {
+        document.assignedTeams = Array.isArray(assignedTeamIds) ? assignedTeamIds : [assignedTeamIds];
+      }
+    }
+
+    if (allowedRoles) {
+      try {
+        const parsed = Array.isArray(allowedRoles) ? allowedRoles : JSON.parse(allowedRoles);
+        document.allowedRoles = parsed;
+      } catch (e) {
+        document.allowedRoles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+      }
+    }
 
     await document.save();
 
@@ -250,7 +296,7 @@ exports.getArchivedDocuments = async (req, res) => {
 
     const { type } = req.query;
     const filter = { archived: true };
-    
+
     if (type) filter.type = type;
 
     const documents = await Document.find(filter)
@@ -294,14 +340,41 @@ exports.restoreDocument = async (req, res) => {
 // Download document
 exports.downloadDocument = async (req, res) => {
   try {
-    const document = await Document.findById(req.params.id).populate('project');
+    const document = await Document.findById(req.params.id)
+      .populate('project', 'name category client')
+      .populate('assignedTeams', '_id');
 
     if (!document) {
       return res.status(404).json({ message: 'Document non trouvé' });
     }
 
-    // Check permissions
-    if (req.user.role !== 'admin' && document.project.client.toString() !== req.user._id.toString()) {
+    // Check permissions (same logic as getDocumentById)
+    let hasAccess = false;
+    if (req.user.role === 'admin' || req.user.role === 'collaborator') {
+      hasAccess = true;
+    } else {
+      if (document.allowedRoles && document.allowedRoles.includes(req.user.role)) {
+        hasAccess = true;
+      }
+
+      if (!hasAccess && document.assignedUsers && document.assignedUsers.some(u => u.toString() === req.user._id.toString())) {
+        hasAccess = true;
+      }
+
+      if (!hasAccess && document.assignedTeams && document.assignedTeams.length) {
+        const userTeams = await Team.find({ members: req.user._id }).select('_id');
+        const userTeamIds = userTeams.map(t => t._id.toString());
+        if (document.assignedTeams.some(tid => userTeamIds.includes(tid.toString()))) {
+          hasAccess = true;
+        }
+      }
+
+      if (!hasAccess && req.user.role === 'client' && document.project && document.project.client && document.project.client.toString() === req.user._id.toString() && document.allowedRoles && document.allowedRoles.includes('client')) {
+        hasAccess = true;
+      }
+    }
+
+    if (!hasAccess) {
       return res.status(403).json({ message: 'Accès refusé' });
     }
 
@@ -309,7 +382,7 @@ exports.downloadDocument = async (req, res) => {
     if (document.fileType) {
       res.setHeader('Content-Type', document.fileType);
     }
-    
+
     // Définir le Content-Disposition pour forcer le téléchargement avec le bon nom
     const fileName = document.name || 'document';
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
