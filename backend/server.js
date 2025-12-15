@@ -1,5 +1,15 @@
 const path = require("path");
-require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+
+// Load environment variables. Prefer a local backend `.env` file, but fall back to repo-root `.env`.
+// (Your previous path only loaded `../.env`, which can silently ignore `backend/.env`.)
+const dotenv = require("dotenv");
+
+const envCandidates = [
+  path.join(__dirname, ".env"),
+  path.join(__dirname, "..", ".env"),
+];
+
+dotenv.config({ path: envCandidates.find((p) => require("fs").existsSync(p)) });
 
 const express = require("express");
 const cors = require("cors");
