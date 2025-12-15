@@ -28,6 +28,21 @@ const documentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Project' 
   },
+  // Users the document is explicitly assigned to
+  assignedUsers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  // Teams the document is explicitly assigned to
+  assignedTeams: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Team'
+  }],
+  // Roles that should have access to the document (e.g. 'client','partner','collaborator','admin')
+  allowedRoles: [{
+    type: String,
+    enum: ['client', 'partner', 'collaborator', 'admin', 'member', 'finance']
+  }],
   uploadedBy: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User', 

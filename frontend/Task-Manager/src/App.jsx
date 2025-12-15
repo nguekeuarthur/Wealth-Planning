@@ -36,6 +36,7 @@ import UserDocuments from "./pages/User/UserDocuments";
 import ClientDocuments from "./pages/Client/ClientDocuments";
 import ClientDashboard from "./pages/Client/ClientDashboard";
 import PartnerDashboard from "./pages/Partner/PartnerDashboard";
+import PartnerProjectDetails from "./pages/Partner/ProjectDetails";
 import CollaboratorDashboard from "./pages/Collaborator/CollaboratorDashboard";
 import DashboardLayout from "./components/layouts/DashboardLayout";
 import ChatLayout from "./components/layouts/ChatLayout";
@@ -133,7 +134,7 @@ const App = () => {
                 <Route element={<PrivateRoute allowedRoles={["partner"]} />}>
                   <Route path="/partner/dashboard" element={<PartnerDashboard />} />
                   <Route path="/partner/projects" element={<AllProjects />} />
-                  <Route path="/partner/project/:id" element={<ProjectDetails />} />
+                  <Route path="/partner/project/:id" element={<PartnerProjectDetails />} />
                   <Route path="/partner/tasks" element={<MyTasks />} />
                   <Route path="/partner/task-details/:id" element={<ViewTaskDetails />} />
                   <Route path="/partner/chat" element={<DashboardLayout activeMenu="Messagerie" fullWidth={true}><Chat /></DashboardLayout>} />

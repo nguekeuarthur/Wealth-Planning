@@ -29,6 +29,7 @@ import {
 import toast from "react-hot-toast";
 import { UserContext } from "../../context/userContext";
 import ManageProjectTeamsModal from "../../components/ManageProjectTeamsModal";
+import ManageProjectUsersModal from "../../components/ManageProjectUsersModal";
 import CreateProjectTaskModal from "../../components/CreateProjectTaskModal";
 import CreateProjectDocumentModal from "../../components/CreateProjectDocumentModal";
 import CreateInvoiceModal from "../../components/CreateInvoiceModal";
@@ -42,11 +43,9 @@ import TaskDetailsModal from "../../components/TaskDetailsModal";
 const allTabs = [
   { id: "overview", label: "Vue d'ensemble", icon: FiFolder, roles: ["admin", "partner", "collaborator", "client"] },
   { id: "tasks", label: "Tâches", icon: FiCheckCircle, roles: ["admin", "partner", "collaborator", "client"] },
-  { id: "weeklyUpdates", label: "Mises à jour hebdomadaires", icon: FiActivity, roles: ["admin"] },
   { id: "milestones", label: "Jalons", icon: FiFlag, roles: ["admin", "partner", "collaborator", "client"] },
   { id: "documents", label: "Documents", icon: FiFileText, roles: ["admin", "partner", "collaborator", "client"] },
-  { id: "invoices", label: "Finances", icon: FiDollarSign, roles: ["admin", "partner", "collaborator", "client"] },
-  { id: "updates", label: "Messages", icon: FiMessageSquare, roles: ["admin", "partner", "collaborator", "client"] }
+  { id: "invoices", label: "Finances", icon: FiDollarSign, roles: ["admin", "partner", "collaborator", "client"] }
 ];
 
 const getStatusBadgeClass = (status) => {
@@ -61,6 +60,18 @@ const getStatusBadgeClass = (status) => {
       return "bg-[#f4f7f4] text-[#7a8b7f]";
   }
 };
+
+  const getRoleLabel = (role) => {
+    switch (role) {
+      case 'admin': return 'Administrateur';
+      case 'collaborator': return 'Collaborateur';
+      case 'partner': return 'Partenaire';
+      case 'member': return 'Membre';
+      case 'client': return 'Client';
+      case 'finance': return 'Finance';
+      default: return role || '';
+    }
+  };
 
 const MetricCard = ({ icon, label, value, subtext }) => (
   <div className="bg-white p-4 rounded-2xl border border-[#dfe8e1] shadow-sm">
@@ -97,6 +108,7 @@ const ProjectDetails = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [showTeamsModal, setShowTeamsModal] = useState(false);
+  const [showUsersModal, setShowUsersModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -111,6 +123,7 @@ const ProjectDetails = () => {
   const [milestonesLoaded, setMilestonesLoaded] = useState(false);
   const [showTaskDetailsModal, setShowTaskDetailsModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [viewMode, setViewMode] = useState('members'); // 'members' or 'teams' display toggle
 
   const handleTaskDragStart = (task) => {
     setDraggedTaskId(task._id);
@@ -593,6 +606,142 @@ const ProjectDetails = () => {
                     label="Tâches en retard"
                     value={metrics?.overdueTasks || 0}
                   />
+                </div>
+                {/* Members / Teams panel - moved under metrics */}
+                <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm mt-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-[#1e4029] flex items-center gap-2">
+                      <FiUsers /> {viewMode === 'members' ? `Membres (${(project.assignedUsers||[]).length})` : `Équipes (${project.teams?.length || 0} équipe${project.teams?.length > 1 ? 's' : ''})`}
+                    </h3>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setViewMode('members')}
+                        className={`text-sm font-medium ${viewMode === 'members' ? 'text-white bg-[#2d5f3f] px-3 py-1 rounded' : 'text-[#2d5f3f] hover:text-[#1e4029]'}`}
+                      >
+                        Membres
+                      </button>
+                      <button
+                        onClick={() => setViewMode('teams')}
+                        className={`text-sm font-medium ${viewMode === 'teams' ? 'text-white bg-[#2d5f3f] px-3 py-1 rounded' : 'text-[#2d5f3f] hover:text-[#1e4029]'}`}
+                      >
+                        Équipes
+                      </button>
+                      {can("team") && (
+                        <div className="flex gap-2">
+                          <button onClick={() => setShowTeamsModal(true)} className="text-sm text-[#2d5f3f] hover:text-[#1e4029] font-medium">Gérer équipes</button>
+                          <button onClick={() => setShowUsersModal(true)} className="text-sm text-[#2d5f3f] hover:text-[#1e4029] font-medium">Gérer membres</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {viewMode === 'members' ? (
+                      <div>
+                        {/* Project lead */}
+                        {project.projectLead && (
+                          <div className="p-3 border border-[#dfe8e1] rounded-xl flex items-center gap-3 bg-[#f4f7f4]">
+                            {project.projectLead.profileImageUrl ? (
+                              <img src={project.projectLead.profileImageUrl} alt={project.projectLead.name || "Avatar"} className="w-10 h-10 rounded-full object-cover" />
+                            ) : (
+                              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#2d5f3f] font-semibold">{project.projectLead.name?.charAt(0).toUpperCase() || 'P'}</div>
+                            )}
+                            <div>
+                              <p className="text-sm font-semibold text-[#1e4029]">{project.projectLead.name || project.projectLead.email || 'Chef de projet'}</p>
+                              <p className="text-xs text-[#7a8b7f]">Chef de projet</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Assigned users */}
+                        {(project.assignedUsers || []).length > 0 ? (
+                          <div className="space-y-2 mt-3">
+                            {(project.assignedUsers || []).
+                              filter(u => !(project.projectLead && u._id && project.projectLead._id && u._id.toString() === project.projectLead._id.toString())).
+                              map(userItem => (
+                                  <div key={userItem._id} className="flex items-center gap-3 p-3 border border-[#dfe8e1] rounded-lg bg-white">
+                                {userItem.profileImageUrl ? (
+                                  <img src={userItem.profileImageUrl} alt={userItem.name} className="w-10 h-10 rounded-full object-cover" />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-full bg-[#5a8f6f] flex items-center justify-center text-white font-medium">{(userItem.name||userItem.email||'').charAt(0).toUpperCase()}</div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-[#1e4029] truncate">{userItem.name || userItem.email}</p>
+                                      <p className="text-xs text-[#7a8b7f]">{userItem.email} • <span className="font-medium">{getRoleLabel(userItem.role)}</span></p>
+                                </div>
+                                      {can('team') && (
+                                      <div>
+                                        <button onClick={async () => {
+                                          if (!window.confirm(`Retirer ${userItem.name || userItem.email} du projet ?`)) return;
+                                          try {
+                                            await axiosInstance.delete(API_PATHS.PROJECTS.REMOVE_USER_FROM_PROJECT(project._id, userItem._id));
+                                            toast.success('Utilisateur retiré');
+                                            fetchProjectDetails();
+                                          } catch (err) {
+                                            console.error(err);
+                                            toast.error(err.response?.data?.message || 'Erreur lors de la suppression');
+                                          }
+                                        }} className="text-xs text-red-600 hover:underline">Retirer</button>
+                                      </div>
+                                    )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-[#7a8b7f] text-center py-4">Aucun membre assigné. Cliquez sur "Gérer membres" pour ajouter.</p>
+                        )}
+                      </div>
+                    ) : (
+                      // Teams view reuses existing rendering
+                      project.teams && project.teams.length > 0 ? (
+                        project.teams.map((team) => {
+                          const isExpanded = expandedTeams.has(team._id);
+                          return (
+                            <div key={team._id} className="border border-[#dfe8e1] rounded-xl bg-white overflow-hidden">
+                              <button onClick={() => toggleTeam(team._id)} className="w-full p-4 flex items-center justify-between hover:bg-[#f4f7f4] transition-colors">
+                                  <div className="flex items-center gap-3 flex-1">
+                                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0" style={{ backgroundColor: team.color || '#5a8f6f' }}><FiUsers /></div>
+                                  <div className="flex-1 text-left">
+                                    <h4 className="font-semibold text-[#1e4029]">{team.name}</h4>
+                                    {team.members && <p className="text-xs text-[#7a8b7f] mt-1">{team.members.filter(m => !(team.leader && m._id && team.leader._id && m._id.toString() === team.leader._id.toString())).length} membre{team.members.filter(m => !(team.leader && m._id && team.leader._id && m._id.toString() === team.leader._id.toString())).length > 1 ? 's' : ''}</p>}
+                                  </div>
+                                </div>
+                                <div className="flex-shrink-0 ml-3">{isExpanded ? <FiChevronUp className="text-[#7a8b7f] w-5 h-5" /> : <FiChevronDown className="text-[#7a8b7f] w-5 h-5" />}</div>
+                              </button>
+                              {isExpanded && (
+                                <div className="px-4 pb-4 pt-2 border-t border-[#dfe8e1] bg-[#fafafa]">
+                                  {team.leader && (
+                                    <div className="mb-4 p-3 bg-white rounded-lg border border-[#dfe8e1]">
+                                      <div className="flex items-center gap-2 mb-2"><FiUser className="text-[#5a8f6f] text-sm" /><span className="text-xs text-[#7a8b7f] font-medium uppercase">Chef d'équipe</span></div>
+                                      <div className="flex items-center gap-3">
+                                        {team.leader.profileImageUrl ? <img src={team.leader.profileImageUrl} alt={team.leader.name} className="w-8 h-8 rounded-full object-cover" /> : <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">{team.leader.name?.charAt(0).toUpperCase() || 'L'}</div>}
+                                        <div><p className="text-sm font-semibold text-[#1e4029]">{team.leader.name || team.leader.email}</p><p className="text-xs text-[#7a8b7f]">{team.leader.email}</p></div>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {team.members && team.members.length > 0 && (
+                                    <div>
+                                      <div className="flex items-center gap-2 mb-3"><FiUsers className="text-[#5a8f6f] text-sm" /><span className="text-xs text-[#7a8b7f] font-medium uppercase">Membres ({team.members.length})</span></div>
+                                      <div className="space-y-2">
+                                        {team.members.filter(member => !(team.leader && member._id && team.leader._id && member._id.toString() === team.leader._id.toString())).map((member) => (
+                                          <div key={member._id} className="flex items-center gap-3 p-2 bg-white rounded-lg border border-[#dfe8e1] hover:border-[#5a8f6f]/30 transition-colors">
+                                            {member.profileImageUrl ? <img src={member.profileImageUrl} alt={member.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" /> : <div className="w-8 h-8 bg-[#f4f7f4] rounded-full flex items-center justify-center text-[#2d5f3f] text-xs font-semibold flex-shrink-0">{member.name?.charAt(0).toUpperCase() || 'U'}</div>}
+                                            <div className="flex-1 min-w-0"><p className="text-sm font-medium text-[#1e4029] truncate">{member.name || 'Membre'}</p><p className="text-xs text-[#7a8b7f] truncate">{member.email} • <span className="font-medium">{member.role}</span></p></div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-sm text-[#7a8b7f] text-center py-4">Aucune équipe assignée. Cliquez sur "Gérer équipes" pour ajouter.</p>
+                      )
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -1347,164 +1496,7 @@ const ProjectDetails = () => {
               )}
             </div>
 
-            <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-[#1e4029] flex items-center gap-2">
-                  <FiUsers /> Équipe ({project.teams?.length || 0} équipe{project.teams?.length > 1 ? 's' : ''})
-                </h3>
-                {can("team") && (
-                  <button
-                    onClick={() => setShowTeamsModal(true)}
-                    className="text-sm text-[#2d5f3f] hover:text-[#1e4029] font-medium"
-                  >
-                    Gérer
-                  </button>
-                )}
-              </div>
-              <div className="space-y-4">
-                {/* Chef de projet */}
-                {project.projectLead && (
-                  <div className="p-3 border border-[#dfe8e1] rounded-xl flex items-center gap-3 bg-[#f4f7f4]">
-                    {project.projectLead.profileImageUrl ? (
-                      <img
-                        src={project.projectLead.profileImageUrl}
-                        alt={project.projectLead.name || "Avatar"}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#2d5f3f] font-semibold">
-                        {project.projectLead.name?.charAt(0).toUpperCase() || "P"}
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-sm font-semibold text-[#1e4029]">
-                        {project.projectLead.name || project.projectLead.email || "Chef de projet"}
-                      </p>
-                      <p className="text-xs text-[#7a8b7f]">Chef de projet</p>
-                    </div>
-                  </div>
-                )}
 
-                {/* Équipes assignées */}
-                {project.teams && project.teams.length > 0 ? (
-                  project.teams.map((team) => {
-                    const isExpanded = expandedTeams.has(team._id);
-                    return (
-                      <div
-                        key={team._id}
-                        className="border border-[#dfe8e1] rounded-xl bg-white overflow-hidden"
-                      >
-                        {/* Header cliquable */}
-                        <button
-                          onClick={() => toggleTeam(team._id)}
-                          className="w-full p-4 flex items-center justify-between hover:bg-[#f4f7f4] transition-colors"
-                        >
-                          <div className="flex items-center gap-3 flex-1">
-                            <div
-                              className="w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0"
-                              style={{ backgroundColor: team.color || "#5a8f6f" }}
-                            >
-                              <FiUsers />
-                            </div>
-                            <div className="flex-1 text-left">
-                              <h4 className="font-semibold text-[#1e4029]">{team.name}</h4>
-                              {team.members && (
-                                <p className="text-xs text-[#7a8b7f] mt-1">
-                                  {team.members.length} membre{team.members.length > 1 ? 's' : ''}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex-shrink-0 ml-3">
-                            {isExpanded ? (
-                              <FiChevronUp className="text-[#7a8b7f] w-5 h-5" />
-                            ) : (
-                              <FiChevronDown className="text-[#7a8b7f] w-5 h-5" />
-                            )}
-                          </div>
-                        </button>
-
-                        {/* Contenu déroulant */}
-                        {isExpanded && (
-                          <div className="px-4 pb-4 pt-2 border-t border-[#dfe8e1] bg-[#fafafa]">
-                            {/* Chef d'équipe */}
-                            {team.leader && (
-                              <div className="mb-4 p-3 bg-white rounded-lg border border-[#dfe8e1]">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <FiUser className="text-[#5a8f6f] text-sm" />
-                                  <span className="text-xs text-[#7a8b7f] font-medium uppercase">Chef d'équipe</span>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  {team.leader.profileImageUrl ? (
-                                    <img
-                                      src={team.leader.profileImageUrl}
-                                      alt={team.leader.name || "Avatar"}
-                                      className="w-8 h-8 rounded-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                                      {team.leader.name?.charAt(0).toUpperCase() || "L"}
-                                    </div>
-                                  )}
-                                  <div>
-                                    <p className="text-sm font-semibold text-[#1e4029]">
-                                      {team.leader.name || team.leader.email}
-                                    </p>
-                                    <p className="text-xs text-[#7a8b7f]">{team.leader.email}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Membres de l'équipe */}
-                            {team.members && team.members.length > 0 && (
-                              <div>
-                                <div className="flex items-center gap-2 mb-3">
-                                  <FiUsers className="text-[#5a8f6f] text-sm" />
-                                  <span className="text-xs text-[#7a8b7f] font-medium uppercase">
-                                    Membres ({team.members.length})
-                                  </span>
-                                </div>
-                                <div className="space-y-2">
-                                  {team.members.map((member) => (
-                                    <div
-                                      key={member._id}
-                                      className="flex items-center gap-3 p-2 bg-white rounded-lg border border-[#dfe8e1] hover:border-[#5a8f6f]/30 transition-colors"
-                                    >
-                                      {member.profileImageUrl ? (
-                                        <img
-                                          src={member.profileImageUrl}
-                                          alt={member.name || "Avatar"}
-                                          className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                                        />
-                                      ) : (
-                                        <div className="w-8 h-8 bg-[#f4f7f4] rounded-full flex items-center justify-center text-[#2d5f3f] text-xs font-semibold flex-shrink-0">
-                                          {member.name?.charAt(0).toUpperCase() || "U"}
-                                        </div>
-                                      )}
-                                      <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-[#1e4029] truncate">
-                                          {member.name || "Membre"}
-                                        </p>
-                                        <p className="text-xs text-[#7a8b7f] truncate">{member.email}</p>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="text-sm text-[#7a8b7f] text-center py-4">
-                    Aucune équipe assignée. Cliquez sur "Gérer" pour ajouter des équipes.
-                  </p>
-                )}
-              </div>
-            </div>
 
             {/* Dates clés */}
             <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm">
@@ -1550,6 +1542,15 @@ const ProjectDetails = () => {
         <ManageProjectTeamsModal
           isOpen={showTeamsModal}
           onClose={() => setShowTeamsModal(false)}
+          project={project}
+          onUpdate={fetchProjectDetails}
+        />
+      )}
+
+      {project && (
+        <ManageProjectUsersModal
+          isOpen={showUsersModal}
+          onClose={() => setShowUsersModal(false)}
           project={project}
           onUpdate={fetchProjectDetails}
         />

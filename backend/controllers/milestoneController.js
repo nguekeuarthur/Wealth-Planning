@@ -11,8 +11,18 @@ exports.getProjectMilestones = async (req, res) => {
       return res.status(404).json({ message: 'Projet non trouvé' });
     }
 
-    // Check permissions
-    if (req.user.role !== 'admin' && project.client.toString() !== req.user._id.toString()) {
+    // Check permissions - allow admin, client, project lead, and assigned users
+    const isAdmin = req.user.role === 'admin';
+    const isClient = project.client && project.client.toString() === req.user._id.toString();
+    const isProjectLead = project.projectLead && project.projectLead.toString() === req.user._id.toString();
+    const isAssignedUser = project.assignedUsers && project.assignedUsers.some(
+      user => user._id.toString() === req.user._id.toString()
+    );
+    const isAssignedTeam = project.teams && project.teams.some(team =>
+      team.members && team.members.some(member => member._id.toString() === req.user._id.toString())
+    );
+
+    if (!isAdmin && !isClient && !isProjectLead && !isAssignedUser && !isAssignedTeam) {
       return res.status(403).json({ message: 'Accès refusé' });
     }
 
