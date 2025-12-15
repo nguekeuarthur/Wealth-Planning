@@ -572,16 +572,49 @@ const PartnerProjectDetails = () => {
                                                             { responseType: 'blob' }
                                                         );
 
+                                                        // Déterminer le type MIME à partir du Content-Type de la réponse
+                                                        const contentType = response.headers?.['content-type'] || doc.fileType || 'application/octet-stream';
+                                                        const blob = new Blob([response.data], { type: contentType });
+
+                                                        // Nom de fichier: header content-disposition > doc.name > fallback
                                                         const contentDisposition = response.headers?.['content-disposition'];
                                                         let fileName = doc.name || 'document';
                                                         if (contentDisposition) {
-                                                            const match = contentDisposition.match(/filename\*=UTF-8''([^;\n]*)/);
-                                                            if (match && match[1]) {
-                                                                fileName = decodeURIComponent(match[1]);
+                                                            const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;\n]*)/);
+                                                            const asciiMatch = contentDisposition.match(/filename="?([^";\n]*)"?/);
+                                                            const rawName = utf8Match?.[1] || asciiMatch?.[1];
+                                                            if (rawName) {
+                                                                try {
+                                                                    fileName = decodeURIComponent(rawName);
+                                                                } catch {
+                                                                    fileName = rawName;
+                                                                }
                                                             }
                                                         }
 
-                                                        const url = window.URL.createObjectURL(new Blob([response.data]));
+                                                        // S'assurer que le nom a la bonne extension
+                                                        const mimeToExt = {
+                                                            'application/pdf': '.pdf',
+                                                            'application/msword': '.doc',
+                                                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+                                                            'application/vnd.ms-excel': '.xls',
+                                                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+                                                            'application/vnd.ms-powerpoint': '.ppt',
+                                                            'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+                                                            'image/jpeg': '.jpg',
+                                                            'image/png': '.png',
+                                                            'image/gif': '.gif',
+                                                            'text/plain': '.txt',
+                                                            'text/csv': '.csv'
+                                                        };
+
+                                                        const hasExtension = /\.[\w]+$/.test(fileName);
+                                                        const ext = mimeToExt[contentType] || mimeToExt[doc.fileType];
+                                                        if (!hasExtension && ext) {
+                                                            fileName += ext;
+                                                        }
+
+                                                        const url = window.URL.createObjectURL(blob);
                                                         const link = document.createElement('a');
                                                         link.href = url;
                                                         link.download = fileName;

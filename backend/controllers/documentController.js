@@ -296,7 +296,7 @@ exports.getArchivedDocuments = async (req, res) => {
 
     const { type } = req.query;
     const filter = { archived: true };
-    
+
     if (type) filter.type = type;
 
     const documents = await Document.find(filter)
@@ -340,14 +340,41 @@ exports.restoreDocument = async (req, res) => {
 // Download document
 exports.downloadDocument = async (req, res) => {
   try {
-    const document = await Document.findById(req.params.id).populate('project');
+    const document = await Document.findById(req.params.id)
+      .populate('project', 'name category client')
+      .populate('assignedTeams', '_id');
 
     if (!document) {
       return res.status(404).json({ message: 'Document non trouvé' });
     }
 
-    // Check permissions
-    if (req.user.role !== 'admin' && document.project.client.toString() !== req.user._id.toString()) {
+    // Check permissions (same logic as getDocumentById)
+    let hasAccess = false;
+    if (req.user.role === 'admin' || req.user.role === 'collaborator') {
+      hasAccess = true;
+    } else {
+      if (document.allowedRoles && document.allowedRoles.includes(req.user.role)) {
+        hasAccess = true;
+      }
+
+      if (!hasAccess && document.assignedUsers && document.assignedUsers.some(u => u.toString() === req.user._id.toString())) {
+        hasAccess = true;
+      }
+
+      if (!hasAccess && document.assignedTeams && document.assignedTeams.length) {
+        const userTeams = await Team.find({ members: req.user._id }).select('_id');
+        const userTeamIds = userTeams.map(t => t._id.toString());
+        if (document.assignedTeams.some(tid => userTeamIds.includes(tid.toString()))) {
+          hasAccess = true;
+        }
+      }
+
+      if (!hasAccess && req.user.role === 'client' && document.project && document.project.client && document.project.client.toString() === req.user._id.toString() && document.allowedRoles && document.allowedRoles.includes('client')) {
+        hasAccess = true;
+      }
+    }
+
+    if (!hasAccess) {
       return res.status(403).json({ message: 'Accès refusé' });
     }
 
@@ -355,7 +382,7 @@ exports.downloadDocument = async (req, res) => {
     if (document.fileType) {
       res.setHeader('Content-Type', document.fileType);
     }
-    
+
     // Définir le Content-Disposition pour forcer le téléchargement avec le bon nom
     const fileName = document.name || 'document';
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
