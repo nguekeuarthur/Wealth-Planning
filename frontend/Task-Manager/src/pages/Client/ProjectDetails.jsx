@@ -22,6 +22,23 @@ import {
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { UserContext } from "../../context/userContext";
+import TaskCard from "../../components/Cards/TaskCard";
+import TaskDetailsModal from "../../components/TaskDetailsModal";
+import {
+    DndContext,
+    DragOverlay,
+    closestCorners,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    useDroppable,
+} from "@dnd-kit/core";
+import {
+    SortableContext,
+    verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const clientTabs = [
     { id: "overview", label: "Vue d'ensemble", icon: FiFolder },
@@ -72,6 +89,104 @@ const EmptyState = ({ icon, title, subtitle }) => (
     </div>
 );
 
+// Composant draggable pour chaque tâche avec animations améliorées
+const DraggableTaskCard = ({ task, onTaskClick }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ 
+        id: task._id,
+        data: {
+            status: task.status, // Ajouter le statut pour faciliter la détection
+        },
+        transition: {
+            duration: 200,
+            easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+        },
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition: transition || 'transform 200ms cubic-bezier(0.25, 1, 0.5, 1)',
+        opacity: isDragging ? 0.4 : 1,
+        cursor: isDragging ? 'grabbing' : 'grab',
+        zIndex: isDragging ? 999 : 'auto',
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+            <TaskCard
+                title={task.title}
+                description={task.description}
+                priority={task.priority}
+                status={task.status}
+                progress={task.progress}
+                createdAt={task.createdAt}
+                dueDate={task.dueDate}
+                assignedTo={[]}
+                attachmentCount={task.attachments?.length || 0}
+                completedTodoCount={task.todoChecklist?.filter(item => item.completed).length || 0}
+                todoChecklist={task.todoChecklist || []}
+                onClick={() => onTaskClick(task)}
+                canModify={false}
+            />
+        </div>
+    );
+};
+
+// Composant pour créer une zone droppable (colonne de statut)
+const DroppableColumn = ({ status, label, tasks, onTaskClick }) => {
+    const { setNodeRef, isOver } = useDroppable({
+        id: status,
+    });
+
+    return (
+        <div 
+            ref={setNodeRef} 
+            className={`flex flex-col transition-all duration-200 ${
+                isOver ? 'ring-2 ring-[#2d5f3f] ring-opacity-50' : ''
+            }`}
+        >
+            <div className={`bg-white rounded-2xl border border-[#dfe8e1] p-4 shadow-sm transition-all ${
+                isOver ? 'bg-[#f4f7f4] border-[#2d5f3f]' : ''
+            }`}>
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-[#1e4029]">{label}</h3>
+                    <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-[#f4f7f4] text-[#7a8b7f]">
+                        {tasks.length} tâche{tasks.length !== 1 ? 's' : ''}
+                    </span>
+                </div>
+                <SortableContext
+                    id={status}
+                    items={tasks.map(t => t._id)}
+                    strategy={verticalListSortingStrategy}
+                >
+                    <div className="space-y-3 min-h-[200px]">
+                        {tasks.length > 0 ? (
+                            tasks.map((task) => (
+                                <DraggableTaskCard
+                                    key={task._id}
+                                    task={task}
+                                    onTaskClick={onTaskClick}
+                                />
+                            ))
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-8 text-[#7a8b7f]">
+                                <FiCheckCircle className="text-3xl mb-2 opacity-40" />
+                                <p className="text-sm">Aucune tâche</p>
+                            </div>
+                        )}
+                    </div>
+                </SortableContext>
+            </div>
+        </div>
+    );
+};
+
 const ClientProjectDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -79,12 +194,24 @@ const ClientProjectDetails = () => {
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("overview");
+    const [selectedTask, setSelectedTask] = useState(null);
+    const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+    const [activeId, setActiveId] = useState(null);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        })
+    );
 
     const fetchProjectDetails = async () => {
         try {
             setLoading(true);
             const response = await axiosInstance.get(API_PATHS.PROJECTS.GET_PROJECT_BY_ID(id));
-            setProject(response.data);
+            console.log("Projet chargé:", response.data);
+            setProject(response.data.project || response.data);
         } catch (error) {
             console.error("Erreur lors de la récupération des détails du projet:", error);
             toast.error("Impossible de charger les détails du projet");
@@ -99,6 +226,61 @@ const ClientProjectDetails = () => {
     useEffect(() => {
         fetchProjectDetails();
     }, [id]);
+
+    const handleDragStart = (event) => {
+        setActiveId(event.active.id);
+    };
+
+    const handleDragEnd = async (event) => {
+        const { active, over } = event;
+        setActiveId(null);
+
+        if (!over) return;
+
+        const taskId = active.id;
+        
+        // Déterminer le nouveau statut en fonction de l'élément survolé
+        let newStatus;
+        
+        // Si on survole directement une colonne (droppable)
+        if (over.data?.current?.type === undefined && ["Pending", "In Progress", "Completed"].includes(over.id)) {
+            newStatus = over.id;
+        }
+        // Si on survole une tâche, récupérer le conteneur parent (la colonne)
+        else if (over.data?.current?.sortable?.containerId) {
+            newStatus = over.data.current.sortable.containerId;
+        }
+        // Sinon, essayer de trouver la tâche survolée et récupérer son statut
+        else {
+            const overTask = project.tasks.find(t => t._id === over.id);
+            if (overTask) {
+                newStatus = overTask.status;
+            }
+        }
+
+        if (!newStatus) return;
+
+        const task = project.tasks.find(t => t._id === taskId);
+        if (!task || task.status === newStatus) return;
+
+        try {
+            await axiosInstance.put(API_PATHS.TASKS.UPDATE_TASK_STATUS(taskId), {
+                status: newStatus
+            });
+
+            setProject(prev => ({
+                ...prev,
+                tasks: prev.tasks.map(t =>
+                    t._id === taskId ? { ...t, status: newStatus } : t
+                )
+            }));
+
+            toast.success("Statut de la tâche mis à jour");
+        } catch (error) {
+            console.error("Erreur lors de la mise à jour:", error);
+            toast.error("Impossible de mettre à jour le statut");
+        }
+    };
 
     if (loading) {
         return (
@@ -118,7 +300,7 @@ const ClientProjectDetails = () => {
             <DashboardLayout>
                 <div className="flex items-center justify-center min-h-screen">
                     <EmptyState
-                        icon={FiFolder}
+                        icon={<FiFolder />}
                         title="Projet non trouvé"
                         subtitle="Le projet que vous cherchez n'existe pas ou vous n'y avez pas accès."
                     />
@@ -138,17 +320,17 @@ const ClientProjectDetails = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <MetricCard
-                    icon={FiCalendar}
+                    icon={<FiCalendar />}
                     label="Date de début"
                     value={project.startDate && !isNaN(new Date(project.startDate)) ? new Date(project.startDate).toLocaleDateString('fr-FR') : "Non définie"}
                 />
                 <MetricCard
-                    icon={FiClock}
+                    icon={<FiClock />}
                     label="Date de fin"
                     value={project.endDate && !isNaN(new Date(project.endDate)) ? new Date(project.endDate).toLocaleDateString('fr-FR') : "Non définie"}
                 />
                 <MetricCard
-                    icon={FiCheckCircle}
+                    icon={<FiCheckCircle />}
                     label="Statut"
                     value={
                         <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusBadgeClass(project.status)}`}>
@@ -159,7 +341,7 @@ const ClientProjectDetails = () => {
                     }
                 />
                 <MetricCard
-                    icon={FiUsers}
+                    icon={<FiUsers />}
                     label="Équipe"
                     value={project.assignedUsers?.length || 0}
                     subtext="membres assignés"
@@ -191,33 +373,83 @@ const ClientProjectDetails = () => {
         </div>
     );
 
-    const renderTasks = () => (
-        <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {["To Do", "In Progress", "Completed"].map((status) => (
-                    <div key={status} className="bg-white rounded-2xl border border-[#dfe8e1] p-4">
-                        <h3 className="text-lg font-semibold text-[#1e4029] mb-4">{status}</h3>
-                        <div className="space-y-3">
-                            {project.tasks?.filter(task => task.status === status).map(task => (
-                                <div key={task._id} className="p-3 border border-[#dfe8e1] rounded-xl bg-white">
-                                    <h4 className="text-[#1e4029] font-medium text-sm mb-1">{task.title}</h4>
-                                    <p className="text-xs text-[#7a8b7f] line-clamp-2">{task.description}</p>
-                                    {task.dueDate && (
-                                        <p className="text-xs text-[#99aca2] mt-2">
-                                            Échéance: {new Date(task.dueDate).toLocaleDateString('fr-FR')}
-                                        </p>
-                                    )}
-                                </div>
-                            ))}
-                            {(!project.tasks || project.tasks.filter(task => task.status === status).length === 0) && (
-                                <p className="text-sm text-[#7a8b7f] text-center py-4">Aucune tâche</p>
-                            )}
-                        </div>
+    const renderTasks = () => {
+        const tasksByStatus = {
+            "Pending": project.tasks?.filter(task => task.status === "Pending") || [],
+            "In Progress": project.tasks?.filter(task => task.status === "In Progress") || [],
+            "Completed": project.tasks?.filter(task => task.status === "Completed") || []
+        };
+
+        const statusLabels = {
+            "Pending": "À faire",
+            "In Progress": "En cours",
+            "Completed": "Terminé"
+        };
+
+        const handleTaskClick = (task) => {
+            setSelectedTask(task);
+            setIsTaskModalOpen(true);
+        };
+
+        const activeTask = activeId ? project.tasks?.find(t => t._id === activeId) : null;
+
+        return (
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCorners}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+            >
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {Object.entries(tasksByStatus).map(([status, tasks]) => (
+                            <DroppableColumn
+                                key={status}
+                                status={status}
+                                label={statusLabels[status]}
+                                tasks={tasks}
+                                onTaskClick={handleTaskClick}
+                            />
+                        ))}
                     </div>
-                ))}
-            </div>
-        </div>
-    );
+
+                    <DragOverlay>
+                        {activeTask ? (
+                            <div className="opacity-80">
+                                <TaskCard
+                                    title={activeTask.title}
+                                    description={activeTask.description}
+                                    priority={activeTask.priority}
+                                    status={activeTask.status}
+                                    progress={activeTask.progress}
+                                    dueDate={activeTask.dueDate}
+                                    assignedTo={[]}
+                                    attachments={activeTask.attachments}
+                                    completedTodoCount={activeTask.completedTodoCount}
+                                    todoChecklist={activeTask.todoChecklist}
+                                    canModify={false}
+                                />
+                            </div>
+                        ) : null}
+                    </DragOverlay>
+
+                    {selectedTask && (
+                        <TaskDetailsModal
+                            isOpen={isTaskModalOpen}
+                            onClose={() => {
+                                setIsTaskModalOpen(false);
+                                setSelectedTask(null);
+                            }}
+                            task={selectedTask}
+                            projectId={id}
+                            onTaskUpdate={fetchProjectDetails}
+                            readOnly={true}
+                        />
+                    )}
+                </div>
+            </DndContext>
+        );
+    };
 
     const renderMilestones = () => (
         <div className="space-y-4">
@@ -250,7 +482,7 @@ const ClientProjectDetails = () => {
                 ))
             ) : (
                 <EmptyState
-                    icon={FiFlag}
+                    icon={<FiFlag />}
                     title="Aucun jalon"
                     subtitle="Ce projet n'a pas encore de jalons définis."
                 />
@@ -286,7 +518,7 @@ const ClientProjectDetails = () => {
                 ))
             ) : (
                 <EmptyState
-                    icon={FiFileText}
+                    icon={<FiFileText />}
                     title="Aucun document"
                     subtitle="Ce projet n'a pas encore de documents partagés."
                 />
@@ -309,14 +541,18 @@ const ClientProjectDetails = () => {
                             </div>
                             <div className="text-right">
                                 <p className="text-2xl font-bold text-[#1e4029]">{invoice.amount}€</p>
-                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${invoice.status === "paid"
+                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                    invoice.status === "payée" || invoice.status === "paiement reçu"
                                     ? "bg-[#dff5e7] text-[#1e4029]"
-                                    : invoice.status === "overdue"
+                                    : invoice.status === "non payée"
                                         ? "bg-[#fee2e2] text-[#dc2626]"
-                                        : "bg-[#fff6ea] text-[#b76a28]"
+                                        : invoice.status === "partiellement payée"
+                                        ? "bg-[#fff6ea] text-[#b76a28]"
+                                        : "bg-[#f4f7f4] text-[#7a8b7f]"
                                     }`}>
-                                    {invoice.status === "paid" ? "Payée" :
-                                        invoice.status === "overdue" ? "En retard" : "En attente"}
+                                    {invoice.status === "payée" || invoice.status === "paiement reçu" ? "Payée" :
+                                        invoice.status === "non payée" ? "En retard" : 
+                                        invoice.status === "partiellement payée" ? "Partiellement payée" : "En attente"}
                                 </span>
                             </div>
                         </div>
@@ -324,7 +560,7 @@ const ClientProjectDetails = () => {
                 ))
             ) : (
                 <EmptyState
-                    icon={FiDollarSign}
+                    icon={<FiDollarSign />}
                     title="Aucune facture"
                     subtitle="Ce projet n'a pas encore de factures émises."
                 />
@@ -363,7 +599,7 @@ const ClientProjectDetails = () => {
                 ))
             ) : (
                 <EmptyState
-                    icon={FiMessageSquare}
+                    icon={<FiMessageSquare />}
                     title="Aucun message"
                     subtitle="Aucun message n'a encore été partagé sur ce projet."
                 />

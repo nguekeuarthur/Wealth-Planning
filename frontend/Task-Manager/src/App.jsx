@@ -35,6 +35,7 @@ import Chat from "./pages/User/Chat";
 import UserDocuments from "./pages/User/UserDocuments";
 import ClientDocuments from "./pages/Client/ClientDocuments";
 import ClientDashboard from "./pages/Client/ClientDashboard";
+import ClientTasks from "./pages/Client/ClientTasks";
 import PartnerDashboard from "./pages/Partner/PartnerDashboard";
 import CollaboratorDashboard from "./pages/Collaborator/CollaboratorDashboard";
 import DashboardLayout from "./components/layouts/DashboardLayout";
@@ -116,13 +117,11 @@ const App = () => {
                   <Route path="/user/notifications" element={<AllNotifications />} />
                 </Route>
 
-                {/* Client Routes - Accès à projets, factures, tâches, milestones, documents tagés client, messages */}
+                {/* Client Routes - Accès à projets, factures, documents tagés client, messages */}
                 <Route element={<PrivateRoute allowedRoles={["client"]} />}>
                   <Route path="/client/dashboard" element={<ClientDashboard />} />
                   <Route path="/client/projects" element={<AllProjects />} />
                   <Route path="/client/project/:id" element={<ClientProjectDetails />} />
-                  <Route path="/client/tasks" element={<MyTasks />} />
-                  <Route path="/client/task-details/:id" element={<ViewTaskDetails />} />
                   <Route path="/client/chat" element={<DashboardLayout activeMenu="Messagerie" fullWidth={true}><Chat /></DashboardLayout>} />
                   <Route path="/client/invoices" element={<AllInvoices />} />
                   <Route path="/client/documents" element={<ClientDocuments />} />

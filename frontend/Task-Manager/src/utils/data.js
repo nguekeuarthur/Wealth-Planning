@@ -136,30 +136,24 @@ export const SIDE_MENU_CLIENT_DATA = [
   },
   {
     id: "03",
-    label: "Tâches",
-    icon: LuClipboardCheck,
-    path: "/client/tasks",
-  },
-  {
-    id: "04",
     label: "Factures",
     icon: LuFileText,
     path: "/client/invoices",
   },
   {
-    id: "05",
+    id: "04",
     label: "Documents",
     icon: LuFolder,
     path: "/client/documents",
   },
   {
-    id: "06",
+    id: "05",
     label: "Messagerie",
     icon: LuMessageSquare,
     path: "/client/chat",
   },
   {
-    id: "07",
+    id: "06",
     label: "Notifications",
     icon: LuBell,
     path: "/client/messages",

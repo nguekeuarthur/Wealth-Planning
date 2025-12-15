@@ -84,7 +84,7 @@ const UserProjectDetails = () => {
         try {
             setLoading(true);
             const response = await axiosInstance.get(API_PATHS.PROJECTS.GET_PROJECT_BY_ID(id));
-            setProject(response.data);
+            setProject(response.data.project || response.data);
         } catch (error) {
             console.error("Erreur lors de la récupération des détails du projet:", error);
             toast.error("Impossible de charger les détails du projet");
@@ -118,7 +118,7 @@ const UserProjectDetails = () => {
             <DashboardLayout>
                 <div className="flex items-center justify-center min-h-screen">
                     <EmptyState
-                        icon={FiFolder}
+                        icon={<FiFolder />}
                         title="Projet non trouvé"
                         subtitle="Le projet que vous cherchez n'existe pas ou vous n'y avez pas accès."
                     />
@@ -138,17 +138,17 @@ const UserProjectDetails = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <MetricCard
-                    icon={FiCalendar}
+                    icon={<FiCalendar />}
                     label="Date de début"
                     value={project.startDate && !isNaN(new Date(project.startDate)) ? new Date(project.startDate).toLocaleDateString('fr-FR') : "Non définie"}
                 />
                 <MetricCard
-                    icon={FiClock}
+                    icon={<FiClock />}
                     label="Date de fin"
                     value={project.endDate && !isNaN(new Date(project.endDate)) ? new Date(project.endDate).toLocaleDateString('fr-FR') : "Non définie"}
                 />
                 <MetricCard
-                    icon={FiCheckCircle}
+                    icon={<FiCheckCircle />}
                     label="Statut"
                     value={
                         <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusBadgeClass(project.status)}`}>
@@ -159,7 +159,7 @@ const UserProjectDetails = () => {
                     }
                 />
                 <MetricCard
-                    icon={FiUsers}
+                    icon={<FiUsers />}
                     label="Équipe"
                     value={project.assignedUsers?.length || 0}
                     subtext="membres assignés"
@@ -312,7 +312,7 @@ const UserProjectDetails = () => {
                 ))
             ) : (
                 <EmptyState
-                    icon={FiFlag}
+                    icon={<FiFlag />}
                     title="Aucun jalon"
                     subtitle="Ce projet n'a pas encore de jalons définis."
                 />
@@ -348,7 +348,7 @@ const UserProjectDetails = () => {
                 ))
             ) : (
                 <EmptyState
-                    icon={FiFileText}
+                    icon={<FiFileText />}
                     title="Aucun document"
                     subtitle="Ce projet n'a pas encore de documents partagés."
                 />
@@ -389,7 +389,7 @@ const UserProjectDetails = () => {
                 ))
             ) : (
                 <EmptyState
-                    icon={FiMessageSquare}
+                    icon={<FiMessageSquare />}
                     title="Aucun message"
                     subtitle="Aucun message n'a encore été partagé sur ce projet."
                 />

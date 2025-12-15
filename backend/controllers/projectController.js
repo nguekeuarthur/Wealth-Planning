@@ -4,6 +4,7 @@ const Task = require('../models/Task');
 // Get all projects
 exports.getAllProjects = async (req, res) => {
   try {
+    console.log(`[getAllProjects] User ${req.user._id} (${req.user.role}) requesting projects`);
     const { status, category } = req.query;
     const filter = { archived: { $ne: true } }; // Exclure les projets archivés
 
@@ -14,9 +15,14 @@ exports.getAllProjects = async (req, res) => {
     if (req.user.role === 'admin' || req.user.role === 'collaborator') {
       // Admin et Collaborateur voient tous les projets
       // Pas de filtre
+      console.log(`[getAllProjects] Admin/Collaborator: no filter applied`);
     } else if (req.user.role === 'client') {
-      // Clients voient seulement leurs projets
-      filter.client = req.user._id;
+      // Clients voient leurs projets ET les projets où ils sont assignés
+      filter.$or = [
+        { client: req.user._id },
+        { assignedUsers: req.user._id }
+      ];
+      console.log(`[getAllProjects] Client filter applied:`, JSON.stringify(filter.$or));
     } else if (req.user.role === 'partner') {
       // Partenaires voient les projets où ils sont assignés
       filter.assignedUsers = req.user._id;
@@ -72,6 +78,48 @@ exports.getAllProjects = async (req, res) => {
 // Get single project
 exports.getProjectById = async (req, res) => {
   try {
+    console.log(`[getProjectById] User ${req.user._id} (${req.user.role}) trying to access project ${req.params.id}`);
+    
+    // 1) Fetch minimal project data for permission checks (avoid relying on populate)
+    const projectAccess = await Project.findById(req.params.id).select('client assignedUsers');
+
+    if (!projectAccess) {
+      console.log(`[getProjectById] Project ${req.params.id} not found`);
+      return res.status(404).json({ message: 'Projet non trouvé' });
+    }
+
+    const userIdStr = req.user._id.toString();
+    const clientIdStr = projectAccess.client ? projectAccess.client.toString() : null;
+    const assignedIds = (projectAccess.assignedUsers || []).map((id) => id.toString());
+
+    console.log(`[getProjectById] Project client: ${clientIdStr}, assignedUsers: ${assignedIds.join(', ')}`);
+
+    // Check permissions selon le rôle
+    let hasAccess = false;
+    if (req.user.role === 'admin' || req.user.role === 'collaborator') {
+      hasAccess = true;
+    } else if (req.user.role === 'client') {
+      // Clients ont accès s'ils sont le client OU assignés au projet
+      hasAccess = (clientIdStr === userIdStr) || assignedIds.includes(userIdStr);
+      console.log(`[getProjectById] Client access: clientMatch=${clientIdStr === userIdStr}, inAssigned=${assignedIds.includes(userIdStr)}, hasAccess=${hasAccess}`);
+    } else if (req.user.role === 'partner') {
+      hasAccess = assignedIds.includes(userIdStr);
+    } else if (req.user.role === 'user') {
+      // Utilisateurs ont accès s'ils sont client ou assignés au projet
+      hasAccess = (clientIdStr === userIdStr) || assignedIds.includes(userIdStr);
+    } else {
+      // Autres rôles (member) ont accès s'ils sont client ou assignés au projet
+      hasAccess = (clientIdStr === userIdStr) || assignedIds.includes(userIdStr);
+    }
+
+    if (!hasAccess) {
+      console.log(`[getProjectById] Access DENIED for user ${userIdStr} to project ${req.params.id}`);
+      return res.status(403).json({ message: 'Accès refusé' });
+    }
+    
+    console.log(`[getProjectById] Access GRANTED for user ${userIdStr} to project ${req.params.id}`);
+
+    // 2) Fetch the full project details only after access is granted
     const project = await Project.findById(req.params.id)
       .populate('client', 'name email profileImageUrl phoneNumber role company address')
       .populate('projectLead', 'name email role')
@@ -87,34 +135,6 @@ exports.getProjectById = async (req, res) => {
 
     if (!project) {
       return res.status(404).json({ message: 'Projet non trouvé' });
-    }
-
-    // Check permissions selon le rôle
-    let hasAccess = false;
-    if (req.user.role === 'admin' || req.user.role === 'collaborator') {
-      hasAccess = true;
-    } else if (req.user.role === 'client') {
-      hasAccess = project.client && project.client._id.toString() === req.user._id.toString();
-    } else if (req.user.role === 'partner') {
-      hasAccess = project.assignedUsers && project.assignedUsers.some(
-        user => user._id.toString() === req.user._id.toString()
-      );
-    } else if (req.user.role === 'user') {
-      // Utilisateurs ont accès s'ils sont client ou assignés au projet
-      hasAccess = (project.client && project.client._id.toString() === req.user._id.toString()) ||
-        (project.assignedUsers && project.assignedUsers.some(
-          user => user._id.toString() === req.user._id.toString()
-        ));
-    } else {
-      // Autres rôles (member) ont accès s'ils sont client ou assignés au projet
-      hasAccess = (project.client && project.client._id.toString() === req.user._id.toString()) ||
-        (project.assignedUsers && project.assignedUsers.some(
-          user => user._id.toString() === req.user._id.toString()
-        ));
-    }
-
-    if (!hasAccess) {
-      return res.status(403).json({ message: 'Accès refusé' });
     }
 
     // Filtrer les membres de projet pour les clients : ne pas voir les Partenaires
@@ -145,7 +165,20 @@ exports.createProject = async (req, res) => {
       return res.status(403).json({ message: 'Accès refusé - Admin uniquement' });
     }
 
-    const project = new Project(req.body);
+    // Solution C: le client doit aussi être dans assignedUsers pour accéder au projet
+    const body = { ...req.body };
+    const clientId = body.client;
+
+    if (clientId) {
+      const assigned = Array.isArray(body.assignedUsers) ? body.assignedUsers : [];
+      const assignedStr = assigned.map((id) => id.toString());
+      if (!assignedStr.includes(clientId.toString())) {
+        assigned.push(clientId);
+      }
+      body.assignedUsers = assigned;
+    }
+
+    const project = new Project(body);
     await project.save();
 
     res.status(201).json({ message: 'Projet créé avec succès', project });
@@ -179,6 +212,18 @@ exports.updateProject = async (req, res) => {
     }
 
     Object.assign(project, req.body);
+
+    // Solution C: assurer que le client fait partie des assignedUsers
+    if (project.client) {
+      const clientIdStr = project.client.toString();
+      const assigned = Array.isArray(project.assignedUsers) ? project.assignedUsers : [];
+      const assignedStr = assigned.map((id) => id.toString());
+      if (!assignedStr.includes(clientIdStr)) {
+        assigned.push(project.client);
+      }
+      project.assignedUsers = assigned;
+    }
+
     await project.save();
 
     res.json({ message: 'Projet mis à jour', project });

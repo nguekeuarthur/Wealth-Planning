@@ -18,7 +18,7 @@ import { API_PATHS } from "../utils/apiPaths";
 import toast from "react-hot-toast";
 import EditTaskModal from "./EditTaskModal";
 
-const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdated, onTaskDeleted }) => {
+const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdated, onTaskDeleted, readOnly = false }) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -190,7 +190,7 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdated, onTaskDeleted 
           )}
 
           {/* Utilisateurs assignés */}
-          {assignedUsers.length > 0 && (
+          {!readOnly && assignedUsers.length > 0 && (
             <div className="border border-[#dfe8e1] rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <FiUsers className="text-[#2d5f3f]" />
@@ -260,42 +260,44 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdated, onTaskDeleted 
           )}
 
           {/* Boutons d'action */}
-          <div className="flex gap-3 pt-4 border-t border-[#dfe8e1]">
-            <button
-              onClick={() => setShowEditModal(true)}
-              className="flex-1 flex items-center justify-center gap-2 bg-[#2d5f3f] text-white px-4 py-3 rounded-xl hover:bg-[#1e4029] transition-colors font-medium"
-            >
-              <FiEdit size={18} />
-              Modifier
-            </button>
-            
-            {!showDeleteConfirm ? (
+          {!readOnly && (
+            <div className="flex gap-3 pt-4 border-t border-[#dfe8e1]">
               <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="flex-1 flex items-center justify-center gap-2 bg-red-50 text-red-600 px-4 py-3 rounded-xl hover:bg-red-100 transition-colors font-medium"
+                onClick={() => setShowEditModal(true)}
+                className="flex-1 flex items-center justify-center gap-2 bg-[#2d5f3f] text-white px-4 py-3 rounded-xl hover:bg-[#1e4029] transition-colors font-medium"
               >
-                <FiTrash2 size={18} />
-                Supprimer
+                <FiEdit size={18} />
+                Modifier
               </button>
-            ) : (
-              <div className="flex-1 flex gap-2">
+              
+              {!showDeleteConfirm ? (
                 <button
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="flex-1 bg-red-600 text-white px-3 py-3 rounded-xl hover:bg-red-700 transition-colors font-medium text-sm disabled:opacity-50"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex-1 flex items-center justify-center gap-2 bg-red-50 text-red-600 px-4 py-3 rounded-xl hover:bg-red-100 transition-colors font-medium"
                 >
-                  {deleting ? "Suppression..." : "Confirmer"}
+                  <FiTrash2 size={18} />
+                  Supprimer
                 </button>
-                <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  disabled={deleting}
-                  className="flex-1 bg-gray-100 text-gray-700 px-3 py-3 rounded-xl hover:bg-gray-200 transition-colors font-medium text-sm disabled:opacity-50"
-                >
-                  Annuler
-                </button>
-              </div>
-            )}
-          </div>
+              ) : (
+                <div className="flex-1 flex gap-2">
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="flex-1 bg-red-600 text-white px-3 py-3 rounded-xl hover:bg-red-700 transition-colors font-medium text-sm disabled:opacity-50"
+                  >
+                    {deleting ? "Suppression..." : "Confirmer"}
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    disabled={deleting}
+                    className="flex-1 bg-gray-100 text-gray-700 px-3 py-3 rounded-xl hover:bg-gray-200 transition-colors font-medium text-sm disabled:opacity-50"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </Modal>
 

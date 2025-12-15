@@ -21,6 +21,19 @@ const TaskCard = ({
   onDelete,
   canModify = false,
 }) => {
+  const getStatusLabel = () => {
+    switch (status) {
+      case "In Progress":
+        return "En cours";
+      case "Completed":
+        return "Terminée";
+      case "Pending":
+        return "En attente";
+      default:
+        return status;
+    }
+  };
+
   const getStatusTagColor = () => {
     switch (status) {
       case "In Progress":
@@ -31,6 +44,21 @@ const TaskCard = ({
 
       default:
         return "text-violet-500 bg-violet-50 border border-violet-500/10";
+    }
+  };
+
+  const getPriorityLabel = () => {
+    switch (priority) {
+      case "Low":
+        return "Basse";
+      case "Medium":
+        return "Moyenne";
+      case "High":
+        return "Haute";
+      case "Urgent":
+        return "Urgente";
+      default:
+        return priority;
     }
   };
 
@@ -55,12 +83,12 @@ const TaskCard = ({
         <div
           className={`text-[11px] font-medium ${getStatusTagColor()} px-4 py-0.5 rounded `}
         >
-          {status}
+          {getStatusLabel()}
         </div>
         <div
           className={`text-[11px] font-medium ${getPriorityTagColor()} px-4 py-0.5 rounded`}
         >
-          {priority} Priority
+          {getPriorityLabel()}
         </div>
       </div>
 
@@ -81,20 +109,24 @@ const TaskCard = ({
           {description}
         </p>
 
-        <p className="text-[13px] text-gray-700/80 font-medium mt-2 mb-2 leading-[18px]">
-          Task Done:{" "}
-          <span className="font-semibold text-gray-700">
-            {completedTodoCount} / {todoChecklist.length || 0}
-          </span>
-        </p>
+        {canModify && (
+          <>
+            <p className="text-[13px] text-gray-700/80 font-medium mt-2 mb-2 leading-[18px]">
+              Tâches terminées:{" "}
+              <span className="font-semibold text-gray-700">
+                {completedTodoCount} / {todoChecklist.length || 0}
+              </span>
+            </p>
 
-        <Progress progress={progress} status={status} />
+            <Progress progress={progress} status={status} />
+          </>
+        )}
       </div>
 
       <div className="px-4">
         <div className="flex items-center justify-between my-1">
           <div>
-            <label className="text-xs text-gray-500">Start Date</label>
+            <label className="text-xs text-gray-500">Date de début</label>
             <p className="text-[13px] font-medium text-gray-900">
               {moment(createdAt).format("Do MMM YYYY")}
             </p>
@@ -102,7 +134,7 @@ const TaskCard = ({
 
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <label className="text-xs text-gray-500">Due Date</label>
+              <label className="text-xs text-gray-500">Échéance</label>
               <p className="text-[13px] font-medium text-gray-900">
                 {moment(dueDate).format("Do MMM YYYY")}
               </p>

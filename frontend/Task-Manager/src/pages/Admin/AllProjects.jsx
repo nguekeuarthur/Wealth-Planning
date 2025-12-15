@@ -208,7 +208,22 @@ const AllProjects = () => {
   }, [searchQuery, filters, sortBy, allProjects]);
 
   const handleProjectClick = (projectId) => {
-    navigate(`/admin/project/${projectId}`);
+    // Navigation basée sur le rôle de l'utilisateur
+    switch (user?.role) {
+      case 'client':
+        navigate(`/client/project/${projectId}`);
+        break;
+      case 'partner':
+        navigate(`/partner/project/${projectId}`);
+        break;
+      case 'collaborator':
+        navigate(`/collaborator/project/${projectId}`);
+        break;
+      case 'admin':
+      default:
+        navigate(`/admin/project/${projectId}`);
+        break;
+    }
   };
 
   const handleAddProject = () => {
@@ -258,25 +273,32 @@ const AllProjects = () => {
       // Actions globales (ex: créer un projet) réservées aux admins
       return action === 'edit' ? currentUser.role === 'admin' : false;
     }
+    
+    // Helper pour comparer les IDs (objet ou string)
+    const compareIds = (id1, id2) => {
+      const getId = (id) => typeof id === 'object' && id?._id ? id._id : id;
+      return getId(id1) === getId(id2);
+    };
+    
     switch (action) {
       case 'view':
-        return project.client === currentUser._id ||
-               project.projectLead === currentUser._id ||
-               project.assignedUsers?.includes(currentUser._id);
+        return compareIds(project.client, currentUser._id) ||
+               compareIds(project.projectLead, currentUser._id) ||
+               project.assignedUsers?.some(user => compareIds(user, currentUser._id));
 
       case 'edit':
-        return project.projectLead === currentUser._id ||
-               (project.assignedUsers?.includes(currentUser._id) && action !== 'delete');
+        return compareIds(project.projectLead, currentUser._id) ||
+               (project.assignedUsers?.some(user => compareIds(user, currentUser._id)) && action !== 'delete');
 
       case 'delete':
-        return project.projectLead === currentUser._id;
+        return compareIds(project.projectLead, currentUser._id);
 
       case 'assign_users':
-        return project.projectLead === currentUser._id;
+        return compareIds(project.projectLead, currentUser._id);
 
       case 'change_status':
-        return project.projectLead === currentUser._id ||
-               project.assignedUsers?.includes(currentUser._id);
+        return compareIds(project.projectLead, currentUser._id) ||
+               project.assignedUsers?.some(user => compareIds(user, currentUser._id));
 
       default:
         return false;
@@ -493,7 +515,7 @@ const AllProjects = () => {
   };
 
   return (
-    <DashboardLayout activeMenu="Projets">
+    <DashboardLayout activeMenu={user?.role === 'client' ? "Mes projets" : "Projets"}>
       {/* Header Section with Enhanced Design */}
       <div className="relative bg-gradient-to-br from-[#1e4029] via-[#2d5f3f] to-[#1e4029] rounded-2xl shadow-xl p-8 my-6 overflow-hidden">
         {/* Background Pattern */}

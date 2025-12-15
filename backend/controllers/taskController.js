@@ -324,15 +324,42 @@ const deleteTask = async (req, res) => {
 // @access  Private
 const updateTaskStatus = async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id);
+    const task = await Task.findById(req.params.id).populate('project');
     if (!task) return res.status(404).json({ message: "Task not found" });
 
-    const isAssigned = task.assignedTo.some(
-      (userId) => userId.toString() === req.user._id.toString()
-    );
+    // Vérifier les autorisations
+    let isAuthorized = false;
 
-    if (!isAssigned && req.user.role !== "admin") {
-      return res.status(403).json({ message: "Not authorized" });
+    if (req.user.role === "admin" || req.user.role === "collaborator") {
+      isAuthorized = true;
+    } else if (req.user.role === "client") {
+      // Les clients peuvent mettre à jour les tâches de leurs projets
+      const Project = require('../models/Project');
+      const project = await Project.findById(task.project._id || task.project);
+      
+      if (project && (
+        project.client?.toString() === req.user._id.toString() ||
+        project.assignedUsers?.some(userId => userId.toString() === req.user._id.toString())
+      )) {
+        isAuthorized = true;
+      }
+    } else if (req.user.role === "partner") {
+      // Les partenaires peuvent mettre à jour les tâches des projets où ils sont assignés
+      const Project = require('../models/Project');
+      const project = await Project.findById(task.project._id || task.project);
+      
+      if (project && project.assignedUsers?.some(userId => userId.toString() === req.user._id.toString())) {
+        isAuthorized = true;
+      }
+    } else {
+      // Pour les autres rôles, vérifier s'ils sont assignés à la tâche
+      isAuthorized = task.assignedTo.some(
+        (userId) => userId.toString() === req.user._id.toString()
+      );
+    }
+
+    if (!isAuthorized) {
+      return res.status(403).json({ message: "Not authorized to update this task" });
     }
 
     const oldStatus = task.status;
@@ -348,7 +375,7 @@ const updateTaskStatus = async (req, res) => {
     // Mettre à jour automatiquement la progression du projet parent
     if (task.project && (oldStatus !== task.status)) {
       const Project = require('../models/Project');
-      const project = await Project.findById(task.project).populate('tasks');
+      const project = await Project.findById(task.project._id || task.project).populate('tasks');
 
       if (project && project.tasks.length > 0) {
         const totalTasks = project.tasks.length;
@@ -364,6 +391,7 @@ const updateTaskStatus = async (req, res) => {
 
     res.json({ message: "Task status updated", task });
   } catch (error) {
+    console.error("Error updating task status:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
