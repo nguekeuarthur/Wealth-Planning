@@ -196,14 +196,31 @@ const Footer = () => {
             © {new Date().getFullYear()} GENEVA WEALTH PARTNERS. {copy.copyright}
           </p>
           <div className="mt-2 space-x-4">
-            {legalItems.map((item, index) => (
-              <React.Fragment key={item}>
-                <a href="#" className="text-gray-300 hover:text-white text-sm transition-colors font-light">
-                  {item}
-                </a>
-                {index !== legalItems.length - 1 && <span className="text-gray-500">|</span>}
-              </React.Fragment>
-            ))}
+            {legalItems.map((item, index) => {
+              const paths = {
+                "Politique de confidentialité": "/privacy-policy",
+                "Conditions d'utilisation": "/terms-of-use",
+                "Mentions légales": "/legal-notice",
+                "Privacy policy": "/privacy-policy",
+                "Terms of use": "/terms-of-use",
+                "Legal notice": "/legal-notice",
+                "Datenschutzrichtlinie": "/privacy-policy",
+                "Nutzungsbedingungen": "/terms-of-use",
+                "Impressum": "/legal-notice",
+                "Informativa sulla privacy": "/privacy-policy",
+                "Termini di utilizzo": "/terms-of-use",
+                "Note legali": "/legal-notice"
+              };
+
+              return (
+                <React.Fragment key={item}>
+                  <Link to={paths[item] || "#"} className="text-gray-300 hover:text-white text-sm transition-colors font-light">
+                    {item}
+                  </Link>
+                  {index !== legalItems.length - 1 && <span className="text-gray-500">|</span>}
+                </React.Fragment>
+              )
+            })}
           </div>
         </div>
       </div>

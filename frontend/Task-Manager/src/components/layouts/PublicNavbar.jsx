@@ -84,12 +84,12 @@ const PublicNavbar = () => {
               <span className="text-[#2d5f3f] text-[13px] font-light tracking-[0.2em] leading-tight">WEALTH</span>
               <span className="text-[#2d5f3f] text-[9px] font-light tracking-[0.3em] leading-tight">PARTNERS</span>
             </div>
-            
+
             {/* Barre verticale + Wealth Planning */}
             <div className="flex items-end h-full relative" style={{ height: '45px' }}>
               <div className="absolute left-0 top-0 bottom-0 w-[1px] bg-[#2d5f3f]"></div>
               <span className="text-[#2d5f3f] text-[9px] font-light tracking-[0.15em] pl-2 leading-tight italic whitespace-nowrap">
-                WEALTH<br/>PLANNING
+                WEALTH<br />PLANNING
               </span>
             </div>
           </Link>
@@ -100,16 +100,15 @@ const PublicNavbar = () => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`text-sm font-light transition-colors tracking-wide ${
-                  isActive(link.path)
+                className={`text-sm font-light transition-colors tracking-wide ${isActive(link.path)
                     ? "text-[#2d5f3f]"
                     : "text-gray-700 hover:text-[#2d5f3f]"
-                }`}
+                  }`}
               >
                 {link.name}
               </Link>
             ))}
-            
+
             {/* Language Selector */}
             <div className="relative">
               <button
@@ -119,7 +118,7 @@ const PublicNavbar = () => {
                 <FaGlobe className="text-base" />
                 <span>{currentLang}</span>
               </button>
-              
+
               {isLangOpen && (
                 <div className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                   {languageOptions.map((option) => (
@@ -129,11 +128,10 @@ const PublicNavbar = () => {
                         setLang(option.code);
                         setIsLangOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-2 text-sm font-light transition-colors ${
-                        currentLang === option.code
+                      className={`w-full text-left px-4 py-2 text-sm font-light transition-colors ${currentLang === option.code
                           ? "bg-[#2d5f3f] text-white"
                           : "text-gray-700 hover:bg-gray-100"
-                      }`}
+                        }`}
                     >
                       {option.label}
                     </button>
@@ -141,7 +139,7 @@ const PublicNavbar = () => {
                 </div>
               )}
             </div>
-            
+
             <Link
               to="/connexion"
               className="w-8 h-8 rounded-full border border-gray-400 flex items-center justify-center hover:border-[#2d5f3f] hover:text-[#2d5f3f] transition-colors"
@@ -169,11 +167,10 @@ const PublicNavbar = () => {
                 key={link.path}
                 to={link.path}
                 onClick={() => setIsOpen(false)}
-                className={`block text-sm font-light py-2 transition-colors ${
-                  isActive(link.path)
+                className={`block text-sm font-light py-2 transition-colors ${isActive(link.path)
                     ? "text-[#2d5f3f]"
                     : "text-gray-700 hover:text-[#2d5f3f]"
-                }`}
+                  }`}
               >
                 {link.name}
               </Link>
@@ -188,18 +185,17 @@ const PublicNavbar = () => {
                     onClick={() => {
                       setLang(option.code);
                     }}
-                    className={`px-3 py-2 rounded text-sm font-light transition-colors ${
-                      currentLang === option.code
+                    className={`px-3 py-2 rounded text-sm font-light transition-colors ${currentLang === option.code
                         ? "bg-[#2d5f3f] text-white"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
+                      }`}
                   >
                     {option.code}
                   </button>
                 ))}
               </div>
             </div>
-            
+
             <Link
               to="/connexion"
               onClick={() => setIsOpen(false)}
