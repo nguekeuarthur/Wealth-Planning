@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import Modal from "./Modal";
-import { 
-  FiCalendar, 
-  FiUser, 
-  FiClock, 
-  FiEdit, 
-  FiTrash2, 
+import {
+  FiCalendar,
+  FiUser,
+  FiClock,
+  FiEdit,
+  FiTrash2,
   FiAlertCircle,
   FiFileText,
   FiUsers,
@@ -28,8 +28,8 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdated, onTaskDeleted,
   const assignedUsers = Array.isArray(task.assignedTo)
     ? task.assignedTo
     : task.assignedTo
-    ? [task.assignedTo]
-    : [];
+      ? [task.assignedTo]
+      : [];
 
   const dueDate = task.dueDate ? new Date(task.dueDate) : null;
   const isOverdue = dueDate && dueDate < new Date() && task.status !== "Completed";
@@ -103,7 +103,7 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdated, onTaskDeleted,
                 {task.title || "Tâche sans titre"}
               </h2>
             </div>
-            
+
             <div className="flex flex-wrap gap-2">
               <span className={`px-3 py-1 rounded-full text-xs font-semibold ${priorityConfig.color}`}>
                 {priorityConfig.icon} {priorityConfig.label}
@@ -139,11 +139,11 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdated, onTaskDeleted,
                 <h3 className="font-semibold text-[#1e4029] text-sm">Date d'échéance</h3>
               </div>
               <p className={`text-sm ${isOverdue ? "text-red-600 font-semibold" : "text-[#4a5c52]"}`}>
-                {dueDate ? dueDate.toLocaleDateString("fr-FR", { 
-                  weekday: "long", 
-                  year: "numeric", 
-                  month: "long", 
-                  day: "numeric" 
+                {dueDate ? dueDate.toLocaleDateString("fr-FR", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric"
                 }) : "Non définie"}
               </p>
             </div>
@@ -156,10 +156,10 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdated, onTaskDeleted,
                   <h3 className="font-semibold text-[#1e4029] text-sm">Créée le</h3>
                 </div>
                 <p className="text-sm text-[#4a5c52]">
-                  {new Date(task.createdAt).toLocaleDateString("fr-FR", { 
-                    year: "numeric", 
-                    month: "long", 
-                    day: "numeric" 
+                  {new Date(task.createdAt).toLocaleDateString("fr-FR", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric"
                   })}
                 </p>
               </div>
@@ -177,7 +177,7 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdated, onTaskDeleted,
                 {task.assignedRoles.map((role, index) => {
                   const roleConfig = getRoleConfig(role);
                   return (
-                    <span 
+                    <span
                       key={index}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium ${roleConfig.color}`}
                     >
@@ -189,6 +189,7 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdated, onTaskDeleted,
             </div>
           )}
 
+<<<<<<< HEAD
           {/* Utilisateurs assignés */}
           {!readOnly && assignedUsers.length > 0 && (
             <div className="border border-[#dfe8e1] rounded-xl p-4">
@@ -222,7 +223,7 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdated, onTaskDeleted,
             </div>
           )}
 
-          {/* Pièces jointes */}
+          {/* Pièces jointes */
           {task.attachments && task.attachments.length > 0 && (
             <div className="border border-[#dfe8e1] rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">

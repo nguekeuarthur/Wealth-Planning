@@ -1,8 +1,10 @@
 import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { io } from "socket.io-client";
 import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS, BASE_URL } from "../../utils/apiPaths";
+import { getSession } from "../../utils/authStorage";
 import {
   FiArrowLeft,
   FiCalendar,
@@ -61,17 +63,17 @@ const getStatusBadgeClass = (status) => {
   }
 };
 
-  const getRoleLabel = (role) => {
-    switch (role) {
-      case 'admin': return 'Administrateur';
-      case 'collaborator': return 'Collaborateur';
-      case 'partner': return 'Partenaire';
-      case 'member': return 'Membre';
-      case 'client': return 'Client';
-      case 'finance': return 'Finance';
-      default: return role || '';
-    }
-  };
+const getRoleLabel = (role) => {
+  switch (role) {
+    case 'admin': return 'Administrateur';
+    case 'collaborator': return 'Collaborateur';
+    case 'partner': return 'Partenaire';
+    case 'member': return 'Membre';
+    case 'client': return 'Client';
+    case 'finance': return 'Finance';
+    default: return role || '';
+  }
+};
 
 const MetricCard = ({ icon, label, value, subtext }) => (
   <div className="bg-white p-4 rounded-2xl border border-[#dfe8e1] shadow-sm">
@@ -118,12 +120,67 @@ const ProjectDetails = () => {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [expandedTeams, setExpandedTeams] = useState(new Set());
   const [draggedTaskId, setDraggedTaskId] = useState(null);
+  const [expandedTasks, setExpandedTasks] = useState(new Set());
   const [milestones, setMilestones] = useState([]);
   const [loadingMilestones, setLoadingMilestones] = useState(false);
   const [milestonesLoaded, setMilestonesLoaded] = useState(false);
   const [showTaskDetailsModal, setShowTaskDetailsModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [viewMode, setViewMode] = useState('members'); // 'members' or 'teams' display toggle
+
+  // Socket.io for real-time updates
+  useEffect(() => {
+    const { token } = getSession();
+    const socket = io("http://localhost:8000", {
+      transports: ['websocket', 'polling'],
+      withCredentials: true,
+      auth: {
+        token: token
+      }
+    });
+
+    socket.on("taskUpdated", (updatedTask) => {
+      if (project && updatedTask.project.toString() === project._id.toString()) {
+        setProject(prev => {
+          if (!prev) return prev;
+
+          const taskExists = (prev.tasks || []).some(t => t._id === updatedTask._id);
+          let newTasks;
+          if (taskExists) {
+            newTasks = prev.tasks.map(t => t._id === updatedTask._id ? updatedTask : t);
+          } else {
+            newTasks = [...(prev.tasks || []), updatedTask];
+          }
+          return { ...prev, tasks: newTasks };
+        });
+      } else {
+        // Project mismatch ignored
+      }
+    });
+
+    socket.on("taskCreated", (newTask) => {
+      if (project && newTask.project.toString() === project._id.toString()) {
+        setProject(prev => {
+          if (!prev) return prev;
+          if ((prev.tasks || []).some(t => t._id === newTask._id)) return prev;
+          return { ...prev, tasks: [...(prev.tasks || []), newTask] };
+        });
+      }
+    });
+
+    socket.on("taskDeleted", (taskId) => {
+      if (project) {
+        setProject(prev => {
+          if (!prev) return prev;
+          return { ...prev, tasks: prev.tasks.filter(t => t._id !== taskId) };
+        });
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [project?._id]);
 
   const handleTaskDragStart = (task) => {
     setDraggedTaskId(task._id);
@@ -133,17 +190,57 @@ const ProjectDetails = () => {
     setDraggedTaskId(null);
   };
 
+  const toggleTaskExpansion = (taskId) => {
+    setExpandedTasks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
+  };
+
   const handleStatusDrop = async (event, newStatus) => {
     event.preventDefault();
     if (!draggedTaskId) return;
 
+    const normalizeTaskStatus = (status) => {
+      if (!status) return "Pending";
+      const s = String(status).trim().toLowerCase();
+      const map = {
+        pending: "Pending",
+        todo: "Pending",
+        "in progress": "In Progress",
+        "in-progress": "In Progress",
+        inprogress: "In Progress",
+        completed: "Completed",
+        complete: "Completed",
+        done: "Completed",
+      };
+      return map[s] || status;
+    };
+
+    const formattedStatus = normalizeTaskStatus(newStatus);
+
     try {
       await axiosInstance.put(
         API_PATHS.TASKS.UPDATE_TASK_STATUS(draggedTaskId),
-        { status: newStatus }
+        { status: formattedStatus }
       );
       toast.success("Statut de la tâche mis à jour");
-      fetchProjectDetails();
+
+      setProject((prev) => {
+        if (!prev) return prev;
+        const updatedTasks = (prev.tasks || []).map((t) =>
+          t?._id === draggedTaskId ? { ...t, status: formattedStatus } : t
+        );
+        const total = updatedTasks.length;
+        const completed = updatedTasks.filter((t) => t?.status === "Completed").length;
+        const completion = total > 0 ? Math.round((completed / total) * 100) : 0;
+        return { ...prev, tasks: updatedTasks, completion };
+      });
     } catch (error) {
       console.error("Erreur lors de la mise à jour du statut de la tâche:", error);
       toast.error(
@@ -156,20 +253,87 @@ const ProjectDetails = () => {
   };
 
   // Helper pour rendre une carte de tâche, réutilisée dans les 3 colonnes
-  const renderTaskCard = (task, { onDragStart, onDragEnd } = {}) => {
-    const assignedUsers = Array.isArray(task.assignedTo)
-      ? task.assignedTo
-      : task.assignedTo
-        ? [task.assignedTo]
+  const renderTaskCard = (task, { onDragStart, onDragEnd, isExpanded, onToggleExpand } = {}) => {
+    const rawAssignees =
+      task?.assignedTo ?? task?.assignedUsers ?? task?.assignees ?? [];
+    const assignedUsers = Array.isArray(rawAssignees)
+      ? rawAssignees
+      : rawAssignees
+        ? [rawAssignees]
         : [];
+
+    const usersById = (() => {
+      const map = new Map();
+
+      const addUser = (u) => {
+        if (!u || typeof u === "string") return;
+        if (u._id) map.set(String(u._id), u);
+      };
+
+      addUser(project?.projectLead);
+      (project?.assignedUsers || []).forEach(addUser);
+
+      (project?.teams || []).forEach((team) => {
+        addUser(team?.leader);
+        (team?.members || []).forEach(addUser);
+      });
+
+      return map;
+    })();
+
+    const resolveUser = (u) => {
+      if (!u) return null;
+      if (typeof u === "string") return usersById.get(String(u)) || null;
+
+      const hasIdentityFields =
+        !!(u.name || u.fullName || u.email || u.firstName || u.lastName);
+
+      if (!hasIdentityFields && u._id) {
+        return usersById.get(String(u._id)) || u;
+      }
+
+      return u;
+    };
+
+    const getUserDisplayName = (u) => {
+      const resolved = resolveUser(u);
+      if (!resolved) return "Utilisateur";
+      if (typeof resolved === "string") return "Utilisateur";
+
+      const composedName = [resolved.firstName, resolved.lastName]
+        .filter(Boolean)
+        .join(" ");
+      return (
+        resolved.name ||
+        resolved.fullName ||
+        composedName ||
+        resolved.email ||
+        "Utilisateur"
+      );
+    };
+
+    const getUserInitial = (u) => {
+      const name = getUserDisplayName(u);
+      return name?.trim()?.charAt(0)?.toUpperCase() || "U";
+    };
+
+    const assignedLabel =
+      assignedUsers.length === 0
+        ? "Non assignée"
+        : assignedUsers.length === 1
+          ? getUserDisplayName(assignedUsers[0])
+          : `${assignedUsers
+            .slice(0, 2)
+            .map(getUserDisplayName)
+            .join(", ")}${assignedUsers.length > 2 ? ` +${assignedUsers.length - 2}` : ""}`;
 
     const dueDate = task.dueDate ? new Date(task.dueDate) : null;
     const isOverdue =
       dueDate && dueDate < new Date() && task.status !== "Completed";
 
     const handleTaskClick = (e) => {
-      // Ne pas ouvrir le modal si on drag la tâche
-      if (e.defaultPrevented) return;
+      // Ne pas ouvrir le modal si on drag la tâche ou si on clique sur le bouton de détails
+      if (e.defaultPrevented || e.target.closest('button')) return;
       setSelectedTask(task);
       setShowTaskDetailsModal(true);
     };
@@ -185,118 +349,107 @@ const ProjectDetails = () => {
           onDragEnd && onDragEnd();
         }}
         onClick={handleTaskClick}
-        className="p-4 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 hover:shadow-md transition-all bg-white cursor-pointer"
+        className="p-5 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 hover:shadow-md transition-all bg-white cursor-pointer flex flex-col"
       >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h4 className="text-[#1e4029] font-semibold text-base">
-                {task.title || "Tâche sans titre"}
-              </h4>
-              <span
-                className={`px-2 py-1 rounded-full text-xs font-semibold ${task.priority === "Urgent"
+        <div className="flex flex-col gap-3 flex-grow">
+          {/* Header: title */}
+          <div className="flex-1 min-w-0">
+            <h4 className="text-[#1e4029] font-semibold text-base leading-tight line-clamp-2 break-words">
+              {task.title || "Tâche sans titre"}
+            </h4>
+          </div>
+
+        </div>
+
+        {/* Toggle and Expanded content */}
+        <div className="mt-4 pt-4 border-t border-dashed border-[#dfe8e1]">
+          <button onClick={onToggleExpand} className="flex items-center justify-between w-full text-sm font-medium text-[#2d5f3f]">
+            <span>{isExpanded ? "Masquer les détails" : "Voir les détails"}</span>
+            {isExpanded ? <FiChevronUp /> : <FiChevronDown />}
+          </button>
+          {isExpanded && (
+            <div className="mt-3 text-sm text-[#4a5c52] space-y-3">
+              {/* Priorité */}
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-[#2d5f3f]">Priorité :</span>
+                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${task.priority === "Urgent"
                   ? "bg-red-100 text-red-700"
                   : task.priority === "High"
                     ? "bg-orange-100 text-orange-700"
                     : task.priority === "Medium"
                       ? "bg-yellow-100 text-yellow-700"
                       : "bg-blue-100 text-blue-700"
-                  }`}
-              >
-                {task.priority === "Urgent"
-                  ? "Urgente"
-                  : task.priority === "High"
-                    ? "Haute"
-                    : task.priority === "Medium"
-                      ? "Moyenne"
-                      : "Basse"}
-              </span>
-            </div>
+                  }`}>
+                  {task.priority === "Urgent"
+                    ? "Urgente"
+                    : task.priority === "High"
+                      ? "Haute"
+                      : task.priority === "Medium"
+                        ? "Moyenne"
+                        : "Basse"}
+                </span>
+              </div>
 
-            {task.description && (
-              <p className="text-sm text-[#7a8b7f] mt-1 mb-3">
-                {task.description}
-              </p>
-            )}
+              {/* Statut */}
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-[#2d5f3f]">Statut :</span>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${task.status === "Completed"
+                  ? "bg-[#dff5e7] text-[#1e4029]"
+                  : task.status === "In Progress"
+                    ? "bg-[#fff6ea] text-[#b76a28]"
+                    : "bg-[#f4f7f4] text-[#7a8b7f]"
+                  }`}>
+                  {task.status === "Completed"
+                    ? "Terminée"
+                    : task.status === "In Progress"
+                      ? "En cours"
+                      : "En attente"}
+                </span>
+              </div>
 
-            {/* Assignés et date d'échéance */}
-            <div className="flex flex-wrap items-center gap-4 mt-3">
               {/* Assignés */}
-              {assignedUsers.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <FiUser className="text-[#7a8b7f] text-sm" />
-                  <div className="flex items-center gap-1">
-                    {assignedUsers.slice(0, 3).map((user, idx) => (
-                      <div
-                        key={user._id || idx}
-                        className="flex items-center -ml-2 first:ml-0"
-                      >
-                        {user.profileImageUrl ? (
-                          <img
-                            src={user.profileImageUrl}
-                            alt={user.name || "Avatar"}
-                            className="w-6 h-6 rounded-full object-cover border-2 border-white"
-                            title={user.name || user.email}
-                          />
-                        ) : (
-                          <div
-                            className="w-6 h-6 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-xs font-semibold border-2 border-white"
-                            title={user.name || user.email}
-                          >
-                            {user.name?.charAt(0).toUpperCase() ||
-                              user.email?.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    {assignedUsers.length > 3 && (
-                      <span className="text-xs text-[#7a8b7f] ml-1">
-                        +{assignedUsers.length - 3}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-xs text-[#7a8b7f]">
-                    {assignedUsers.length === 1
-                      ? assignedUsers[0].name || assignedUsers[0].email
-                      : `${assignedUsers.length} personnes`}
-                  </span>
+              <div className="flex items-start gap-2">
+                <span className="font-medium text-[#2d5f3f]">Assignés :</span>
+                <div className="flex-1">
+                  {assignedUsers.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {assignedUsers.map((user, idx) => (
+                        <span key={idx} className="text-xs bg-[#e8f2ea] text-[#2d5f3f] px-2 py-1 rounded-md">
+                          {getUserDisplayName(user)}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-[#7a8b7f]">Non assignée</span>
+                  )}
                 </div>
-              )}
+              </div>
 
-              {/* Date d'échéance */}
+              {/* Date d’échéance */}
               {dueDate && (
-                <div
-                  className={`flex items-center gap-2 ${isOverdue ? "text-red-600" : "text-[#7a8b7f]"
-                    }`}
-                >
-                  <FiCalendar className="text-sm" />
-                  <span className="text-xs font-medium">
-                    {isOverdue ? "En retard - " : "Échéance: "}
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-[#2d5f3f]">Échéance :</span>
+                  <span className={`text-xs ${isOverdue ? "text-red-600 font-medium" : "text-[#4a5c52]"}`}>
                     {dueDate.toLocaleDateString("fr-FR", {
+                      weekday: "short",
                       day: "numeric",
                       month: "short",
                       year: "numeric",
                     })}
+                    {isOverdue && " (en retard)"}
                   </span>
                 </div>
               )}
-            </div>
-          </div>
 
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${task.status === "Completed"
-              ? "bg-[#dff5e7] text-[#1e4029]"
-              : task.status === "In Progress"
-                ? "bg-[#fff6ea] text-[#b76a28]"
-                : "bg-[#f4f7f4] text-[#7a8b7f]"
-              }`}
-          >
-            {task.status === "Completed"
-              ? "Terminée"
-              : task.status === "In Progress"
-                ? "En cours"
-                : "En attente"}
-          </span>
+              {/* Description */}
+              <div>
+                <span className="font-medium text-[#2d5f3f]">Description :</span>
+                <p className="mt-1 whitespace-pre-wrap break-words text-[#4a5c52]">
+                  {task.description || "Aucune description."}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -611,7 +764,7 @@ const ProjectDetails = () => {
                 <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6 shadow-sm mt-4">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-[#1e4029] flex items-center gap-2">
-                      <FiUsers /> {viewMode === 'members' ? `Membres (${(project.assignedUsers||[]).length})` : `Équipes (${project.teams?.length || 0} équipe${project.teams?.length > 1 ? 's' : ''})`}
+                      <FiUsers /> {viewMode === 'members' ? `Membres (${(project.assignedUsers || []).length})` : `Équipes (${project.teams?.length || 0} équipe${project.teams?.length > 1 ? 's' : ''})`}
                     </h3>
                     <div className="flex items-center gap-3">
                       <button
@@ -642,7 +795,11 @@ const ProjectDetails = () => {
                         {project.projectLead && (
                           <div className="p-3 border border-[#dfe8e1] rounded-xl flex items-center gap-3 bg-[#f4f7f4]">
                             {project.projectLead.profileImageUrl ? (
-                              <img src={project.projectLead.profileImageUrl} alt={project.projectLead.name || "Avatar"} className="w-10 h-10 rounded-full object-cover" />
+                              <img
+                                src={project.projectLead.profileImageUrl.startsWith('http') ? project.projectLead.profileImageUrl : `http://localhost:8000${project.projectLead.profileImageUrl}`}
+                                alt={project.projectLead.name || "Avatar"}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
                             ) : (
                               <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#2d5f3f] font-semibold">{project.projectLead.name?.charAt(0).toUpperCase() || 'P'}</div>
                             )}
@@ -658,34 +815,35 @@ const ProjectDetails = () => {
                           <div className="space-y-2 mt-3">
                             {(project.assignedUsers || []).
                               filter(u => !(project.projectLead && u._id && project.projectLead._id && u._id.toString() === project.projectLead._id.toString())).
+                              filter(u => u.role !== 'admin').
                               map(userItem => (
-                                  <div key={userItem._id} className="flex items-center gap-3 p-3 border border-[#dfe8e1] rounded-lg bg-white">
-                                {userItem.profileImageUrl ? (
-                                  <img src={userItem.profileImageUrl} alt={userItem.name} className="w-10 h-10 rounded-full object-cover" />
-                                ) : (
-                                  <div className="w-10 h-10 rounded-full bg-[#5a8f6f] flex items-center justify-center text-white font-medium">{(userItem.name||userItem.email||'').charAt(0).toUpperCase()}</div>
-                                )}
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-[#1e4029] truncate">{userItem.name || userItem.email}</p>
-                                      <p className="text-xs text-[#7a8b7f]">{userItem.email} • <span className="font-medium">{getRoleLabel(userItem.role)}</span></p>
+                                <div key={userItem._id} className="flex items-center gap-3 p-3 border border-[#dfe8e1] rounded-lg bg-white">
+                                  {userItem.profileImageUrl ? (
+                                    <img src={userItem.profileImageUrl} alt={userItem.name} className="w-10 h-10 rounded-full object-cover" />
+                                  ) : (
+                                    <div className="w-10 h-10 rounded-full bg-[#5a8f6f] flex items-center justify-center text-white font-medium">{(userItem.name || userItem.email || '').charAt(0).toUpperCase()}</div>
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-[#1e4029] truncate">{userItem.name || userItem.email}</p>
+                                    <p className="text-xs text-[#7a8b7f]">{userItem.email} • <span className="font-medium">{getRoleLabel(userItem.role)}</span></p>
+                                  </div>
+                                  {can('team') && (
+                                    <div>
+                                      <button onClick={async () => {
+                                        if (!window.confirm(`Retirer ${userItem.name || userItem.email} du projet ?`)) return;
+                                        try {
+                                          await axiosInstance.delete(API_PATHS.PROJECTS.REMOVE_USER_FROM_PROJECT(project._id, userItem._id));
+                                          toast.success('Utilisateur retiré');
+                                          fetchProjectDetails();
+                                        } catch (err) {
+                                          console.error(err);
+                                          toast.error(err.response?.data?.message || 'Erreur lors de la suppression');
+                                        }
+                                      }} className="text-xs text-red-600 hover:underline">Retirer</button>
+                                    </div>
+                                  )}
                                 </div>
-                                      {can('team') && (
-                                      <div>
-                                        <button onClick={async () => {
-                                          if (!window.confirm(`Retirer ${userItem.name || userItem.email} du projet ?`)) return;
-                                          try {
-                                            await axiosInstance.delete(API_PATHS.PROJECTS.REMOVE_USER_FROM_PROJECT(project._id, userItem._id));
-                                            toast.success('Utilisateur retiré');
-                                            fetchProjectDetails();
-                                          } catch (err) {
-                                            console.error(err);
-                                            toast.error(err.response?.data?.message || 'Erreur lors de la suppression');
-                                          }
-                                        }} className="text-xs text-red-600 hover:underline">Retirer</button>
-                                      </div>
-                                    )}
-                              </div>
-                            ))}
+                              ))}
                           </div>
                         ) : (
                           <p className="text-sm text-[#7a8b7f] text-center py-4">Aucun membre assigné. Cliquez sur "Gérer membres" pour ajouter.</p>
@@ -699,7 +857,7 @@ const ProjectDetails = () => {
                           return (
                             <div key={team._id} className="border border-[#dfe8e1] rounded-xl bg-white overflow-hidden">
                               <button onClick={() => toggleTeam(team._id)} className="w-full p-4 flex items-center justify-between hover:bg-[#f4f7f4] transition-colors">
-                                  <div className="flex items-center gap-3 flex-1">
+                                <div className="flex items-center gap-3 flex-1">
                                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0" style={{ backgroundColor: team.color || '#5a8f6f' }}><FiUsers /></div>
                                   <div className="flex-1 text-left">
                                     <h4 className="font-semibold text-[#1e4029]">{team.name}</h4>
@@ -811,6 +969,8 @@ const ProjectDetails = () => {
                                 {renderTaskCard(task, {
                                   onDragStart: handleTaskDragStart,
                                   onDragEnd: handleTaskDragEnd,
+                                  isExpanded: expandedTasks.has(task._id),
+                                  onToggleExpand: () => toggleTaskExpansion(task._id),
                                 })}
                               </div>
                             ))}
@@ -850,6 +1010,8 @@ const ProjectDetails = () => {
                                 {renderTaskCard(task, {
                                   onDragStart: handleTaskDragStart,
                                   onDragEnd: handleTaskDragEnd,
+                                  isExpanded: expandedTasks.has(task._id),
+                                  onToggleExpand: () => toggleTaskExpansion(task._id),
                                 })}
                               </div>
                             ))}
@@ -888,6 +1050,8 @@ const ProjectDetails = () => {
                                 {renderTaskCard(task, {
                                   onDragStart: handleTaskDragStart,
                                   onDragEnd: handleTaskDragEnd,
+                                  isExpanded: expandedTasks.has(task._id),
+                                  onToggleExpand: () => toggleTaskExpansion(task._id),
                                 })}
                               </div>
                             ))}

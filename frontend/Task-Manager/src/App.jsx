@@ -29,6 +29,7 @@ import ProfileCompletion from "./pages/Auth/ProfileCompletion";
 import AllTeams from "./pages/Admin/AllTeams";
 
 import UserDashboard from "./pages/User/UserDashboard";
+import UserProjects from "./pages/User/UserProjects";
 import MyTasks from "./pages/User/MyTasks";
 import ViewTaskDetails from "./pages/User/ViewTaskDetails";
 import Chat from "./pages/User/Chat";
@@ -37,6 +38,7 @@ import ClientDocuments from "./pages/Client/ClientDocuments";
 import ClientDashboard from "./pages/Client/ClientDashboard";
 import ClientTasks from "./pages/Client/ClientTasks";
 import PartnerDashboard from "./pages/Partner/PartnerDashboard";
+import PartnerProjects from "./pages/Partner/PartnerProjects";
 import PartnerProjectDetails from "./pages/Partner/ProjectDetails";
 import CollaboratorDashboard from "./pages/Collaborator/CollaboratorDashboard";
 import DashboardLayout from "./components/layouts/DashboardLayout";
@@ -111,9 +113,7 @@ const App = () => {
                     element={<ViewTaskDetails />}
                   />
                   <Route path="/user/project/:id" element={<UserProjectDetails />} />
-                  <Route path="/user/projects" element={<AllProjects />} />
-                  <Route path="/user/documents" element={<UserDocuments />} />
-                  <Route path="/user/invoices" element={<AllInvoices />} />
+                  <Route path="/user/projects" element={<UserProjects />} />
                   <Route path="/user/chat" element={<ChatLayout><Chat /></ChatLayout>} />
                   <Route path="/user/notifications" element={<AllNotifications />} />
                 </Route>
@@ -132,12 +132,11 @@ const App = () => {
                 {/* Partner Routes - Accès à messages (admin+collaborateur), tâches, milestones, documents tagés partenaire */}
                 <Route element={<PrivateRoute allowedRoles={["partner"]} />}>
                   <Route path="/partner/dashboard" element={<PartnerDashboard />} />
-                  <Route path="/partner/projects" element={<AllProjects />} />
+                  <Route path="/partner/projects" element={<PartnerProjects />} />
                   <Route path="/partner/project/:id" element={<PartnerProjectDetails />} />
                   <Route path="/partner/tasks" element={<MyTasks />} />
                   <Route path="/partner/task-details/:id" element={<ViewTaskDetails />} />
                   <Route path="/partner/chat" element={<DashboardLayout activeMenu="Messagerie" fullWidth={true}><Chat /></DashboardLayout>} />
-                  <Route path="/partner/documents" element={<AllInvoices />} />
                   <Route path="/partner/messages" element={<AllNotifications />} />
                 </Route>
 

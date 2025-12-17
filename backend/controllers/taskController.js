@@ -222,12 +222,20 @@ const createTask = async (req, res) => {
       status: status || "Pending"
     });
 
+
+
     // Si la tâche est associée à un projet, l'ajouter au projet
     if (project) {
       const Project = require("../models/Project");
       await Project.findByIdAndUpdate(project, {
         $addToSet: { tasks: task._id }
       });
+    }
+
+    const populatedTask = await Task.findById(task._id).populate('assignedTo', 'name email profileImageUrl');
+
+    if (global.io) {
+      global.io.emit('taskCreated', populatedTask);
     }
 
     res.status(201).json({ message: "Task created successfully", task });
@@ -297,7 +305,14 @@ const updateTask = async (req, res) => {
     }
 
     const updatedTask = await task.save();
-    res.json({ message: "Task updated successfully", task: updatedTask });
+
+    const populatedTask = await Task.findById(updatedTask._id).populate('assignedTo', 'name email profileImageUrl');
+
+    if (global.io) {
+      global.io.emit('taskUpdated', populatedTask);
+    }
+
+    res.json({ message: "Task updated successfully", task: populatedTask });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -313,6 +328,11 @@ const deleteTask = async (req, res) => {
     if (!task) return res.status(404).json({ message: "Task not found" });
 
     await task.deleteOne();
+
+    if (global.io) {
+      global.io.emit('taskDeleted', task._id);
+    }
+
     res.json({ message: "Task deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -424,7 +444,13 @@ const updateTaskStatus = async (req, res) => {
       }
     }
 
-    res.json({ message: "Task status updated", task });
+    const populatedTask = await Task.findById(task._id).populate('assignedTo', 'name email profileImageUrl');
+
+    if (global.io) {
+      global.io.emit('taskUpdated', populatedTask);
+    }
+
+    res.json({ message: "Task status updated", task: populatedTask });
   } catch (error) {
     console.error("Error in updateTaskStatus:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -489,6 +515,10 @@ const updateTaskChecklist = async (req, res) => {
       "assignedTo",
       "name email profileImageUrl"
     );
+
+    if (global.io) {
+      global.io.emit('taskUpdated', updatedTask);
+    }
 
     res.json({ message: "Task checklist updated", task: updatedTask });
   } catch (error) {

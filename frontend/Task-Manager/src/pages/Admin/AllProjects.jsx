@@ -405,14 +405,14 @@ const AllProjects = () => {
         prev.map(project =>
           selectedProjects.includes(project._id)
             ? (() => {
-                const updatedProject = { ...project, status: newStatus };
-                const calculatedCompletion = calculateProjectCompletion(updatedProject);
-                return {
-                  ...updatedProject,
-                  completion: calculatedCompletion,
-                  status: calculateProjectStatus(updatedProject, calculatedCompletion)
-                };
-              })()
+              const updatedProject = { ...project, status: newStatus };
+              const calculatedCompletion = calculateProjectCompletion(updatedProject);
+              return {
+                ...updatedProject,
+                completion: calculatedCompletion,
+                status: calculateProjectStatus(updatedProject, calculatedCompletion)
+              };
+            })()
             : project
         )
       );
@@ -549,15 +549,15 @@ const AllProjects = () => {
                   <FiArchive className="text-lg" />
                   Projets archivés
                 </button>
-          <button
-            onClick={handleAddProject}
-              className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
-          >
-              <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-            <FiPlus className="text-lg" />
-              </div>
-              Nouveau projet
-          </button>
+                <button
+                  onClick={handleAddProject}
+                  className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
+                >
+                  <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+                    <FiPlus className="text-lg" />
+                  </div>
+                  Nouveau projet
+                </button>
               </>
             )}
           </div>
@@ -682,37 +682,37 @@ const AllProjects = () => {
               <span className="text-sm text-[#2d5f3f] mr-2">Actions :</span>
 
               {/* Change Status - Seulement si permissions */}
-            {user && selectedProjects.some(projectId => {
+              {user && selectedProjects.some(projectId => {
                 const project = filteredProjects.find(p => p._id === projectId);
                 return project && checkProjectPermissions(user, project, 'change_status');
               }) && (
-                <select
-                  onChange={(e) => e.target.value && handleBulkStatusChange(e.target.value)}
-                  disabled={bulkActionLoading}
-                  className="px-3 py-1 bg-white border border-[#dfe8e1] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] disabled:opacity-50"
-                  defaultValue=""
-                >
-                  <option value="">Changer statut</option>
-                  <option value="in progress">En cours</option>
-                  <option value="in review">À revoir</option>
-                  <option value="done">Terminé</option>
-                </select>
-              )}
+                  <select
+                    onChange={(e) => e.target.value && handleBulkStatusChange(e.target.value)}
+                    disabled={bulkActionLoading}
+                    className="px-3 py-1 bg-white border border-[#dfe8e1] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] disabled:opacity-50"
+                    defaultValue=""
+                  >
+                    <option value="">Changer statut</option>
+                    <option value="in progress">En cours</option>
+                    <option value="in review">À revoir</option>
+                    <option value="done">Terminé</option>
+                  </select>
+                )}
 
               {/* Archive - Seulement si permissions */}
               {user && selectedProjects.some(projectId => {
                 const project = filteredProjects.find(p => p._id === projectId);
                 return project && checkProjectPermissions(user, project, 'delete');
               }) && (
-                <button
-                  onClick={handleBulkArchive}
-                  disabled={bulkActionLoading}
-                  className="flex items-center gap-2 px-3 py-1 bg-white border border-[#dfe8e1] rounded-lg text-sm hover:bg-[#f4f7f4] transition-colors disabled:opacity-50"
-                >
-                  <FiArchive className="text-sm" />
-                  Archiver
-                </button>
-              )}
+                  <button
+                    onClick={handleBulkArchive}
+                    disabled={bulkActionLoading}
+                    className="flex items-center gap-2 px-3 py-1 bg-white border border-[#dfe8e1] rounded-lg text-sm hover:bg-[#f4f7f4] transition-colors disabled:opacity-50"
+                  >
+                    <FiArchive className="text-sm" />
+                    Archiver
+                  </button>
+                )}
             </div>
           </div>
         )}
@@ -758,11 +758,10 @@ const AllProjects = () => {
                 }
                 handleProjectClick(project._id);
               }}
-              className={`bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer border ${
-                isProjectSelected(project._id)
+              className={`bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer border ${isProjectSelected(project._id)
                   ? 'border-[#5a8f6f] bg-[#f4f7f4]/50'
                   : 'border-[#dfe8e1] hover:border-[#5a8f6f]/30'
-              }`}
+                }`}
             >
               {/* Project Image */}
               <div className="relative h-48 bg-gradient-to-br from-[#f4f7f4] to-[#e8f0e8]">
@@ -779,7 +778,7 @@ const AllProjects = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {/* Status Badge */}
                 <div className="absolute top-3 left-3">
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(project.status)}`}>
@@ -844,7 +843,7 @@ const AllProjects = () => {
                 <h3 className="text-lg font-semibold text-[#1e4029] mb-2 truncate">
                   {project.name}
                 </h3>
-                
+
                 {project.category && (
                   <p className="text-sm text-[#7a8b7f] mb-3 truncate">
                     {project.category}
@@ -918,7 +917,7 @@ const AllProjects = () => {
 
                 {/* Client and Project Lead Info */}
                 <div className="mt-4 space-y-2">
-                {project.client && (
+                  {project.client && (
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-[#f4f7f4] rounded-full flex items-center justify-center text-xs font-medium text-[#7a8b7f]">
                         {project.client.company?.charAt(0).toUpperCase() || project.client.name?.charAt(0).toUpperCase() || "C"}
@@ -936,9 +935,9 @@ const AllProjects = () => {
                       </div>
                       <span className="text-xs text-[#2d5f3f] truncate font-medium">
                         Chef: {project.projectLead.name || project.projectLead.email}
-                    </span>
-                  </div>
-                )}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
