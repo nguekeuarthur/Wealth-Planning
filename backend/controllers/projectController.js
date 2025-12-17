@@ -53,7 +53,6 @@ exports.getAllProjects = async (req, res) => {
 
     // Filtrer les membres de projet pour les clients : ne pas voir les Partenaires
     // Filtrer les informations du client pour les partenaires : ne pas voir le Client
-    /*
     const filteredProjects = projects.map(project => {
       const projectObj = project.toObject();
       
@@ -75,8 +74,6 @@ exports.getAllProjects = async (req, res) => {
     });
 
     res.json({ projects: filteredProjects });
-    */
-    res.json({ projects });
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
@@ -154,7 +151,6 @@ exports.getProjectById = async (req, res) => {
     // Filtrer les membres de projet pour les clients : ne pas voir les Partenaires
     // Masquer les informations du client pour les partenaires
     const projectObj = project.toObject();
-    /*
     if (req.user.role === 'client' && projectObj.assignedUsers) {
       projectObj.assignedUsers = projectObj.assignedUsers.filter(
         user => user.role !== 'partner'
@@ -165,7 +161,6 @@ exports.getProjectById = async (req, res) => {
         projectObj.client = null;
       }
     }
-    */
 
     res.json({ project: projectObj });
   } catch (error) {

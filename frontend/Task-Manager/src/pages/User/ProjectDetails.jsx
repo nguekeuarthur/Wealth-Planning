@@ -53,9 +53,24 @@ const UserProjectDetails = () => {
             setLoading(true);
 
             const response = await axiosInstance.get(API_PATHS.PROJECTS.GET_PROJECT_BY_ID(id));
-            setProject(response.data.project || response.data);
+            const projectData = response.data?.project || response.data;
+            setProject(projectData);
+
+            const tasksRes = await axiosInstance.get(API_PATHS.TASKS.GET_ALL_TASKS, {
+                params: { project: id }
+            });
+            setTasks(tasksRes.data.tasks || []);
+
+            const milestonesRes = await axiosInstance.get(API_PATHS.MILESTONES.GET_BY_PROJECT(id));
+            setMilestones(milestonesRes.data.milestones || []);
+
+            const documentsRes = await axiosInstance.get(API_PATHS.DOCUMENTS.GET_ALL_DOCUMENTS, {
+                params: {
+                    project: id,
+                    assignedTo: user?._id
+                }
+            });
             setDocuments(documentsRes.data.documents || []);
->>>>>>> origin/dev
         } catch (error) {
             console.error("Erreur lors de la récupération des détails du projet:", error);
             toast.error("Impossible de charger les détails du projet");
@@ -187,124 +202,6 @@ const UserProjectDetails = () => {
             </DashboardLayout>
         );
     }
-
-<<<<<<< HEAD
-    const renderOverview = () => (
-        <div className="space-y-6">
-            <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6">
-                <h3 className="text-lg font-semibold text-[#1e4029] mb-4">Description du projet</h3>
-                <p className="text-[#7a8b7f] leading-relaxed">
-                    {project.description || "Aucune description disponible"}
-                </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <MetricCard
-                    icon={<FiCalendar />}
-                    label="Date de début"
-                    value={project.startDate && !isNaN(new Date(project.startDate)) ? new Date(project.startDate).toLocaleDateString('fr-FR') : "Non définie"}
-                />
-                <MetricCard
-                    icon={<FiClock />}
-                    label="Date de fin"
-                    value={project.endDate && !isNaN(new Date(project.endDate)) ? new Date(project.endDate).toLocaleDateString('fr-FR') : "Non définie"}
-                />
-                <MetricCard
-                    icon={<FiCheckCircle />}
-                    label="Statut"
-                    value={
-                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusBadgeClass(project.status)}`}>
-                            {project.status === "in progress" ? "En cours" :
-                                project.status === "in review" ? "En révision" :
-                                    project.status === "done" ? "Terminé" : project.status}
-                        </span>
-                    }
-                />
-                <MetricCard
-                    icon={<FiUsers />}
-                    label="Équipe"
-                    value={project.assignedUsers?.length || 0}
-                    subtext="membres assignés"
-                />
-            </div>
-
-            {project.projectLead && (
-                <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6">
-                    <h3 className="text-lg font-semibold text-[#1e4029] mb-4">Chef de projet</h3>
-                    <div className="flex items-center gap-4">
-                        {project.projectLead.profileImageUrl ? (
-                            <img
-                                src={project.projectLead.profileImageUrl}
-                                alt={project.projectLead.name || "Avatar"}
-                                className="w-12 h-12 rounded-full object-cover"
-                            />
-                        ) : (
-                            <div className="w-12 h-12 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-lg font-semibold">
-                                {project.projectLead.name?.charAt(0).toUpperCase() || "?"}
-                            </div>
-                        )}
-                        <div>
-                            <p className="text-[#1e4029] font-medium">{project.projectLead.name || "Nom non défini"}</p>
-                            <p className="text-sm text-[#7a8b7f]">{project.projectLead.email}</p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {project.client && (
-                <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6">
-                    <h3 className="text-lg font-semibold text-[#1e4029] mb-4">Client</h3>
-                    <div className="flex items-center gap-4">
-                        {project.client.profileImageUrl ? (
-                            <img
-                                src={project.client.profileImageUrl}
-                                alt={project.client.name || "Avatar"}
-                                className="w-12 h-12 rounded-full object-cover"
-                            />
-                        ) : (
-                            <div className="w-12 h-12 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-lg font-semibold">
-                                {project.client.name?.charAt(0).toUpperCase() || project.client.company?.charAt(0).toUpperCase() || "?"}
-                            </div>
-                        )}
-                        <div>
-                            <p className="text-[#1e4029] font-medium">{project.client.company || project.client.name || "Nom non défini"}</p>
-                            <p className="text-sm text-[#7a8b7f]">{project.client.email}</p>
-                            {project.client.address && (
-                                <p className="text-sm text-[#7a8b7f] mt-1">{project.client.address}</p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {project.assignedUsers && project.assignedUsers.length > 0 && (
-                <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6">
-                    <h3 className="text-lg font-semibold text-[#1e4029] mb-4">Équipe du projet</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {project.assignedUsers.map((member) => (
-                            <div key={member._id} className="flex items-center gap-3 p-3 bg-[#f4f7f4] rounded-xl">
-                                {member.profileImageUrl ? (
-                                    <img
-                                        src={member.profileImageUrl}
-                                        alt={member.name || "Avatar"}
-                                        className="w-10 h-10 rounded-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-10 h-10 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                                        {member.name?.charAt(0).toUpperCase() || member.email?.charAt(0).toUpperCase()}
-                                    </div>
-                                )}
-                                <div>
-                                    <p className="text-[#1e4029] font-medium">{member.name || "Nom non défini"}</p>
-                                    <p className="text-xs text-[#7a8b7f]">{member.role}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
 
     const renderTasks = () => {
         return (
@@ -534,72 +431,13 @@ const UserProjectDetails = () => {
                 </div>
             ) : (
                 <EmptyState
-                    icon={<FiFileText />}
-                    title="Aucun document"
-                    subtitle="Ce projet n'a pas encore de documents partagés."
+                    icon={<FiFile />}
+                    title="Aucun document partagé"
+                    subtitle="Aucun document partagé"
                 />
             )}
         </div>
     );
-
-<<<<<<< HEAD
-    const renderUpdates = () => (
-        <div className="space-y-4">
-            {project.updates && project.updates.length > 0 ? (
-                project.updates.map((update) => (
-                    <div key={update._id} className="bg-white rounded-2xl border border-[#dfe8e1] p-6">
-                        <div className="flex items-start gap-4">
-                            {update.author?.profileImageUrl ? (
-                                <img
-                                    src={update.author.profileImageUrl}
-                                    alt={update.author.name || "Avatar"}
-                                    className="w-10 h-10 rounded-full object-cover"
-                                />
-                            ) : (
-                                <div className="w-10 h-10 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                                    {update.author?.name?.charAt(0).toUpperCase() || "?"}
-                                </div>
-                            )}
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <h3 className="font-semibold text-[#1e4029]">{update.author?.name || "Système"}</h3>
-                                    <span className="text-xs text-[#99aca2]">
-                                        {update.createdAt && !isNaN(new Date(update.createdAt)) ?
-                                            `${new Date(update.createdAt).toLocaleDateString('fr-FR')} à ${new Date(update.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
-                                            : "Date inconnue"}
-                                    </span>
-                                </div>
-                                <p className="text-[#7a8b7f]">{update.content}</p>
-                            </div>
-                        </div>
-                    </div>
-                ))
-            ) : (
-                <EmptyState
-                    icon={<FiMessageSquare />}
-                    title="Aucun message"
-                    subtitle="Aucun message n'a encore été partagé sur ce projet."
-                />
-            )}
-        </div>
-    );
-
-    const renderContent = () => {
-        switch (activeTab) {
-            case "overview":
-                return renderOverview();
-            case "tasks":
-                return renderTasks();
-            case "milestones":
-                return renderMilestones();
-            case "documents":
-                return renderDocuments();
-            case "updates":
-                return renderUpdates();
-            default:
-                return renderOverview();
-        }
-    };
 
     return (
         <DashboardLayout>

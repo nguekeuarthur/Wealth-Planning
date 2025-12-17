@@ -288,7 +288,7 @@ const AllProjects = () => {
 
       case 'edit':
         return compareIds(project.projectLead, currentUser._id) ||
-               (project.assignedUsers?.some(user => compareIds(user, currentUser._id)) && action !== 'delete');
+               project.assignedUsers?.some(user => compareIds(user, currentUser._id));
 
       case 'delete':
         return compareIds(project.projectLead, currentUser._id);

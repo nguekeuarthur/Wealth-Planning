@@ -189,7 +189,6 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdated, onTaskDeleted,
             </div>
           )}
 
-<<<<<<< HEAD
           {/* Utilisateurs assignés */}
           {!readOnly && assignedUsers.length > 0 && (
             <div className="border border-[#dfe8e1] rounded-xl p-4">
@@ -223,7 +222,7 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdated, onTaskDeleted,
             </div>
           )}
 
-          {/* Pièces jointes */
+          {/* Pièces jointes */}
           {task.attachments && task.attachments.length > 0 && (
             <div className="border border-[#dfe8e1] rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">
@@ -270,7 +269,7 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdated, onTaskDeleted,
                 <FiEdit size={18} />
                 Modifier
               </button>
-              
+
               {!showDeleteConfirm ? (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
