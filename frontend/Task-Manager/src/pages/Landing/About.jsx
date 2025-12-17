@@ -51,7 +51,7 @@ const content = {
         {
           title: "Accompagnement sur mesure",
           text:
-            "Nous plaçons l'humain au cœur de notre démarche. Chaque client bénéficie d'un accompagnement personnalisé, de la création d'entreprise à l'ouverture de comptes bancaires, en passant par la domiciliation et la gestion administrative.",
+            "Nous plaçons l'humain au cœur de notre démarche. En combinant la gestion de vos démarches essentielles (création d'entreprise, domiciliation, bancaire) avec un conseil stratégique sur mesure, nous bâtissons avec vous un patrimoine optimisé, structuré et transmis selon vos souhaits.",
           icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
         },
         {
@@ -69,7 +69,7 @@ const content = {
         {
           title: "Fiabilité",
           text:
-            "Notre logo, marqué par la clé et l'écusson, symbolise la confiance et la protection. En choisissant Geneva Wealth Partners, vous choisissez un partenaire fiable, intègre et rigoureux, capable de vous représenter durablement en Suisse et à l'étranger.",
+            "Votre patrimoine mérite un symbole fort : celui de la confiance et de la protection. C'est l'engagement de Geneva Wealth Partners. Avec nous, vous gagnez un partenaire fiable, intègre et rigoureux, capable de vous représenter durablement, en Suisse comme à l'étranger.",
           icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
         },
       ],
@@ -123,7 +123,7 @@ const content = {
         {
           title: "Tailor-made support",
           text:
-            "People remain at the center of everything we do. From company creation to banking, domiciliation, and administration, you receive bespoke guidance at every milestone.",
+            "People remain at the center of everything we do. By combining the management of your essential steps (company creation, domiciliation, banking) with bespoke strategic advice, we build with you an optimised, structured wealth that is transmitted according to your wishes.",
           icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
         },
         {
@@ -141,7 +141,7 @@ const content = {
         {
           title: "Reliability",
           text:
-            "Our crest and key embody trust and protection. Working with Geneva Wealth Partners means partnering with a diligent representative for both Swiss and international ambitions.",
+            "Your wealth deserves a strong symbol: that of trust and protection. This is Geneva Wealth Partners' commitment. With us, you gain a reliable, ethical, and rigorous partner, capable of representing you sustainably, in Switzerland as well as abroad.",
           icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
         },
       ],
@@ -195,7 +195,7 @@ const content = {
         {
           title: "Maßgeschneiderte Unterstützung",
           text:
-            "Menschen bleiben im Mittelpunkt von allem, was wir tun. Von der Unternehmensgründung bis zum Banking, Domizilierung und Verwaltung erhalten Sie bei jedem Meilenstein maßgeschneiderte Beratung.",
+            "Menschen bleiben im Mittelpunkt von allem, was wir tun. Durch die Kombination der Verwaltung Ihrer wesentlichen Schritte (Unternehmensgründung, Domizilierung, Banking) mit maßgeschneiderter strategischer Beratung bauen wir mit Ihnen ein optimiertes, strukturiertes Vermögen auf, das nach Ihren Wünschen weitergegeben wird.",
           icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
         },
         {
@@ -213,7 +213,7 @@ const content = {
         {
           title: "Zuverlässigkeit",
           text:
-            "Unser Wappen und Schlüssel verkörpern Vertrauen und Schutz. Die Zusammenarbeit mit Geneva Wealth Partners bedeutet eine Partnerschaft mit einem sorgfältigen Vertreter für Schweizer und internationale Ambitionen.",
+            "Ihr Vermögen verdient ein starkes Symbol: das von Vertrauen und Schutz. Das ist das Engagement von Geneva Wealth Partners. Mit uns gewinnen Sie einen zuverlässigen, integren und rigorosen Partner, der Sie nachhaltig vertreten kann, sowohl in der Schweiz als auch im Ausland.",
           icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
         },
       ],
@@ -267,7 +267,7 @@ const content = {
         {
           title: "Supporto su misura",
           text:
-            "Le persone rimangono al centro di tutto ciò che facciamo. Dalla costituzione aziendale al banking, domiciliazione e amministrazione, ricevi una guida su misura in ogni fase.",
+            "Le persone rimangono al centro di tutto ciò che facciamo. Combinando la gestione dei tuoi passaggi essenziali (costituzione aziendale, domiciliazione, banking) con una consulenza strategica su misura, costruiamo con te un patrimonio ottimizzato, strutturato e trasmesso secondo i tuoi desideri.",
           icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
         },
         {
@@ -285,7 +285,7 @@ const content = {
         {
           title: "Affidabilità",
           text:
-            "Il nostro stemma e la chiave incarnano fiducia e protezione. Lavorare con Geneva Wealth Partners significa collaborare con un rappresentante diligente per le ambizioni svizzere e internazionali.",
+            "Il tuo patrimonio merita un simbolo forte: quello della fiducia e della protezione. Questo è l'impegno di Geneva Wealth Partners. Con noi, guadagni un partner affidabile, integro e rigoroso, capace di rappresentarti in modo sostenibile, in Svizzera come all'estero.",
           icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
         },
       ],

@@ -6,19 +6,19 @@ import { useLanguage } from "../../context/languageContext";
 const translations = {
   FR: {
     title: "Votre patrimoine,\nnotre expertise",
-    subtitle: "Conseil en structuration patrimoniale et fiscale pour entrepreneurs et investisseurs",
+    subtitle: "Conseil en structuration patrimoniale et fiscale pour entrepreneurs, particuliers et investisseurs",
   },
   EN: {
     title: "Your wealth,\nour expertise",
-    subtitle: "Wealth and tax structuring advisory for entrepreneurs and investors",
+    subtitle: "Wealth and tax structuring advisory for entrepreneurs, individuals and investors",
   },
   DE: {
     title: "Ihr Vermögen,\nunsere Expertise",
-    subtitle: "Vermögens- und Steuerstrukturierungsberatung für Unternehmer und Investoren",
+    subtitle: "Vermögens- und Steuerstrukturierungsberatung für Unternehmer, Privatpersonen und Investoren",
   },
   IT: {
     title: "Il tuo patrimonio,\nla nostra expertise",
-    subtitle: "Consulenza sulla strutturazione patrimoniale e fiscale per imprenditori e investitori",
+    subtitle: "Consulenza sulla strutturazione patrimoniale e fiscale per imprenditori, privati e investitori",
   },
 };
 

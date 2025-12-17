@@ -14,10 +14,23 @@ const content = {
       title: "Envoyez-nous un message",
       success: "Message envoyé avec succès ! Nous vous répondrons bientôt.",
       fields: {
-        nameLabel: "Nom complet",
-        namePlaceholder: "Votre nom",
+        firstNameLabel: "Prénom",
+        firstNamePlaceholder: "Votre prénom",
+        lastNameLabel: "Nom",
+        lastNamePlaceholder: "Votre nom",
         emailLabel: "Email",
         emailPlaceholder: "votre.email@exemple.com",
+        phoneLabel: "Téléphone",
+        phonePlaceholder: "+33 6 12 34 56 78",
+        serviceLabel: "Service d'intérêt",
+        servicePlaceholder: "Sélectionnez un service",
+        services: [
+          "Création d'entreprise",
+          "Service de domiciliation",
+          "Conseil en structuration patrimoniale",
+          "Optimisation fiscale",
+          "Planification successorale"
+        ],
         messageLabel: "Message",
         messagePlaceholder: "Décrivez votre demande...",
       },
@@ -108,10 +121,23 @@ const content = {
       title: "Send Us a Message",
       success: "Message sent successfully! We will be in touch shortly.",
       fields: {
-        nameLabel: "Full name",
-        namePlaceholder: "Your name",
+        firstNameLabel: "First name",
+        firstNamePlaceholder: "Your first name",
+        lastNameLabel: "Last name",
+        lastNamePlaceholder: "Your last name",
         emailLabel: "Email",
         emailPlaceholder: "your.email@example.com",
+        phoneLabel: "Phone",
+        phonePlaceholder: "+41 22 345 67 89",
+        serviceLabel: "Service of interest",
+        servicePlaceholder: "Select a service",
+        services: [
+          "Company formation",
+          "Business domiciliation",
+          "Wealth structuring advisory",
+          "Tax optimisation",
+          "Estate planning"
+        ],
         messageLabel: "Message",
         messagePlaceholder: "Tell us more about your request...",
       },
@@ -202,11 +228,24 @@ const content = {
       title: "Senden Sie uns eine Nachricht",
       success: "Nachricht erfolgreich gesendet! Wir werden uns in Kürze bei Ihnen melden.",
       fields: {
-        nameLabel: "Vollständiger Name",
-        namePlaceholder: "Ihr Name",
+        firstNameLabel: "Vorname",
+        firstNamePlaceholder: "Ihr Vorname",
+        lastNameLabel: "Nachname",
+        lastNamePlaceholder: "Ihr Nachname",
         emailLabel: "E-Mail",
         emailPlaceholder: "ihre.email@beispiel.com",
-        messageLabel: "Nachricht *",
+        phoneLabel: "Telefon",
+        phonePlaceholder: "+41 22 345 67 89",
+        serviceLabel: "Interessierter Service",
+        servicePlaceholder: "Wählen Sie einen Service",
+        services: [
+          "Unternehmensgründung",
+          "Geschäftsdomizilierung",
+          "Vermögensstrukturierungsberatung",
+          "Steueroptimierung",
+          "Nachlassplanung"
+        ],
+        messageLabel: "Nachricht",
         messagePlaceholder: "Erzählen Sie uns mehr über Ihre Anfrage...",
       },
       button: "Nachricht senden",
@@ -296,11 +335,24 @@ const content = {
       title: "Inviaci un Messaggio",
       success: "Messaggio inviato con successo! Ti contatteremo a breve.",
       fields: {
-        nameLabel: "Nome completo",
-        namePlaceholder: "Il tuo nome",
+        firstNameLabel: "Nome",
+        firstNamePlaceholder: "Il tuo nome",
+        lastNameLabel: "Cognome",
+        lastNamePlaceholder: "Il tuo cognome",
         emailLabel: "Email",
         emailPlaceholder: "tua.email@esempio.com",
-        messageLabel: "Messaggio *",
+        phoneLabel: "Telefono",
+        phonePlaceholder: "+41 22 345 67 89",
+        serviceLabel: "Servizio di interesse",
+        servicePlaceholder: "Seleziona un servizio",
+        services: [
+          "Costituzione aziendale",
+          "Domiciliazione aziendale",
+          "Consulenza sulla strutturazione patrimoniale",
+          "Ottimizzazione fiscale",
+          "Pianificazione successoria"
+        ],
+        messageLabel: "Messaggio",
         messagePlaceholder: "Raccontaci di più sulla tua richiesta...",
       },
       button: "Invia messaggio",
@@ -387,8 +439,11 @@ const Contact = () => {
   const { lang } = useLanguage();
   const copy = content[lang] ?? content.FR;
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
+    phone: "",
+    service: "",
     message: ""
   });
 
@@ -402,7 +457,7 @@ const Contact = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     toast.success(copy.form.success);
-    setFormData({ name: "", email: "", message: "" });
+    setFormData({ firstName: "", lastName: "", email: "", phone: "", service: "", message: "" });
   };
 
   return (
@@ -459,20 +514,38 @@ const Contact = () => {
                 <div className="w-24 h-1.5 bg-gradient-to-r from-[#2d5f3f] via-[#5a8f6f] to-transparent mb-10 rounded-full"></div>
                 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  <div>
-                    <label htmlFor="name" className="block text-gray-700 font-light mb-3 text-lg">
-                      {copy.form.fields.nameLabel}
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-6 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#2d5f3f] transition-colors font-light text-lg"
-                      placeholder={copy.form.fields.namePlaceholder}
-                    />
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <label htmlFor="firstName" className="block text-gray-700 font-light mb-3 text-lg">
+                        {copy.form.fields.firstNameLabel}
+                      </label>
+                      <input
+                        type="text"
+                        id="firstName"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-6 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#2d5f3f] transition-colors font-light text-lg"
+                        placeholder={copy.form.fields.firstNamePlaceholder}
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="lastName" className="block text-gray-700 font-light mb-3 text-lg">
+                        {copy.form.fields.lastNameLabel}
+                      </label>
+                      <input
+                        type="text"
+                        id="lastName"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-6 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#2d5f3f] transition-colors font-light text-lg"
+                        placeholder={copy.form.fields.lastNamePlaceholder}
+                      />
+                    </div>
                   </div>
 
                   <div>
@@ -491,6 +564,40 @@ const Contact = () => {
                     />
                   </div>
 
+                  <div>
+                    <label htmlFor="phone" className="block text-gray-700 font-light mb-3 text-lg">
+                      {copy.form.fields.phoneLabel}
+                    </label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-6 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#2d5f3f] transition-colors font-light text-lg"
+                      placeholder={copy.form.fields.phonePlaceholder}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="service" className="block text-gray-700 font-light mb-3 text-lg">
+                      {copy.form.fields.serviceLabel}
+                    </label>
+                    <select
+                      id="service"
+                      name="service"
+                      value={formData.service}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-6 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#2d5f3f] transition-colors font-light text-lg bg-white"
+                    >
+                      <option value="">{copy.form.fields.servicePlaceholder}</option>
+                      {copy.form.fields.services.map((service, index) => (
+                        <option key={index} value={service}>{service}</option>
+                      ))}
+                    </select>
+                  </div>
 
                   <div>
                     <label htmlFor="message" className="block text-gray-700 font-light mb-3 text-lg">

@@ -38,6 +38,12 @@ const content = {
           "Stratégies fiscales avancées pour minimiser votre imposition tout en respectant les cadres légaux.",
         icon: "M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z",
       },
+      {
+        title: "Planification Successorale",
+        description:
+          "Nous vous aidons à structurer votre héritage pour qu'il bénéficie à vos proches dans les meilleures conditions juridiques et fiscales.",
+        icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
+      },
     ],
     cta: {
       title: "Prêt à optimiser votre patrimoine ?",
@@ -77,6 +83,12 @@ const content = {
         title: "Tax optimisation",
         description: "Advanced strategies that lower tax exposure while respecting every jurisdiction.",
         icon: "M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z",
+      },
+      {
+        title: "Estate Planning",
+        description:
+          "We help you structure your inheritance so it benefits your loved ones under the best legal and tax conditions.",
+        icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
       },
     ],
     cta: {
@@ -118,6 +130,12 @@ const content = {
         description: "Fortgeschrittene Strategien, die die Steuerbelastung senken und gleichzeitig alle Rechtsordnungen respektieren.",
         icon: "M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z",
       },
+      {
+        title: "Nachlassplanung",
+        description:
+          "Wir helfen Ihnen, Ihr Erbe so zu strukturieren, dass es Ihren Angehörigen unter den besten rechtlichen und steuerlichen Bedingungen zugutekommt.",
+        icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
+      },
     ],
     cta: {
       title: "Bereit, Ihr Vermögen zu optimieren?",
@@ -157,6 +175,12 @@ const content = {
         title: "Ottimizzazione fiscale",
         description: "Strategie avanzate che riducono l'esposizione fiscale rispettando ogni giurisdizione.",
         icon: "M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z",
+      },
+      {
+        title: "Pianificazione Successoria",
+        description:
+          "Ti aiutiamo a strutturare la tua eredità in modo che i tuoi cari ne beneficino nelle migliori condizioni legali e fiscali.",
+        icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
       },
     ],
     cta: {
