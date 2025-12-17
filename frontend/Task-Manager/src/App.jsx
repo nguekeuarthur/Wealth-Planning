@@ -49,6 +49,9 @@ import About from "./pages/Landing/About";
 import Services from "./pages/Landing/Services";
 import Contact from "./pages/Landing/Contact";
 import PublicLayout from "./components/layouts/PublicLayout";
+import PrivacyPolicy from "./pages/Legal/PrivacyPolicy";
+import TermsOfUse from "./pages/Legal/TermsOfUse";
+import LegalNotice from "./pages/Legal/LegalNotice";
 
 import PrivateRoute from "./routes/PrivateRoute";
 import UserProvider, { UserContext } from "./context/userContext";
@@ -56,6 +59,42 @@ import { Toaster } from "react-hot-toast";
 import ScrollToTop from "./components/ScrollToTop";
 
 const App = () => {
+  React.useEffect(() => {
+    // Disable right click
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+    };
+
+    // Disable copy/paste/cut
+    const handleCopyPaste = (e) => {
+      e.preventDefault();
+    };
+
+    // Disable specific key combinations (like Cmd+C, Cmd+V, Cmd+S, Cmd+P)
+    const handleKeyDown = (e) => {
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 's' || e.key === 'p' || e.key === 'a')
+      ) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('copy', handleCopyPaste);
+    document.addEventListener('paste', handleCopyPaste);
+    document.addEventListener('cut', handleCopyPaste);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('copy', handleCopyPaste);
+      document.removeEventListener('paste', handleCopyPaste);
+      document.removeEventListener('cut', handleCopyPaste);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
   return (
     <UserProvider>
       <NotificationProvider>
@@ -70,6 +109,9 @@ const App = () => {
                   <Route path="/about" element={<About />} />
                   <Route path="/services" element={<Services />} />
                   <Route path="/contact" element={<Contact />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/terms-of-use" element={<TermsOfUse />} />
+                  <Route path="/legal-notice" element={<LegalNotice />} />
                 </Route>
 
                 {/* Auth Routes (Connexion) */}
