@@ -364,7 +364,7 @@ const Home = () => {
         </div>
 
         <div className="max-w-7xl mx-auto text-center relative z-10">
-          <h1 className="text-4xl md:text-6xl font-light mb-6 tracking-wide">{copy.hero.title}</h1>
+          <h1 className="text-4xl md:text-6xl font-light mb-6 tracking-wide text-white">{copy.hero.title}</h1>
           <p className="text-base md:text-lg mb-8 font-light tracking-wider uppercase">{copy.hero.subtitle}</p>
           <Link
             to="/contact"
@@ -406,8 +406,8 @@ const Home = () => {
               <div
                 key={item.title}
                 className={`relative text-white p-10 md:p-12 group transition-all duration-500 ${index === 1
-                    ? "bg-[#2d5f3f] hover:bg-[#1e4029] hover:-translate-y-2 hover:scale-105 hover:shadow-2xl md:-mt-8 md:shadow-2xl z-10"
-                    : "bg-[#5a8f6f] hover:bg-[#4a7f5f] hover:-translate-y-2 hover:scale-105 hover:shadow-2xl hover:z-20"
+                  ? "bg-[#2d5f3f] hover:bg-[#1e4029] hover:-translate-y-2 hover:scale-105 hover:shadow-2xl md:-mt-8 md:shadow-2xl z-10"
+                  : "bg-[#5a8f6f] hover:bg-[#4a7f5f] hover:-translate-y-2 hover:scale-105 hover:shadow-2xl hover:z-20"
                   }`}
               >
                 <div className="absolute top-0 left-0 w-full h-1 bg-white/20"></div>
@@ -429,7 +429,7 @@ const Home = () => {
                     </svg>
                   </div>
                 </div>
-                <h3 className="text-2xl font-light mb-6 tracking-wide leading-tight">{item.title}</h3>
+                <h3 className="text-2xl font-light mb-6 tracking-wide leading-tight text-white">{item.title}</h3>
                 <p className="font-light text-sm leading-relaxed mb-6 opacity-90">{item.intro}</p>
                 <div className="space-y-3 mb-6">
                   {item.bullets.map((bullet) => (
@@ -467,7 +467,7 @@ const Home = () => {
       {/* CTA Section */}
       <section className="py-20 px-6 bg-[#2d5f3f] text-white">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-light mb-6">{copy.ctaSection.title}</h2>
+          <h2 className="text-4xl md:text-5xl font-light mb-6 text-white">{copy.ctaSection.title}</h2>
           <p className="text-base mb-8 font-light leading-relaxed max-w-3xl mx-auto">{copy.ctaSection.paragraph1}</p>
           <p className="text-sm mb-8 font-light">{copy.ctaSection.paragraph2}</p>
           <Link

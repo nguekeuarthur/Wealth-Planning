@@ -88,7 +88,7 @@ const MyTasks = () => {
 
   const canModifyTask = (task) => {
     return (
-      user?.role === 'admin' || 
+      user?.role === 'admin' ||
       task?.createdBy?._id === user?._id ||
       task?.assignedTo?.some(assignedUser => assignedUser._id === user?._id) ||
       (task?.assignedRoles && task.assignedRoles.includes(user?.role))
@@ -97,7 +97,7 @@ const MyTasks = () => {
 
   useEffect(() => {
     getAllTasks(filterStatus);
-    return () => {};
+    return () => { };
   }, [filterStatus]);
 
   if (loading) {
@@ -125,7 +125,7 @@ const MyTasks = () => {
         <div className="relative flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm overflow-hidden">
+              <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm overflow-hidden translate-y-4">
                 {user?.profileImageUrl ? (
                   <img
                     src={user.profileImageUrl}
@@ -206,7 +206,7 @@ const MyTasks = () => {
               Aucune tâche trouvée
             </h3>
             <p className="text-[#7a8b7f]">
-              {filterStatus === "All" 
+              {filterStatus === "All"
                 ? "Vous n'avez aucune tâche assignée pour le moment."
                 : `Aucune tâche avec le statut "${filterStatus}".`
               }
@@ -228,7 +228,7 @@ const MyTasks = () => {
 
       {/* Modal de confirmation de suppression */}
       {showDeleteModal && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
           onClick={(e) => e.target === e.currentTarget && setShowDeleteModal(false)}
         >

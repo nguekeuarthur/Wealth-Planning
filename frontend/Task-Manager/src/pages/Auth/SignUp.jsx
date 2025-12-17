@@ -185,15 +185,15 @@ const SignUp = () => {
       setEmail("");
       setPassword("");
       setProfilePic(null);
-    } catch (error){
+    } catch (error) {
       setError(getErrorMessage(error, copy));
     }
   };
 
   return (
     <AuthLayout>
-      <div className="max-w-2xl flex-1 flex flex-col justify-center">
-        <div className="mb-12">
+      <div className="max-w-2xl w-full">
+        <div className="mb-8 text-center">
           <h3 className="text-4xl font-light text-[#1e4029] mb-4 tracking-tight">
             {copy.title}
           </h3>
@@ -300,8 +300,8 @@ const SignUp = () => {
           <div className="text-center pt-4">
             <p className="text-base text-gray-600 font-light">
               {copy.hasAccount}{" "}
-              <Link 
-                className="text-[#2d5f3f] hover:text-[#5a8f6f] font-normal underline transition-colors" 
+              <Link
+                className="text-[#2d5f3f] hover:text-[#5a8f6f] font-normal underline transition-colors"
                 to="/login"
               >
                 {copy.signInLink}

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../../components/layouts/AuthLayout";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
@@ -59,6 +59,7 @@ const VerifyEmail = () => {
   const copy = translations[lang] ?? translations.FR;
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
+  const navigate = useNavigate();
 
   const [status, setStatus] = useState(token ? "loading" : "idle");
   const [message, setMessage] = useState("");
@@ -74,24 +75,22 @@ const VerifyEmail = () => {
       }
 
       try {
-        const response = await axiosInstance.get(
-          API_PATHS.AUTH.VERIFY_EMAIL,
-          {
-            params: { token },
-          }
-        );
-        setMessage(response.data.message || copy.success);
-        setStatus("success");
+        await axiosInstance.get(API_PATHS.AUTH.VERIFY_EMAIL, {
+          params: { token },
+        });
+        // Success: Redirect immediately to login
+        navigate("/login", {
+          state: { message: copy.success },
+          replace: true
+        });
       } catch (err) {
-        setMessage(
-          err.response?.data?.message || copy.error
-        );
+        setMessage(err.response?.data?.message || copy.error);
         setStatus("error");
       }
     };
 
     verify();
-  }, [token, copy.success, copy.error]);
+  }, [token, copy.success, copy.error, navigate]);
 
   const handleResend = async (e) => {
     e.preventDefault();

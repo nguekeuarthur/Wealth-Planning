@@ -667,7 +667,7 @@ const ProfileCompletion = () => {
       toast.success("Profil complété avec succès !");
 
       // Rediriger selon le rôle
-      const userRole = response.data.user.role || "member";
+      const userRole = response.data.user.role || "user";
       if (userRole === "admin") {
         navigate("/admin/dashboard");
       } else if (userRole === "client") {
@@ -689,7 +689,7 @@ const ProfileCompletion = () => {
 
   const handleSkip = () => {
     // Rediriger selon le rôle sans compléter le profil
-    const userRole = user?.role || "member";
+    const userRole = user?.role || "user";
     if (userRole === "admin") {
       navigate("/admin/dashboard");
     } else if (userRole === "client") {
@@ -823,7 +823,7 @@ const ProfileCompletion = () => {
                   paddingRight: "3rem"
                 }}
               >
-                <option value="">Utilisateur simple</option>
+                <option value="member">Utilisateur simple</option>
                 <option value="client">Client</option>
                 <option value="partner">Partenaire</option>
                 <option value="collaborator">Collaborateur</option>
@@ -849,35 +849,35 @@ const ProfileCompletion = () => {
                         {formData.role === "client" ? "Nom de l'entreprise" : "Nom de votre entreprise"} *
                       </label>
                       <div className="relative">
-                      <input
-                        type="text"
-                        name="companyName"
-                        value={formData.companyName}
-                        onChange={(e) => handleCompanyNameChange(e.target.value)}
-                        onFocus={() => formData.companyName && setShowCompanyDropdown(true)}
-                        placeholder="Ex: Ma Société SARL"
-                        className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-all text-[#1e4029] placeholder-[#7a8b7f]"
-                        required={formData.role === "client" || formData.role === "collaborator"}
-                      />
+                        <input
+                          type="text"
+                          name="companyName"
+                          value={formData.companyName}
+                          onChange={(e) => handleCompanyNameChange(e.target.value)}
+                          onFocus={() => formData.companyName && setShowCompanyDropdown(true)}
+                          placeholder="Ex: Ma Société SARL"
+                          className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-all text-[#1e4029] placeholder-[#7a8b7f]"
+                          required={formData.role === "client" || formData.role === "collaborator"}
+                        />
 
-                      {/* Dropdown des suggestions d'entreprises */}
-                      {showCompanyDropdown && companySuggestions.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-white border border-[#dfe8e1] rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                          {companySuggestions.map((company) => (
-                            <div
-                              key={company.name}
-                              className="px-4 py-3 hover:bg-[#f4f7f4] cursor-pointer border-b border-[#f4f7f4] last:border-b-0"
-                              onClick={() => selectCompanySuggestion(company)}
-                            >
-                              <div className="font-medium text-[#1e4029]">{company.name}</div>
-                              <div className="text-xs text-[#7a8b7f]">
-                                {company.employeeCount} employé{company.employeeCount > 1 ? 's' : ''}
-                                {company.industry && ` • ${company.industry}`}
+                        {/* Dropdown des suggestions d'entreprises */}
+                        {showCompanyDropdown && companySuggestions.length > 0 && (
+                          <div className="absolute z-50 w-full mt-1 bg-white border border-[#dfe8e1] rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                            {companySuggestions.map((company) => (
+                              <div
+                                key={company.name}
+                                className="px-4 py-3 hover:bg-[#f4f7f4] cursor-pointer border-b border-[#f4f7f4] last:border-b-0"
+                                onClick={() => selectCompanySuggestion(company)}
+                              >
+                                <div className="font-medium text-[#1e4029]">{company.name}</div>
+                                <div className="text-xs text-[#7a8b7f]">
+                                  {company.employeeCount} employé{company.employeeCount > 1 ? 's' : ''}
+                                  {company.industry && ` • ${company.industry}`}
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -985,35 +985,35 @@ const ProfileCompletion = () => {
                         Nom de l'entreprise *
                       </label>
                       <div className="relative">
-                      <input
-                        type="text"
-                        name="organizationName"
-                        value={formData.organizationName}
-                        onChange={(e) => handleOrganizationNameChange(e.target.value)}
-                        onFocus={() => formData.organizationName && setShowOrganizationDropdown(true)}
-                        placeholder="Ex: Cabinet Dupont & Associés"
-                        className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-all text-[#1e4029] placeholder-[#7a8b7f]"
-                        required={formData.role === "partner"}
-                      />
+                        <input
+                          type="text"
+                          name="organizationName"
+                          value={formData.organizationName}
+                          onChange={(e) => handleOrganizationNameChange(e.target.value)}
+                          onFocus={() => formData.organizationName && setShowOrganizationDropdown(true)}
+                          placeholder="Ex: Cabinet Dupont & Associés"
+                          className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-all text-[#1e4029] placeholder-[#7a8b7f]"
+                          required={formData.role === "partner"}
+                        />
 
-                      {/* Dropdown des suggestions d'entreprises pour partenaires */}
-                      {showOrganizationDropdown && organizationSuggestions.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-white border border-[#dfe8e1] rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                          {organizationSuggestions.map((company) => (
-                            <div
-                              key={company.name}
-                              className="px-4 py-3 hover:bg-[#f4f7f4] cursor-pointer border-b border-[#f4f7f4] last:border-b-0"
-                              onClick={() => selectOrganizationSuggestion(company)}
-                            >
-                              <div className="font-medium text-[#1e4029]">{company.name}</div>
-                              <div className="text-xs text-[#7a8b7f]">
-                                {company.employeeCount} employé{company.employeeCount > 1 ? 's' : ''}
-                                {company.industry && ` • ${company.industry}`}
+                        {/* Dropdown des suggestions d'entreprises pour partenaires */}
+                        {showOrganizationDropdown && organizationSuggestions.length > 0 && (
+                          <div className="absolute z-50 w-full mt-1 bg-white border border-[#dfe8e1] rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                            {organizationSuggestions.map((company) => (
+                              <div
+                                key={company.name}
+                                className="px-4 py-3 hover:bg-[#f4f7f4] cursor-pointer border-b border-[#f4f7f4] last:border-b-0"
+                                onClick={() => selectOrganizationSuggestion(company)}
+                              >
+                                <div className="font-medium text-[#1e4029]">{company.name}</div>
+                                <div className="text-xs text-[#7a8b7f]">
+                                  {company.employeeCount} employé{company.employeeCount > 1 ? 's' : ''}
+                                  {company.industry && ` • ${company.industry}`}
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
 

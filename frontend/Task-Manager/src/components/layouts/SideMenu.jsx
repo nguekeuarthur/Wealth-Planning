@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import {
   SIDE_MENU_DATA,
   SIDE_MENU_USER_DATA,
+  SIDE_MENU_MEMBER_DATA,
   SIDE_MENU_CLIENT_DATA,
   SIDE_MENU_PARTNER_DATA,
   SIDE_MENU_COLLABORATOR_DATA
@@ -42,6 +43,9 @@ const SideMenu = ({ activeMenu }) => {
         case 'admin':
           setSideMenuData(SIDE_MENU_DATA);
           break;
+        case 'member':
+          setSideMenuData(SIDE_MENU_MEMBER_DATA);
+          break;
         case 'client':
           setSideMenuData(SIDE_MENU_CLIENT_DATA);
           break;
@@ -51,6 +55,7 @@ const SideMenu = ({ activeMenu }) => {
         case 'collaborator':
           setSideMenuData(SIDE_MENU_COLLABORATOR_DATA);
           break;
+        case 'user':
         default:
           setSideMenuData(SIDE_MENU_USER_DATA);
       }

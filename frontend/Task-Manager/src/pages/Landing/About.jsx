@@ -304,30 +304,30 @@ const About = () => {
       <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
         {/* Background Image */}
         <div className="absolute inset-0">
-          <img 
-            src={bgImage} 
-            alt="Geneva Landscape" 
+          <img
+            src={bgImage}
+            alt="Geneva Landscape"
             className="w-full h-full object-cover"
           />
           {/* <div className="absolute inset-0 bg-gradient-to-br from-[#1e4029]/90 via-[#2d5f3f]/85 to-[#1e4029]/90"></div> */}
         </div>
-        
+
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.3)_0%,transparent_50%)]"></div>
           <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.2)_0%,transparent_50%)]"></div>
         </div>
-        
+
         <div className="relative z-10 max-w-6xl mx-auto px-6 text-center text-white">
           <div className="flex items-center justify-center space-x-4 mb-10">
             <div className="w-16 h-0.5 bg-white/60"></div>
             <div className="w-3 h-3 rounded-full bg-white/80"></div>
             <div className="w-16 h-0.5 bg-white/60"></div>
           </div>
-          
-          <h1 className="text-6xl md:text-7xl font-light mb-10 tracking-wider">
+
+          <h1 className="text-6xl md:text-7xl font-light mb-10 tracking-wider text-white">
             {copy.hero.title}
           </h1>
-          
+
           <p className="text-xl md:text-2xl text-white/90 font-light leading-relaxed max-w-4xl mx-auto">
             {copy.hero.leadPrefix}
             <span className="font-normal border-b-2 border-white/40">{brandName}</span>
@@ -341,7 +341,7 @@ const About = () => {
         {/* Decorative background elements */}
         <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-[#2d5f3f]/5 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-[#5a8f6f]/5 rounded-full blur-3xl"></div>
-        
+
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid lg:grid-cols-2 gap-16">
             <div className="relative group h-full">
@@ -443,11 +443,11 @@ const About = () => {
                   {copy.services.tagline}
                 </span>
               </div>
-              
-              <h2 className="text-5xl md:text-6xl font-light mb-10 tracking-wide">
+
+              <h2 className="text-5xl md:text-6xl font-light mb-10 tracking-wide text-white">
                 {copy.services.title}
               </h2>
-              
+
               {copy.services.paragraphs.map((paragraph) => (
                 <p key={paragraph} className="text-lg font-light leading-relaxed text-white/80">
                   {paragraph}
@@ -480,8 +480,8 @@ const About = () => {
           <div className="text-center mb-24">
             <div className="inline-flex items-center justify-center mb-8 gap-3">
               <div className="w-4 h-4 rounded-full bg-gradient-to-br from-[#2d5f3f] to-[#5a8f6f] animate-pulse shadow-lg"></div>
-              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-[#5a8f6f] to-[#2d5f3f] animate-pulse shadow-lg" style={{animationDelay: '0.2s'}}></div>
-              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-[#2d5f3f] to-[#1e4029] animate-pulse shadow-lg" style={{animationDelay: '0.4s'}}></div>
+              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-[#5a8f6f] to-[#2d5f3f] animate-pulse shadow-lg" style={{ animationDelay: '0.2s' }}></div>
+              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-[#2d5f3f] to-[#1e4029] animate-pulse shadow-lg" style={{ animationDelay: '0.4s' }}></div>
             </div>
             <h2 className="text-6xl md:text-7xl font-light text-[#1e4029] mb-8 tracking-tight">
               {copy.values.title}

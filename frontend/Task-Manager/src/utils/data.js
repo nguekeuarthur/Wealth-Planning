@@ -70,8 +70,7 @@ export const SIDE_MENU_DATA = [
   },
 ];
 
-
-export const SIDE_MENU_USER_DATA = [
+export const SIDE_MENU_MEMBER_DATA = [
   {
     id: "01",
     label: "Tableau de bord",
@@ -90,13 +89,29 @@ export const SIDE_MENU_USER_DATA = [
     icon: LuClipboardCheck,
     path: "/user/projects",
   },
-
   {
     id: "06",
     label: "Messagerie",
     icon: LuMessageSquare,
     path: "/user/chat",
   },
+  {
+    id: "07",
+    label: "Notifications",
+    icon: LuBell,
+    path: "/user/notifications",
+  },
+  {
+    id: "08",
+    label: "Déconnexion",
+    icon: LuLogOut,
+    path: "logout",
+  },
+];
+
+
+
+export const SIDE_MENU_USER_DATA = [
   {
     id: "07",
     label: "Notifications",

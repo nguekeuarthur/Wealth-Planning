@@ -201,14 +201,14 @@ const Services = () => {
       <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
         {/* Background Image */}
         <div className="absolute inset-0">
-          <img 
-            src={bgImage} 
-            alt="Geneva Landscape" 
+          <img
+            src={bgImage}
+            alt="Geneva Landscape"
             className="w-full h-full object-cover"
           />
           {/* <div className="absolute inset-0 bg-gradient-to-br from-[#1e4029]/90 via-[#2d5f3f]/85 to-[#1e4029]/90"></div> */}
         </div>
-        
+
         {/* Radial gradient overlays */}
         <div className="absolute inset-0">
           <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-white/10 rounded-full blur-3xl"></div>
@@ -272,7 +272,7 @@ const Services = () => {
         </div>
 
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <h2 className="text-5xl md:text-6xl font-light mb-8 tracking-tight">
+          <h2 className="text-5xl md:text-6xl font-light mb-8 tracking-tight text-white">
             {copy.cta.title}
           </h2>
           <p className="text-xl md:text-2xl mb-12 text-white/90 font-light leading-relaxed">
@@ -280,7 +280,7 @@ const Services = () => {
           </p>
           <Link
             to="/connexion"
-            className="inline-block bg-white text-blue-900 px-10 py-4 rounded-lg font-semibold text-lg hover:bg-blue-50 transition-all transform hover:scale-105 shadow-xl"
+            className="inline-block bg-[#2d5f3f] text-white px-10 py-4 rounded-lg font-semibold text-lg hover:bg-[#1e4029] transition-all transform hover:scale-105 shadow-xl"
           >
             {copy.cta.button}
           </Link>

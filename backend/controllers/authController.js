@@ -214,7 +214,7 @@ const registerUser = async (req, res) => {
       console.log(`[AUTH][REGISTER] Recreating user with previously deleted email: ${normalizedEmail}`);
     }
 
-    let role = "member";
+    let role = "user";
     if (
       adminInviteToken &&
       adminInviteToken === process.env.ADMIN_INVITE_TOKEN
@@ -226,7 +226,7 @@ const registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     console.log("[registerUser] Creating user with email:", normalizedEmail);
-    
+
     const user = await User.create({
       name,
       email: normalizedEmail,
@@ -243,8 +243,8 @@ const registerUser = async (req, res) => {
     const verifyUser = await User.findById(user._id);
     if (!verifyUser) {
       console.error("[registerUser] ERROR: User not found after creation!");
-      return res.status(500).json({ 
-        message: "Erreur lors de la création du compte. Veuillez réessayer." 
+      return res.status(500).json({
+        message: "Erreur lors de la création du compte. Veuillez réessayer."
       });
     }
 
@@ -313,7 +313,7 @@ const loginUser = async (req, res) => {
     }
     const normalizedEmail = normalizeEmail(email);
     console.log("[loginUser] Attempting login with email:", normalizedEmail);
-    
+
     const user = await User.findOne({ email: normalizedEmail });
     console.log("[loginUser] User found:", user ? `${user._id} - ${user.email}` : "NOT FOUND");
 
@@ -340,6 +340,7 @@ const loginUser = async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      console.log("[loginUser] Password mismatch for:", normalizedEmail);
       user.loginAttempts += 1;
       if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
         user.lockUntil = new Date(
@@ -359,8 +360,11 @@ const loginUser = async (req, res) => {
     }
 
     if (user.isEmailVerified === false) {
+      console.log("[loginUser] Email not verified for:", normalizedEmail);
       return res.status(403).json({ i18nKey: "email_not_verified" });
     }
+
+    console.log("[loginUser] Login successful for:", normalizedEmail);
 
     user.loginAttempts = 0;
     user.lockUntil = null;

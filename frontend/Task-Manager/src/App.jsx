@@ -29,6 +29,7 @@ import ProfileCompletion from "./pages/Auth/ProfileCompletion";
 import AllTeams from "./pages/Admin/AllTeams";
 
 import UserDashboard from "./pages/User/UserDashboard";
+import UserWelcome from "./pages/User/UserWelcome";
 import UserProjects from "./pages/User/UserProjects";
 import MyTasks from "./pages/User/MyTasks";
 import ViewTaskDetails from "./pages/User/ViewTaskDetails";
@@ -122,7 +123,11 @@ const App = () => {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
-                <Route path="/profile-completion" element={<ProfileCompletion />} />
+
+                {/* Route protégée pour la complétion du profil (tout utilisateur connecté) */}
+                <Route element={<PrivateRoute />}>
+                  <Route path="/profile-completion" element={<ProfileCompletion />} />
+                </Route>
 
                 {/* Admin Routes */}
                 <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
@@ -146,18 +151,27 @@ const App = () => {
                   <Route path="/admin/users" element={<ManageUsers />} />
                 </Route>
 
-                {/* User Routes */}
-                <Route element={<PrivateRoute allowedRoles={["admin", "member"]} />}>
+                {/* Routes communes User/Member */}
+                <Route element={<PrivateRoute allowedRoles={["user", "member"]} />}>
+                  <Route path="/user/notifications" element={<AllNotifications />} />
+                </Route>
+
+                {/* User Routes (Onboarding) - Accès limité pour le rôle "user" */}
+                <Route element={<PrivateRoute allowedRoles={["user"]} />}>
+                  <Route path="/user/welcome" element={<UserWelcome />} />
+                </Route>
+
+                {/* Member Routes (Anciennement User) - Accès complet au dashboard standard si nécessaire */}
+                <Route element={<PrivateRoute allowedRoles={["member"]} />}>
                   <Route path="/user/dashboard" element={<UserDashboard />} />
+                  <Route path="/user/projects" element={<UserProjects />} />
                   <Route path="/user/tasks" element={<MyTasks />} />
                   <Route
                     path="/user/task-details/:id"
                     element={<ViewTaskDetails />}
                   />
                   <Route path="/user/project/:id" element={<UserProjectDetails />} />
-                  <Route path="/user/projects" element={<UserProjects />} />
                   <Route path="/user/chat" element={<ChatLayout><Chat /></ChatLayout>} />
-                  <Route path="/user/notifications" element={<AllNotifications />} />
                 </Route>
 
                 {/* Client Routes - Accès à projets, factures, documents tagés client, messages */}

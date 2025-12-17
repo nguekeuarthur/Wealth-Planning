@@ -21,25 +21,25 @@ const UserSchema = new mongoose.Schema(
     website: { type: String, default: null },
     logoUrl: { type: String, default: null },
     companySize: { type: String, default: null },
-    industry: { 
-      type: String, 
+    industry: {
+      type: String,
       enum: [
-        "REAL ESTATE", 
-        "LEGAL", 
-        "AUTOMOTIVE", 
-        "FINANCE", 
-        "TECHNOLOGY", 
-        "HEALTHCARE", 
-        "RETAIL", 
-        "MANUFACTURING", 
-        "CONSULTING", 
+        "REAL ESTATE",
+        "LEGAL",
+        "AUTOMOTIVE",
+        "FINANCE",
+        "TECHNOLOGY",
+        "HEALTHCARE",
+        "RETAIL",
+        "MANUFACTURING",
+        "CONSULTING",
         "OTHER",
         "AUTRES", // French value kept for backward compatibility
         null
       ],
-      default: null 
+      default: null
     },
-    role: { type: String, enum: ["admin", "member", "client", "partner", "collaborator"], default: "member" }, // Role-based access
+    role: { type: String, enum: ["admin", "member", "client", "partner", "collaborator", "user"], default: "user" }, // Role-based access
     language: {
       type: String,
       default: "FR",
@@ -72,7 +72,7 @@ const UserSchema = new mongoose.Schema(
 );
 
 // Virtual property for fullName (returns the name field for compatibility)
-UserSchema.virtual('fullName').get(function() {
+UserSchema.virtual('fullName').get(function () {
   return this.name;
 });
 

@@ -132,22 +132,29 @@ const Login = () => {
       if (token && refreshToken && user) {
         updateUser(response.data);
 
+        const role = user.role?.toLowerCase();
+
         //Redirect based on role
-        if (user.role === "admin") {
+        if (role === "admin") {
           navigate("/admin/dashboard");
-        } else if (user.role === "client") {
+        } else if (role === "client") {
           navigate("/client/dashboard");
-        } else if (user.role === "partner") {
+        } else if (role === "partner") {
           navigate("/partner/dashboard");
-        } else if (user.role === "collaborator") {
+        } else if (role === "collaborator") {
           navigate("/collaborator/dashboard");
-        } else {
+        } else if (role === "user") {
+          navigate("/user/welcome");
+        } else if (role === "member") {
           navigate("/user/dashboard");
+        } else {
+          setError("Role inconnu ou non autorisé: " + user.role);
+          // Do not navigate, stay on login to avoid loop
         }
       } else {
         setError(copy.errors.somethingWrong);
       }
-    } catch (error){
+    } catch (error) {
       const errorData = error.response?.data;
       if (errorData) {
         // Gère les erreurs avec clé de traduction (i18n)
@@ -171,8 +178,8 @@ const Login = () => {
 
   return (
     <AuthLayout>
-      <div className="max-w-md flex-1 flex flex-col justify-center">
-        <div className="mb-12">
+      <div className="max-w-md w-full">
+        <div className="mb-8 text-center">
           <h3 className="text-4xl font-light text-[#1e4029] mb-4 tracking-tight">
             {copy.title}
           </h3>
@@ -234,8 +241,8 @@ const Login = () => {
           <div className="text-center pt-4">
             <p className="text-base text-gray-600 font-light">
               {copy.noAccount}{" "}
-              <Link 
-                className="text-[#2d5f3f] hover:text-[#5a8f6f] font-normal underline transition-colors" 
+              <Link
+                className="text-[#2d5f3f] hover:text-[#5a8f6f] font-normal underline transition-colors"
                 to="/signup"
               >
                 {copy.signUpLink}

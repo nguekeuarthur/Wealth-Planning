@@ -143,7 +143,7 @@ const UserDashboard = () => {
         <div className="relative flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm overflow-hidden">
+              <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm overflow-hidden translate-y-5">
                 {user?.profileImageUrl ? (
                   <img
                     src={user.profileImageUrl}
