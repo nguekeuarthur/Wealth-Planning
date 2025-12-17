@@ -585,10 +585,11 @@ const ProjectDetails = () => {
 
     switch (permission) {
       case "view":
-        return isLead || isAssigned || isClient;
+        return isLead || isAssigned || isClient || user.role === "collaborator";
       case "edit":
         return isLead || (isAssigned && project.status !== "done");
       case "finance":
+        // Collaborateur ne peut PAS créer/modifier/supprimer les factures
         return isLead || user.role === "finance";
       case "team":
         return isLead;

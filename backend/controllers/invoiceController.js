@@ -39,8 +39,15 @@ exports.getAllInvoices = async (req, res) => {
       // Admin voit toutes les factures
       // Pas de filtre client
     } else if (req.user.role === 'collaborator') {
-      // Collaborateur voit toutes les factures (en lecture seule)
-      // Pas de filtre
+      // Collaborateur voit UNIQUEMENT les factures des projets où il est assigné
+      const userProjectIds = (await Project.find({ assignedUsers: req.user._id }).select('_id')).map(p => p._id);
+      
+      if (userProjectIds.length === 0) {
+        // Aucun projet assigné = aucune facture
+        return res.json({ invoices: [] });
+      }
+      
+      filter.project = { $in: userProjectIds };
     } else if (req.user.role === 'client') {
       // Clients voient seulement leurs factures
       filter.client = req.user._id;

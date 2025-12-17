@@ -18,11 +18,29 @@ const getTasks = async (req, res) => {
 
     let tasks;
 
-    if (req.user.role === "admin" || req.user.role === "collaborator") {
-      // Admin et Collaborateur voient toutes les tâches
+    if (req.user.role === "admin") {
+      // Admin voit toutes les tâches
       tasks = await Task.find(filter)
         .populate("assignedTo", "name email profileImageUrl")
         .populate("project", "name");
+    } else if (req.user.role === "collaborator") {
+      // Collaborateur voit UNIQUEMENT les tâches des projets où il est assigné
+      const Project = require("../models/Project");
+      const userProjects = await Project.find({ assignedUsers: req.user._id }).select("_id");
+      const projectIds = userProjects.map(p => p._id);
+      
+      tasks = await Task.find({ ...filter, project: { $in: projectIds } })
+        .populate("assignedTo", "name email profileImageUrl role")
+        .populate("project", "name");
+      
+      // Filtrer les assignedTo pour ne pas montrer les partenaires aux collaborateurs
+      tasks = tasks.map(task => {
+        const taskObj = task.toObject();
+        if (taskObj.assignedTo && Array.isArray(taskObj.assignedTo)) {
+          taskObj.assignedTo = taskObj.assignedTo.filter(user => user.role !== 'partner');
+        }
+        return taskObj;
+      });
     } else if (req.user.role === "client") {
       // Les clients voient toutes les tâches de leurs projets (en lecture seule)
       const Project = require("../models/Project");
@@ -76,9 +94,35 @@ const getTasks = async (req, res) => {
     );
 
     // Status summary counts
-    const allTasks = await Task.countDocuments(
-      (req.user.role === "admin" || req.user.role === "collaborator") ? {} : { assignedTo: req.user._id }
-    );
+    let countFilter = {};
+    
+    if (req.user.role === "admin") {
+      // Admin voit tout
+      countFilter = {};
+    } else if (req.user.role === "collaborator") {
+      // Collaborateur : seulement les projets assignés
+      const Project = require("../models/Project");
+      const userProjects = await Project.find({ assignedUsers: req.user._id }).select("_id");
+      const projectIds = userProjects.map(p => p._id);
+      countFilter = { project: { $in: projectIds } };
+    } else if (req.user.role === "client") {
+      // Client : seulement ses projets
+      const Project = require("../models/Project");
+      const userProjects = await Project.find({ client: req.user._id }).select("_id");
+      const projectIds = userProjects.map(p => p._id);
+      countFilter = { project: { $in: projectIds } };
+    } else if (req.user.role === "partner") {
+      // Partner : seulement les projets assignés
+      const Project = require("../models/Project");
+      const userProjects = await Project.find({ assignedUsers: req.user._id }).select("_id");
+      const projectIds = userProjects.map(p => p._id);
+      countFilter = { project: { $in: projectIds } };
+    } else {
+      // Autres : seulement tâches assignées
+      countFilter = { assignedTo: req.user._id };
+    }
+
+    const allTasks = await Task.countDocuments(countFilter);
 
     const pendingTasks = await Task.countDocuments({
       ...filter,

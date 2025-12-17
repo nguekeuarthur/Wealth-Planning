@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
+import { UserContext } from "../../context/userContext";
 import { 
   FiSearch, 
   FiEdit2, 
@@ -26,6 +27,7 @@ const brandPalette = {
 
 const AllInvoices = () => {
   const navigate = useNavigate();
+  const { user } = useContext(UserContext);
   const [allInvoices, setAllInvoices] = useState([]);
   const [filteredInvoices, setFilteredInvoices] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -133,9 +135,9 @@ const AllInvoices = () => {
   };
 
   const formatAmount = (amount) => {
-    return new Intl.NumberFormat('fr-FR', {
+    return new Intl.NumberFormat('fr-CH', {
       style: 'currency',
-      currency: 'EUR'
+      currency: 'CHF'
     }).format(amount);
   };
 
@@ -305,27 +307,31 @@ const AllInvoices = () => {
                             >
                               <FiEye className="w-4 h-4" />
                             </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditInvoice(invoice);
-                              }}
-                              className="p-2 text-[#7a8b7f] hover:bg-[#f4f7f4] rounded-lg transition-colors"
-                              title="Modifier"
-                            >
-                              <FiEdit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteInvoice(invoice._id);
-                              }}
-                              disabled={deletingInvoice === invoice._id}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                              title="Supprimer"
-                            >
-                              <FiTrash2 className="w-4 h-4" />
-                            </button>
+                            {user?.role === 'admin' && (
+                              <>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditInvoice(invoice);
+                                  }}
+                                  className="p-2 text-[#7a8b7f] hover:bg-[#f4f7f4] rounded-lg transition-colors"
+                                  title="Modifier"
+                                >
+                                  <FiEdit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteInvoice(invoice._id);
+                                  }}
+                                  disabled={deletingInvoice === invoice._id}
+                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                  title="Supprimer"
+                                >
+                                  <FiTrash2 className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>

@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { FiEdit, FiMoreHorizontal, FiCalendar, FiPaperclip, FiArrowUp } from "react-icons/fi";
+import React, { useState, useContext } from "react";
+import { FiEdit, FiMoreHorizontal, FiCalendar, FiPaperclip, FiArrowUp, FiEye } from "react-icons/fi";
 import axiosInstance from "../utils/axiosInstance";
 import { API_PATHS } from "../utils/apiPaths";
+import { UserContext } from "../context/userContext";
 import toast from "react-hot-toast";
 import moment from "moment";
 import "moment/locale/fr";
@@ -9,6 +10,7 @@ import "moment/locale/fr";
 moment.locale("fr");
 
 const InvoicesTable = ({ invoices, onInvoiceDeleted, onInvoiceUpdated, onEditInvoice }) => {
+  const { user } = useContext(UserContext);
   const [showMenu, setShowMenu] = useState(null);
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState("asc");
@@ -178,27 +180,41 @@ const InvoicesTable = ({ invoices, onInvoiceDeleted, onInvoiceUpdated, onEditInv
                     </button>
                     {showMenu === invoice._id && (
                       <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
-                        <button
-                          onClick={() => {
-                            if (onEditInvoice) {
-                              onEditInvoice(invoice);
-                            }
-                            setShowMenu(null);
-                          }}
-                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                        >
-                          <FiEdit size={16} />
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleMarkPaymentReceived(invoice._id)}
-                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                        >
-                          <span className="w-4 h-4 flex items-center justify-center">
-                            ✓
-                          </span>
-                          Mark "Payment Received"
-                        </button>
+                        {user?.role === 'collaborator' ? (
+                          // Collaborateur : Mode lecture seule
+                          <div className="px-4 py-3 text-sm text-[#7a8b7f] border-b border-gray-100">
+                            <div className="flex items-center gap-2 mb-1">
+                              <FiEye size={16} />
+                              <span className="font-medium">Mode lecture seule</span>
+                            </div>
+                            <p className="text-xs">Les collaborateurs ne peuvent pas modifier les factures</p>
+                          </div>
+                        ) : (
+                          // Admin : Accès complet
+                          <>
+                            <button
+                              onClick={() => {
+                                if (onEditInvoice) {
+                                  onEditInvoice(invoice);
+                                }
+                                setShowMenu(null);
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <FiEdit size={16} />
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleMarkPaymentReceived(invoice._id)}
+                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <span className="w-4 h-4 flex items-center justify-center">
+                                ✓
+                              </span>
+                              Mark "Payment Received"
+                            </button>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>

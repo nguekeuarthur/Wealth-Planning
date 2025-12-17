@@ -21,4 +21,7 @@ router.get('/stats', dashboardController.getDashboardStats);
 // Get admin-specific statistics
 router.get('/admin/stats', dashboardController.getAdminStats);
 
+// Get collaborator-specific dashboard data
+router.get('/collaborator/stats', dashboardController.getCollaboratorStats);
+
 module.exports = router;

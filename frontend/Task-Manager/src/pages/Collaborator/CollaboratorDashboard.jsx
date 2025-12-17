@@ -45,30 +45,26 @@ const CollaboratorDashboard = () => {
     try {
       setLoading(true);
       
-      // Récupérer tous les projets (collaborateur voit tout)
-      const projectsRes = await axiosInstance.get(API_PATHS.PROJECTS.GET_ALL_PROJECTS);
+      // Récupérer les statistiques du collaborateur (filtrées selon les projets assignés)
+      const response = await axiosInstance.get('/api/dashboard/collaborator/stats');
       
-      // Récupérer toutes les factures (mode visualisation uniquement)
-      const invoicesRes = await axiosInstance.get(API_PATHS.INVOICES.GET_ALL_INVOICES);
-      
-      // Récupérer toutes les tâches
-      const tasksRes = await axiosInstance.get(API_PATHS.TASKS.GET_ALL_TASKS);
-      
-      // Récupérer les messages (client/admin mais pas partner/admin)
-      const messagesRes = await axiosInstance.get('/api/messages/collaborator');
-      
-      // Récupérer tous les fichiers
-      const filesRes = await axiosInstance.get('/api/documents');
-
       setStats({
-        projects: projectsRes.data?.projects || [],
-        invoices: invoicesRes.data?.invoices || [],
-        tasks: tasksRes.data?.tasks || [],
-        messages: messagesRes.data?.messages || [],
-        files: filesRes.data?.documents || []
+        projects: response.data?.projects || [],
+        invoices: response.data?.invoices || [],
+        tasks: response.data?.tasks || [],
+        messages: response.data?.messages || [],
+        files: response.data?.files || []
       });
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
+      // En cas d'erreur, afficher des données vides
+      setStats({
+        projects: [],
+        invoices: [],
+        tasks: [],
+        messages: [],
+        files: []
+      });
     } finally {
       setLoading(false);
     }

@@ -210,24 +210,12 @@ export const SIDE_MENU_COLLABORATOR_DATA = [
   },
   {
     id: "03",
-    label: "Tâches",
-    icon: LuClipboardCheck,
-    path: "/collaborator/tasks",
-  },
-  {
-    id: "04",
     label: "Factures",
     icon: LuFileText,
     path: "/collaborator/invoices",
   },
   {
     id: "05",
-    label: "Documents",
-    icon: LuFolder,
-    path: "/collaborator/documents",
-  },
-  {
-    id: "06",
     label: "Messagerie",
     icon: LuMessageSquare,
     path: "/collaborator/chat",

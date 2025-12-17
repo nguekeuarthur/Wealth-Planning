@@ -436,3 +436,107 @@ exports.getAdminStats = async (req, res) => {
     res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
 };
+
+// Statistiques spécifiques pour le collaborateur (basé UNIQUEMENT sur les projets où il est assigné)
+exports.getCollaboratorStats = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Vérifier que l'utilisateur est bien un collaborateur
+    if (req.user.role !== 'collaborator') {
+      return res.status(403).json({ 
+        message: 'Accès refusé - Endpoint réservé aux collaborateurs' 
+      });
+    }
+
+    // 1. Trouver UNIQUEMENT les projets où le collaborateur est EXPLICITEMENT assigné
+    const assignedProjects = await Project.find({
+      assignedUsers: userId
+    })
+      .populate('client', 'companyName contactName email')
+      .populate('projectLead', 'name email')
+      .select('name status category client projectLead completion startDate endDate');
+
+    const projectIds = assignedProjects.map(p => p._id);
+
+    // Si aucun projet assigné, retourner des données vides
+    // Le collaborateur ne voit RIEN s'il n'est pas ajouté à un projet
+    if (projectIds.length === 0) {
+      return res.json({
+        projects: [],
+        invoices: [],
+        tasks: [],
+        messages: [],
+        files: []
+      });
+    }
+
+    // 2. Récupérer UNIQUEMENT les factures des projets assignés (lecture seule)
+    const invoices = await Invoice.find({
+      project: { $in: projectIds }
+    })
+      .populate('client', 'companyName contactName')
+      .populate('project', 'name')
+      .sort({ issueDate: -1 })
+      .limit(10);
+
+    // 3. Récupérer UNIQUEMENT les tâches des projets assignés
+    const tasks = await Task.find({
+      project: { $in: projectIds }
+    })
+      .populate('assignedTo', 'name email')
+      .populate('project', 'name')
+      .sort({ dueDate: 1 });
+
+    // 4. Récupérer UNIQUEMENT les messages des projets assignés (pas de messages avec partenaires)
+    const messages = await Message.find({
+      conversation: {
+        $in: await getCollaboratorConversationIds(userId)
+      }
+    })
+      .populate('sender', 'name role')
+      .sort({ createdAt: -1 })
+      .limit(20);
+
+    // 5. Récupérer UNIQUEMENT les fichiers des projets assignés
+    const files = await Document.find({
+      project: { $in: projectIds }
+    })
+      .populate('uploadedBy', 'name')
+      .populate('project', 'name')
+      .sort({ createdAt: -1 })
+      .limit(20);
+
+    res.json({
+      projects: assignedProjects,
+      invoices: invoices,
+      tasks: tasks,
+      messages: messages,
+      files: files
+    });
+
+  } catch (error) {
+    console.error('Erreur getCollaboratorStats:', error);
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+// Fonction helper pour récupérer les IDs des conversations autorisées pour le collaborateur
+async function getCollaboratorConversationIds(userId) {
+  const Conversation = require('../models/Conversation');
+  
+  const conversations = await Conversation.find({
+    'participants.user': userId,
+    isActive: true
+  }).populate('participants.user', 'role');
+
+  // Filtrer les conversations sans partenaires
+  const filteredConversations = conversations.filter(conv => {
+    const hasPartner = conv.participants.some(p => 
+      p.user && p.user.role === 'partner'
+    );
+    return !hasPartner;
+  });
+
+  return filteredConversations.map(c => c._id);
+}

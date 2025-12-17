@@ -187,11 +187,9 @@ const App = () => {
                   <Route path="/collaborator/dashboard" element={<CollaboratorDashboard />} />
                   <Route path="/collaborator/projects" element={<AllProjects />} />
                   <Route path="/collaborator/project/:id" element={<ProjectDetails />} />
-                  <Route path="/collaborator/tasks" element={<MyTasks />} />
                   <Route path="/collaborator/task-details/:id" element={<ViewTaskDetails />} />
                   <Route path="/collaborator/chat" element={<DashboardLayout activeMenu="Messagerie" fullWidth={true}><Chat /></DashboardLayout>} />
                   <Route path="/collaborator/invoices" element={<AllInvoices />} />
-                  <Route path="/collaborator/documents" element={<AllInvoices />} />
                   <Route path="/collaborator/messages" element={<AllNotifications />} />
                 </Route>
               </Routes>

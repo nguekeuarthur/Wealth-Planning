@@ -103,7 +103,7 @@ Le système Wealth Planning implémente 5 rôles principaux avec des permissions
 - ✅ Vue des factures (MODE LECTURE SEULE)
 - ✅ Messages avec Clients
 - ✅ Messages avec Admin
-- ✅ Accès à tous les documents
+- ✅ Accès à tous les documents (client + partenaire)
 - ❌ Ne peut PAS créer/modifier/supprimer des factures
 - ❌ Ne voit PAS les messages entre Partenaires et Admin
 
@@ -115,6 +115,20 @@ Le système Wealth Planning implémente 5 rôles principaux avec des permissions
 - Vue complète sauf modification des factures
 - Peut assister l'Admin dans la gestion quotidienne
 - Point de contact pour les clients
+- **Accès en lecture seule aux factures** : peut consulter mais ne peut ni créer, ni modifier, ni supprimer
+
+### Restrictions factures implémentées :
+- ❌ Bouton "Créer une facture" masqué dans l'interface
+- ❌ Boutons "Modifier" et "Supprimer" masqués dans la liste des factures
+- ❌ Menu contextuel affiche "Mode lecture seule" avec message explicatif
+- ✅ Bouton "Voir" disponible pour consultation uniquement
+- ✅ API backend bloque toute tentative de création/modification/suppression
+
+### Restrictions chat implémentées :
+- ❌ Ne voit PAS les conversations où un Partenaire est participant
+- ❌ Ne peut PAS créer de conversation incluant un Partenaire
+- ✅ Accès complet aux conversations avec Clients et Admin
+- ✅ Filtrage automatique côté backend et frontend
 
 ### Menu Navigation :
 - Tableau de bord

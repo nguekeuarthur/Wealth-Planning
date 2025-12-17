@@ -252,6 +252,7 @@ exports.getUserConversations = async (req, res) => {
 
     // Filtrer les conversations pour les clients : ne pas voir les conversations avec des Partenaires
     // Filtrer les conversations pour les partenaires : ne pas voir les conversations avec des Clients
+    // Filtrer les conversations pour les collaborateurs : ne pas voir les conversations avec des Partenaires
     if (userRole === 'client') {
       conversations = conversations.filter(conv => {
         // Vérifier si la conversation contient un partenaire
@@ -262,6 +263,16 @@ exports.getUserConversations = async (req, res) => {
         return !hasPartner;
       });
       console.log('🔒 Client conversations filtered. Removed conversations with partners.');
+    } else if (userRole === 'collaborator') {
+      conversations = conversations.filter(conv => {
+        // Vérifier si la conversation contient un partenaire
+        const hasPartner = conv.participants.some(p => 
+          p.user && p.user.role === 'partner'
+        );
+        // Ne garder que les conversations sans partenaire
+        return !hasPartner;
+      });
+      console.log('🔒 Collaborator conversations filtered. Removed conversations with partners.');
     } else if (userRole === 'partner') {
       conversations = conversations.filter(conv => {
         // Vérifier si la conversation contient un client
@@ -578,13 +589,25 @@ function canAccessConversation(user, conversation) {
     return true;
   }
 
-  // Les collaborateurs, utilisateurs et membres voient les conversations de projet, privées et de groupe
+  // Les collaborateurs voient les conversations de projet, privées et de groupe SANS partenaires
   // Pour les conversations privées, ils doivent être participants
   if (['collaborator', 'user', 'member'].includes(userRole)) {
     const isParticipant = conversation.participants.some(p =>
       p.user.toString() === userId.toString()
     );
     const allowedType = ['private', 'project', 'group'].includes(conversation.type);
+    
+    // Pour les collaborateurs, vérifier qu'il n'y a pas de partenaire dans la conversation
+    if (userRole === 'collaborator') {
+      const hasPartner = conversation.participants.some(p => 
+        p.user && (p.user.role === 'partner' || (typeof p.user === 'object' && p.user.role === 'partner'))
+      );
+      
+      if (hasPartner) {
+        console.log('👷 Collaborator - Has partner in conversation, access denied');
+        return false;
+      }
+    }
     
     // Pour les conversations privées, vérifier qu'ils sont participants
     if (conversation.type === 'private' && !isParticipant) {
