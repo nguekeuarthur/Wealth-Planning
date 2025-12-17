@@ -7,7 +7,7 @@ import { UserContext } from "../../context/userContext";
 import { FiSearch, FiGrid, FiList, FiClock, FiCheckCircle } from "react-icons/fi";
 import { LuArrowRight } from "react-icons/lu";
 
-const UserProjects = () => {
+const PartnerProjects = () => {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
@@ -18,7 +18,7 @@ const UserProjects = () => {
         const fetchProjects = async () => {
             try {
                 setLoading(true);
-                // The backend logic for getAllProjects now filters by user role automatically
+                // The backend logic for getAllProjects filters by user role automatically (partner sees assigned projects)
                 const response = await axiosInstance.get(API_PATHS.PROJECTS.GET_ALL_PROJECTS);
                 setProjects(response.data.projects || []);
             } catch (error) {
@@ -76,7 +76,7 @@ const UserProjects = () => {
                 </div>
 
                 <div className="relative z-10">
-                    <h1 className="text-3xl font-bold text-white mb-2">Mes Projets</h1>
+                    <h1 className="text-3xl font-bold text-white mb-2">Mes Projets (Partenaire)</h1>
                     <p className="text-white/80">Retrouvez tous les projets auxquels vous participez.</p>
                 </div>
             </div>
@@ -103,7 +103,7 @@ const UserProjects = () => {
                     {filteredProjects.map((project) => (
                         <div
                             key={project._id}
-                            onClick={() => navigate(`/user/project/${project._id || project.id}`)}
+                            onClick={() => navigate(`/partner/project/${project._id || project.id}`)}
                             className="group bg-white border border-[#dfe8e1] rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full transform hover:-translate-y-1 relative overflow-hidden"
                         >
                             {/* Decorative top border */}
@@ -160,4 +160,4 @@ const UserProjects = () => {
     );
 };
 
-export default UserProjects;
+export default PartnerProjects;

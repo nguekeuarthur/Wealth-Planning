@@ -42,7 +42,14 @@ const ManageProjectUsersModal = ({ isOpen, onClose, project, onUpdate }) => {
       <div className="space-y-4">
         <div>
           <p className="text-sm text-[#7a8b7f] mb-2">Sélectionnez des utilisateurs existants</p>
-          <SelectUsers selectedUsers={selectedUsers} setSelectedUsers={setSelectedUsers} />
+          <SelectUsers
+            selectedUsers={selectedUsers}
+            setSelectedUsers={setSelectedUsers}
+            excludeUsers={[
+              ...(project.assignedUsers?.map(u => u._id) || []),
+              project.projectLead?._id
+            ].filter(Boolean)}
+          />
         </div>
 
         <div className="flex justify-end gap-3 pt-4">

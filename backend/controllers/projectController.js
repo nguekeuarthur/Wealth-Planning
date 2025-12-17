@@ -12,14 +12,17 @@ exports.getAllProjects = async (req, res) => {
     if (category) filter.category = category;
 
     // Permissions selon le rôle
-    if (req.user.role === 'admin' || req.user.role === 'collaborator') {
-      // Admin et Collaborateur voient tous les projets
+    if (req.user.role === 'admin') {
+      // Admin voit tous les projets
       // Pas de filtre
     } else if (req.user.role === 'client') {
       // Clients voient seulement leurs projets
       filter.client = req.user._id;
     } else if (req.user.role === 'partner') {
       // Partenaires voient les projets où ils sont assignés
+      filter.assignedUsers = req.user._id;
+    } else if (req.user.role === 'collaborator') {
+      // Collaborateurs voient les projets assignés
       filter.assignedUsers = req.user._id;
     } else if (req.user.role === 'user') {
       // Utilisateurs voient les projets où ils sont client ou assignés
@@ -43,6 +46,7 @@ exports.getAllProjects = async (req, res) => {
       .sort({ createdAt: -1 });
 
     // Filtrer les membres de projet pour les clients : ne pas voir les Partenaires
+    /*
     const filteredProjects = projects.map(project => {
       if (req.user.role === 'client') {
         const projectObj = project.toObject();
@@ -58,6 +62,8 @@ exports.getAllProjects = async (req, res) => {
     });
 
     res.json({ projects: filteredProjects });
+    */
+    res.json({ projects });
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
@@ -68,7 +74,7 @@ exports.getProjectById = async (req, res) => {
   try {
     const project = await Project.findById(req.params.id)
       .populate('client', 'name email profileImageUrl phoneNumber role company address')
-      .populate('projectLead', 'name email role')
+      .populate('projectLead', 'name email role profileImageUrl')
       .populate('assignedUsers', 'name email role profileImageUrl')
       .populate('tasks')
       .populate('documents')
@@ -120,11 +126,13 @@ exports.getProjectById = async (req, res) => {
 
     // Filtrer les membres de projet pour les clients : ne pas voir les Partenaires
     const projectObj = project.toObject();
+    /*
     if (req.user.role === 'client' && projectObj.assignedUsers) {
       projectObj.assignedUsers = projectObj.assignedUsers.filter(
         user => user.role !== 'partner'
       );
     }
+    */
 
     res.json({ project: projectObj });
   } catch (error) {

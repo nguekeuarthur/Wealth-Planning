@@ -70,6 +70,7 @@ export const SIDE_MENU_DATA = [
   },
 ];
 
+
 export const SIDE_MENU_USER_DATA = [
   {
     id: "01",
@@ -89,18 +90,7 @@ export const SIDE_MENU_USER_DATA = [
     icon: LuClipboardCheck,
     path: "/user/projects",
   },
-  {
-    id: "04",
-    label: "Documents",
-    icon: LuFolder,
-    path: "/user/documents",
-  },
-  {
-    id: "05",
-    label: "Factures",
-    icon: LuFileText,
-    path: "/user/invoices",
-  },
+
   {
     id: "06",
     label: "Messagerie",
@@ -190,12 +180,6 @@ export const SIDE_MENU_PARTNER_DATA = [
     label: "Tâches",
     icon: LuClipboardCheck,
     path: "/partner/tasks",
-  },
-  {
-    id: "04",
-    label: "Documents",
-    icon: LuFolder,
-    path: "/partner/documents",
   },
   {
     id: "05",

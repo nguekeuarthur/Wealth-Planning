@@ -16,8 +16,8 @@ axiosInstance.interceptors.request.use((config) => {
   const { token } = getSession();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
+  }
+  return config;
 });
 
 let refreshRequest = null;

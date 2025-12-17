@@ -5,7 +5,7 @@ import { LuUsers } from "react-icons/lu";
 import Modal from "../Modal";
 import AvatarGroup from "../AvatarGroup";
 
-const SelectUsers = ({ selectedUsers, setSelectedUsers }) => {
+const SelectUsers = ({ selectedUsers, setSelectedUsers, excludeUsers = [] }) => {
   const [allUsers, setAllUsers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tempSelectedUsers, setTempSelectedUsers] = useState([]);
@@ -50,6 +50,8 @@ const SelectUsers = ({ selectedUsers, setSelectedUsers }) => {
   }, [isModalOpen, selectedUsers]);
 
   const filteredUsers = allUsers.filter((user) => {
+    if (excludeUsers.includes(user._id)) return false;
+    if (user.role === 'admin') return false;
     if (roleFilter !== "all" && user.role !== roleFilter) return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
