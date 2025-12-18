@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
 const projectSchema = new mongoose.Schema({
-  name: { 
-    type: String, 
-    required: true 
+  name: {
+    type: String,
+    required: true
   },
   category: {
     type: String,
@@ -27,51 +27,55 @@ const projectSchema = new mongoose.Schema({
     enum: ['in progress', 'in review', 'done'],
     default: 'in progress'
   },
-  completion: { 
-    type: Number, 
-    default: 0, 
-    min: 0, 
-    max: 100 
+  completion: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100
   },
-  client: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User', 
-    required: true 
+  client: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
-  projectLead: { 
-    type: mongoose.Schema.Types.ObjectId, 
+  projectLead: {
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
-  assignedUsers: [{ 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User' 
+  assignedUsers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   }],
   teams: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Team'
   }],
-  startDate: { 
-    type: Date, 
-    default: Date.now 
+  startDate: {
+    type: Date,
+    default: Date.now
   },
   endDate: Date,
   description: String,
   imageUrl: String,
-  tasks: [{ 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Task' 
+  tasks: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Task'
   }],
-  documents: [{ 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Document' 
+  documents: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Document'
   }],
-  invoices: [{ 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Invoice' 
+  invoices: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Invoice'
   }],
-  weeklyUpdates: [{ 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'WeeklyUpdate' 
+  weeklyUpdates: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'WeeklyUpdate'
+  }],
+  milestones: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Milestone'
   }],
   messages: [{
     type: mongoose.Schema.Types.ObjectId,

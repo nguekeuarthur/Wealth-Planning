@@ -1,8 +1,9 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { io } from "socket.io-client";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
-import { API_PATHS } from "../../utils/apiPaths";
+import { API_PATHS, BASE_URL } from "../../utils/apiPaths";
 import moment from "moment";
 import 'moment/locale/fr';
 import {
@@ -18,6 +19,7 @@ import {
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { UserContext } from "../../context/userContext";
+import { getSession } from "../../utils/authStorage";
 
 moment.locale('fr');
 
@@ -85,6 +87,54 @@ const UserProjectDetails = () => {
     useEffect(() => {
         fetchProjectData();
     }, [id]);
+
+    // Socket.io for real-time updates
+    useEffect(() => {
+        const { token } = getSession();
+        if (!token || !id) return;
+
+        const socket = io(BASE_URL, {
+            transports: ['websocket', 'polling'],
+            withCredentials: true,
+            auth: {
+                token: token
+            }
+        });
+
+        socket.on("taskUpdated", (updatedTask) => {
+            if (id && updatedTask.project.toString() === id.toString()) {
+                setTasks(prevTasks => {
+                    const exists = prevTasks.some(t => t._id === updatedTask._id);
+                    if (exists) {
+                        return prevTasks.map(t => t._id === updatedTask._id ? updatedTask : t);
+                    }
+                    return [...prevTasks, updatedTask];
+                });
+
+                // Refresh project to update completion percentage
+                axiosInstance.get(API_PATHS.PROJECTS.GET_PROJECT_BY_ID(id))
+                    .then(res => setProject(res.data?.project || res.data))
+                    .catch(err => console.error("Error refreshing project:", err));
+            }
+        });
+
+        socket.on("taskCreated", (newTask) => {
+            if (id && newTask.project.toString() === id.toString()) {
+                setTasks(prev => {
+                    if (prev.some(t => t._id === newTask._id)) return prev;
+                    return [...prev, newTask];
+                });
+            }
+        });
+
+        socket.on("taskDeleted", (taskId) => {
+            setTasks(prev => prev.filter(t => t._id !== taskId));
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, [id, BASE_URL]);
 
     const handleTaskDragStart = (task) => {
         setDraggedTaskId(task._id);
@@ -317,11 +367,11 @@ const UserProjectDetails = () => {
                         <div key={milestone._id} className="border border-[#dfe8e1] rounded-xl p-4 hover:bg-[#f4f7f4] transition-colors">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <h3 className="font-medium text-[#1e4029]">{milestone.title}</h3>
+                                    <h3 className="font-medium text-[#1e4029]">{milestone.name}</h3>
                                     <p className="text-sm text-[#7a8b7f] mt-1">{milestone.description}</p>
-                                    {milestone.dueDate && (
+                                    {milestone.completedAt && (
                                         <p className="text-xs text-[#7a8b7f] mt-2">
-                                            Échéance: {moment(milestone.dueDate).format('DD MMM YYYY')}
+                                            Échéance: {moment(milestone.completedAt).format('DD MMM YYYY')}
                                         </p>
                                     )}
                                 </div>
@@ -550,6 +600,25 @@ const UserProjectDetails = () => {
                                     <p className="text-2xl font-bold text-[#2d5f3f]">{milestones.length}</p>
                                 </div>
                             </div>
+
+                            {milestones.length > 0 && (
+                                <div className="mt-8">
+                                    <h3 className="text-lg font-semibold text-[#1e4029] mb-4">Jalons du projet</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {milestones.map((milestone) => (
+                                            <div key={milestone._id} className="p-4 border border-[#dfe8e1] rounded-xl bg-[#f9fbf9]">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-medium text-[#1e4029]">{milestone.name}</span>
+                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${getMilestoneStatusBadge(milestone.status)}`}>
+                                                        {milestone.status || 'Past'}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-[#7a8b7f] mt-1 line-clamp-1">{milestone.description}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
