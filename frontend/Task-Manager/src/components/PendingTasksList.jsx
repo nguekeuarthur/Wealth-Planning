@@ -8,6 +8,27 @@ const PendingTasksList = ({ tasks = [] }) => {
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
   const role = user?.role;
+
+  const translateStatus = (status) => {
+    const statusMap = {
+      'Pending': 'En attente',
+      'In Progress': 'En cours',
+      'Completed': 'Terminé',
+      'Done': 'Terminé',
+      'In Review': 'En révision'
+    };
+    return statusMap[status] || status;
+  };
+
+  const translatePriority = (priority) => {
+    const priorityMap = {
+      'Low': 'Faible',
+      'Medium': 'Moyen',
+      'High': 'Élevé'
+    };
+    return priorityMap[priority] || priority;
+  };
+
   const getPriorityColor = (priority) => {
     switch (priority?.toLowerCase()) {
       case 'high':
@@ -117,13 +138,13 @@ const PendingTasksList = ({ tasks = [] }) => {
               </td>
               <td className="px-4 py-4 whitespace-nowrap">
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(task.status)}`}>
-                  {task.status}
+                  {translateStatus(task.status)}
                 </span>
               </td>
               <td className="px-4 py-4 whitespace-nowrap">
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-1 w-fit ${getPriorityColor(task.priority)}`}>
                   <FaFlag className="text-xs" />
-                  {task.priority}
+                  {translatePriority(task.priority)}
                 </span>
               </td>
               <td className="px-4 py-4 whitespace-nowrap">
