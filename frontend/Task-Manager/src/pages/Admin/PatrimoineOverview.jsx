@@ -38,10 +38,10 @@ const PatrimoineOverview = () => {
         
         // Préparer les données pour les graphiques
         const projectsChart = response.data.charts.projectsByStatus.map(item => ({
-          name: item.status === 'in progress' ? 'En cours' : 
-                item.status === 'in review' ? 'En révision' : 
-                item.status === 'done' ? 'Terminé' : item.status,
-          value: item.count
+          status: item.status === 'in progress' ? 'En cours' : 
+                  item.status === 'in review' ? 'En révision' : 
+                  item.status === 'done' ? 'Terminé' : item.status,
+          count: item.count
         }));
         setProjectStatusData(projectsChart);
 
