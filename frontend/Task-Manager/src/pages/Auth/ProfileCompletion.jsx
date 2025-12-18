@@ -706,19 +706,28 @@ const ProfileCompletion = () => {
   const selectedCountry = countries.find(c => c.code === formData.phoneCountry);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1e4029] via-[#2d5f3f] to-[#1e4029] flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen relative flex items-center justify-center p-4">
+      {/* Arrière-plan avec image et overlay flouté */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?q=80&w=2071&auto=format&fit=crop')`,
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1e4029]/80 via-[#2d5f3f]/75 to-[#1e4029]/80 backdrop-blur-sm" />
+
+      <div className="w-full max-w-md relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 backdrop-blur-md rounded-full mb-4 shadow-lg">
             <FiUser className="text-white text-2xl" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Complétez votre profil</h1>
-          <p className="text-white/80">Quelques informations supplémentaires pour finaliser votre inscription</p>
+          <h1 className="text-2xl font-bold text-white mb-2 drop-shadow-lg">Complétez votre profil</h1>
+          <p className="text-white/90 drop-shadow-md">Quelques informations supplémentaires pour finaliser votre inscription</p>
         </div>
 
         {/* Form */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Date de naissance */}
             <div>
