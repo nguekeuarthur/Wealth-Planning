@@ -84,7 +84,7 @@ const content = {
     ctaSection: {
       title: "Réservez une Consultation Gratuite",
       paragraph1:
-        "Nous offrons des consultations gratuites pour discuter de vos besoins en matière de création d'entreprise en Suisse et offshore, domiciliation commerciale, ouverture de comptes bancaires, accompagnement administratif et patrimonial de clients internationaux.",
+        "Nous offrons des consultations gratuites pour discuter de vos besoins en matière de création d'entreprise en Suisse et offshore, domiciliation commerciale, ouverture de comptes bancaires, accompagnement administratif, patrimonial et successorale de clients locaux et internationaux.",
       paragraph2: "Cliquez ici pour réserver votre consultation dès maintenant.",
       button: "Rejoignez-nous",
     },
