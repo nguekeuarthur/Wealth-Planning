@@ -192,6 +192,8 @@ const UserProjectDetails = () => {
         const isCompleted = task.status === "Completed" || task.status === "completed";
         const isOverdue = dueDate && dueDate < new Date() && !isCompleted;
 
+
+
         return (
             <div
                 draggable={!!onDragStart}
@@ -202,7 +204,7 @@ const UserProjectDetails = () => {
                 onDragEnd={() => {
                     onDragEnd && onDragEnd();
                 }}
-                className="p-4 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 hover:shadow-md transition-all bg-white cursor-pointer"
+                className="p-4 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 hover:shadow-md transition-all bg-white cursor-move"
             >
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">

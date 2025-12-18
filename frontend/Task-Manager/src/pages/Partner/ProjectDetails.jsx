@@ -142,22 +142,41 @@ const PartnerProjectDetails = () => {
         const isCompleted = task.status === "Completed" || task.status === "completed";
         const isOverdue = dueDate && dueDate < new Date() && !isCompleted;
 
+        // Vérifier si la tâche est assignée au partenaire actuel
+        const isAssignedToMe = task.assignedTo?.some(assignedUser =>
+            assignedUser._id === user?._id || assignedUser === user?._id
+        );
+
+        // Le partenaire ne peut déplacer que les tâches qui lui sont assignées
+        const canDrag = isAssignedToMe && !!onDragStart;
+
         return (
             <div
-                draggable={!!onDragStart}
+                draggable={canDrag}
                 onDragStart={(e) => {
+                    if (!canDrag) {
+                        e.preventDefault();
+                        return;
+                    }
                     e.dataTransfer.effectAllowed = "move";
                     onDragStart && onDragStart(task);
                 }}
                 onDragEnd={() => {
                     onDragEnd && onDragEnd();
                 }}
-                className="p-4 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 hover:shadow-md transition-all bg-white cursor-pointer"
+                className={`p-4 border border-[#dfe8e1] rounded-2xl transition-all bg-white ${canDrag
+                        ? 'cursor-move hover:border-[#5a8f6f]/40 hover:shadow-md'
+                        : 'cursor-default opacity-60'
+                    }`}
+                title={!isAssignedToMe ? "Vous ne pouvez modifier que les tâches qui vous sont assignées" : ""}
             >
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                         <h4 className="text-[#1e4029] font-semibold text-base mb-2">
                             {task.title || "Tâche sans titre"}
+                            {!isAssignedToMe && (
+                                <span className="ml-2 text-xs text-[#7a8b7f] font-normal">(Non assignée)</span>
+                            )}
                         </h4>
                         <p className="text-sm text-[#7a8b7f] line-clamp-2 mb-3">
                             {task.description || "Pas de description"}
@@ -521,18 +540,28 @@ const PartnerProjectDetails = () => {
                             <h2 className="text-xl font-semibold text-[#1e4029] mb-4">Vue d'ensemble</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <div className="bg-[#f4f7f4] rounded-xl p-4">
+                                    <p className="text-sm text-[#7a8b7f] mb-1">Total des tâches</p>
+                                    <p className="text-2xl font-bold text-[#2d5f3f]">
+                                        {tasks.length}
+                                    </p>
+                                </div>
+                                <div className="bg-[#f4f7f4] rounded-xl p-4">
                                     <p className="text-sm text-[#7a8b7f] mb-1">Tâches terminées</p>
                                     <p className="text-2xl font-bold text-[#2d5f3f]">
                                         {tasks.filter(t => t.status === 'completed' || t.status === 'Completed').length}
                                     </p>
                                 </div>
-                                <div className="bg-[#f4f7f4] rounded-xl p-4">
-                                    <p className="text-sm text-[#7a8b7f] mb-1">Documents partagés</p>
-                                    <p className="text-2xl font-bold text-[#2d5f3f]">{documents.length}</p>
+                                <div className="bg-[#fffaf2] rounded-xl p-4">
+                                    <p className="text-sm text-[#7a8b7f] mb-1">Tâches en cours</p>
+                                    <p className="text-2xl font-bold text-[#b76a28]">
+                                        {tasks.filter(t => t.status === 'in-progress' || t.status === 'In Progress' || t.status === 'in progress').length}
+                                    </p>
                                 </div>
-                                <div className="bg-[#f4f7f4] rounded-xl p-4">
-                                    <p className="text-sm text-[#7a8b7f] mb-1">Jalons</p>
-                                    <p className="text-2xl font-bold text-[#2d5f3f]">{milestones.length}</p>
+                                <div className="bg-[#f9fbf9] rounded-xl p-4">
+                                    <p className="text-sm text-[#7a8b7f] mb-1">Tâches en attente</p>
+                                    <p className="text-2xl font-bold text-[#5a8f6f]">
+                                        {tasks.filter(t => !t.status || t.status === 'pending' || t.status === 'Pending').length}
+                                    </p>
                                 </div>
                             </div>
 

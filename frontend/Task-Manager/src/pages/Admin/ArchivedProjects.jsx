@@ -3,7 +3,7 @@ import DashboardLayout from "../../components/layouts/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
-import { FiSearch, FiRotateCcw, FiArchive, FiFolder, FiUser, FiCalendar } from "react-icons/fi";
+import { FiSearch, FiRotateCcw, FiArchive, FiFolder, FiUser, FiCalendar, FiTrash2 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { UserContext } from "../../context/userContext";
 
@@ -21,6 +21,8 @@ const ArchivedProjects = () => {
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selectedProjects, setSelectedProjects] = useState([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { user } = useContext(UserContext);
   const navigate = useNavigate();
 
@@ -72,6 +74,39 @@ const ArchivedProjects = () => {
     }
   };
 
+  const handleDeleteProjects = async () => {
+    try {
+      const deletePromises = selectedProjects.map(projectId =>
+        axiosInstance.delete(API_PATHS.PROJECTS.DELETE_PROJECT(projectId))
+      );
+
+      await Promise.all(deletePromises);
+      toast.success(`${selectedProjects.length} projet(s) supprimé(s) définitivement`);
+      setSelectedProjects([]);
+      setShowDeleteConfirm(false);
+      getArchivedProjects(); // Refresh the list
+    } catch (error) {
+      console.error("Erreur lors de la suppression :", error);
+      toast.error("Échec de la suppression des projets");
+    }
+  };
+
+  const handleSelectProject = (projectId) => {
+    setSelectedProjects(prev =>
+      prev.includes(projectId)
+        ? prev.filter(id => id !== projectId)
+        : [...prev, projectId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedProjects.length === filteredProjects.length) {
+      setSelectedProjects([]);
+    } else {
+      setSelectedProjects(filteredProjects.map(p => p._id));
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString('fr-FR');
@@ -120,8 +155,17 @@ const ArchivedProjects = () => {
             </p>
           </div>
 
-          {/* Archive Icon */}
+          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
+            {selectedProjects.length > 0 && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-medium"
+              >
+                <FiTrash2 className="text-lg" />
+                Supprimer ({selectedProjects.length})
+              </button>
+            )}
             <div className="p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
               <FiArchive className="text-white text-2xl" />
             </div>
@@ -141,6 +185,21 @@ const ArchivedProjects = () => {
             className="w-full pl-12 pr-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors"
           />
         </div>
+
+        {/* Select All */}
+        {filteredProjects.length > 0 && (
+          <div className="flex items-center gap-2 bg-white border border-[#dfe8e1] rounded-xl p-3">
+            <input
+              type="checkbox"
+              checked={selectedProjects.length === filteredProjects.length && filteredProjects.length > 0}
+              onChange={handleSelectAll}
+              className="w-4 h-4 text-[#2d5f3f] bg-gray-100 border-gray-300 rounded focus:ring-[#2d5f3f]"
+            />
+            <span className="text-sm text-[#1e4029] font-medium">
+              Tout sélectionner ({filteredProjects.length})
+            </span>
+          </div>
+        )}
 
         {/* Projects Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -165,15 +224,15 @@ const ArchivedProjects = () => {
                   </div>
                 )}
 
-                {/* Archived Badge */}
-                <div className="absolute top-3 left-3">
-                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                    Archivé
-                  </span>
-                </div>
-
-                {/* Restore Button */}
-                <div className="absolute top-3 right-3">
+                {/* Checkbox and Restore Button */}
+                <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
+                  <input
+                    type="checkbox"
+                    checked={selectedProjects.includes(project._id)}
+                    onChange={() => handleSelectProject(project._id)}
+                    className="w-5 h-5 text-[#2d5f3f] bg-white border-gray-300 rounded focus:ring-[#2d5f3f] cursor-pointer"
+                    onClick={(e) => e.stopPropagation()}
+                  />
                   <button
                     onClick={() => handleRestoreProject(project._id)}
                     className="p-2 bg-white/90 backdrop-blur-sm rounded-lg hover:bg-white transition-colors shadow-sm"
@@ -257,6 +316,50 @@ const ArchivedProjects = () => {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-red-100 rounded-xl">
+                <FiTrash2 className="text-red-600 text-2xl" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-[#1e4029]">
+                  Confirmer la suppression
+                </h3>
+                <p className="text-sm text-[#7a8b7f]">
+                  Cette action est irréversible
+                </p>
+              </div>
+            </div>
+
+            <p className="text-[#1e4029] mb-6">
+              Êtes-vous sûr de vouloir supprimer définitivement{" "}
+              <span className="font-semibold">
+                {selectedProjects.length} projet{selectedProjects.length > 1 ? "s" : ""}
+              </span>{" "}
+              ? Cette action ne peut pas être annulée.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-4 py-2.5 bg-gray-100 text-[#1e4029] rounded-xl hover:bg-gray-200 transition-colors font-medium"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDeleteProjects}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-medium"
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

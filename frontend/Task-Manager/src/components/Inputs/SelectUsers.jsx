@@ -4,6 +4,17 @@ import axiosInstance from "../../utils/axiosInstance";
 import { LuUsers } from "react-icons/lu";
 import Modal from "../Modal";
 import AvatarGroup from "../AvatarGroup";
+import { BASE_URL } from "../../utils/apiPaths";
+
+const fullImageUrl = (url) => {
+  if (!url) return null;
+  // Aggressive cleanup of historical localhost URLs
+  let cleaned = url.replace(/^https?:\/\/localhost:8000/, '');
+  if (cleaned.startsWith('http')) return cleaned;
+  const baseUrlClean = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+  const pathClean = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+  return `${baseUrlClean}${pathClean}`;
+};
 
 const SelectUsers = ({ selectedUsers, setSelectedUsers, excludeUsers = [] }) => {
   const [allUsers, setAllUsers] = useState([]);
@@ -94,12 +105,12 @@ const SelectUsers = ({ selectedUsers, setSelectedUsers, excludeUsers = [] }) => 
             {filteredUsers.map((user) => (
               <div key={user._id} className="flex items-center gap-4 p-3 border-b border-gray-200">
                 {user.profileImageUrl ? (
-                  <img src={user.profileImageUrl} alt={user.name} className="w-10 h-10 rounded-full" />
+                  <img src={fullImageUrl(user.profileImageUrl)} alt={user.name} className="w-10 h-10 rounded-full" />
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-[#5a8f6f] flex items-center justify-center text-white font-medium">{(user.name || user.email || "").charAt(0).toUpperCase()}</div>
                 )}
                 <div className="flex-1">
-                  <p className="font-medium text-gray-800 dark:text-white">{user.name}</p>
+                  <p className="font-medium text-gray-800">{user.name}</p>
                   <p className="text-[13px] text-gray-500">{user.email} • <span className="text-xs">{user.role}</span></p>
                 </div>
 

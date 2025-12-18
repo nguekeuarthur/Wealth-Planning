@@ -338,11 +338,15 @@ const updateTaskStatus = async (req, res) => {
         isAuthorized = true;
       }
     } else if (req.user.role === "partner") {
-      // Les partenaires peuvent mettre à jour les tâches des projets où ils sont assignés
+      // Les partenaires peuvent mettre à jour UNIQUEMENT les tâches qui leur sont assignées personnellement
       const Project = require('../models/Project');
       const project = await Project.findById(task.project._id || task.project);
 
-      if (project && project.assignedUsers?.some(userId => userId.toString() === req.user._id.toString())) {
+      // Le partenaire doit être assigné au projet ET à la tâche spécifique
+      const isAssignedToProject = project && project.assignedUsers?.some(userId => userId.toString() === req.user._id.toString());
+      const isAssignedToTask = task.assignedTo?.some(userId => userId.toString() === req.user._id.toString());
+
+      if (isAssignedToProject && isAssignedToTask) {
         isAuthorized = true;
       }
     } else {
