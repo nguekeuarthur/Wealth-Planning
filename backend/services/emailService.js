@@ -23,6 +23,15 @@ if (SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS) {
       rejectUnauthorized: false, // Désactiver la vérification des certificats
     },
   });
+
+  // Verify connection configuration
+  transporter.verify(function (error, success) {
+    if (error) {
+      console.error("[emailService] SMTP connection error:", error);
+    } else {
+      console.log("[emailService] SMTP server is ready to take our messages");
+    }
+  });
 } else {
   console.warn(
     "[emailService] SMTP credentials missing. Emails will be logged to console."
@@ -59,29 +68,26 @@ const buildEmailTemplate = ({
                 <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4a5c52;">
                   ${message || ""}
                 </p>
-                ${
-                  buttonLabel && buttonUrl
-                    ? `<a href="${buttonUrl}" style="display:inline-block;padding:14px 28px;background:#2d5f3f;color:#ffffff;text-decoration:none;border-radius:999px;font-weight:600;letter-spacing:0.04em;margin-bottom:16px;">
+                ${buttonLabel && buttonUrl
+      ? `<a href="${buttonUrl}" style="display:inline-block;padding:14px 28px;background:#2d5f3f;color:#ffffff;text-decoration:none;border-radius:999px;font-weight:600;letter-spacing:0.04em;margin-bottom:16px;">
                         ${buttonLabel}
                       </a>`
-                    : ""
-                }
-                ${
-                  secondaryText
-                    ? `<p style="margin:12px 0 0;font-size:13px;color:#7b8c82;">
+      : ""
+    }
+                ${secondaryText
+      ? `<p style="margin:12px 0 0;font-size:13px;color:#7b8c82;">
                         ${secondaryText}
                       </p>`
-                    : ""
-                }
-                ${
-                  buttonUrl
-                    ? `<p style="margin:18px 0 0;font-size:12px;color:#9aa79f;">
+      : ""
+    }
+                ${buttonUrl
+      ? `<p style="margin:18px 0 0;font-size:12px;color:#9aa79f;">
                         Si le bouton ne fonctionne pas, copiez/collez ce lien dans votre navigateur :
                         <br />
                         <a href="${buttonUrl}" style="color:#2d5f3f;">${buttonUrl}</a>
                       </p>`
-                    : ""
-                }
+      : ""
+    }
               </td>
             </tr>
             <tr>

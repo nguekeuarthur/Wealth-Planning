@@ -81,6 +81,16 @@ async function start() {
 // Middleware
 app.use(express.json());
 
+// Health check and root route
+app.get("/", (req, res) => {
+  res.json({
+    message: "Wealth Planning API is running",
+    status: "active",
+    environment: process.env.NODE_ENV || "production",
+    documentation: "Please use /api endpoints"
+  });
+});
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -189,6 +199,16 @@ io.on('connection', (socket) => {
     }
     broadcastOnlineUsers();
   });
+});
+
+// Global Error Handler to prevent process crashes from unhandled rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Process] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[Process] Uncaught Exception thrown:', err);
+  // Optional: Graceful shutdown if needed, but for SMTP we might want to stay alive
 });
 
 start().catch((err) => {

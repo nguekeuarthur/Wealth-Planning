@@ -261,7 +261,7 @@ const registerUser = async (req, res) => {
 
     try {
       console.log("[registerUser] Sending verification email to:", user.email);
-      sendVerificationEmail(user, user.language);
+      sendVerificationEmail(user, user.language).catch(err => console.error("[AUTH][REGISTER] Email error:", err));
       console.log("[registerUser] Verification email sent successfully");
     } catch (emailError) {
       console.error("[registerUser] Error sending verification email:", emailError);
@@ -516,7 +516,7 @@ const forgotPassword = async (req, res) => {
       to: user.email,
       subject: emailContent.subject,
       html,
-    });
+    }).catch(err => console.error("[AUTH][FORGOT] Email error:", err));
 
     await logAuthEvent({
       user: user._id,
@@ -640,7 +640,7 @@ const resendVerificationEmail = async (req, res) => {
       return res.status(400).json({ message: "Email déjà vérifié." });
     }
 
-    sendVerificationEmail(user, language || user.language);
+    sendVerificationEmail(user, language || user.language).catch(err => console.error("[AUTH][RESEND] Email error:", err));
     res.json({ message: "Email de vérification renvoyé." });
   } catch (error) {
     res.status(500).json({ message: "Erreur serveur", error: error.message });
@@ -747,7 +747,7 @@ const updateUserProfile = async (req, res) => {
       }
       user.email = normalizedEmail;
       user.isEmailVerified = false;
-      sendVerificationEmail(user, req.body.language || user.language);
+      sendVerificationEmail(user, req.body.language || user.language).catch(err => console.error("[AUTH][PROFILE] Email send error:", err.message));
     }
 
     if (newPassword) {
