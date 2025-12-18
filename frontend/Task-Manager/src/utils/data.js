@@ -77,12 +77,7 @@ export const SIDE_MENU_MEMBER_DATA = [
     icon: LuLayoutDashboard,
     path: "/user/dashboard",
   },
-  {
-    id: "02",
-    label: "Mes tâches",
-    icon: LuClipboardCheck,
-    path: "/user/tasks",
-  },
+
   {
     id: "03",
     label: "Mes projets",
@@ -184,12 +179,7 @@ export const SIDE_MENU_PARTNER_DATA = [
     icon: LuClipboardCheck,
     path: "/partner/projects",
   },
-  {
-    id: "03",
-    label: "Tâches",
-    icon: LuClipboardCheck,
-    path: "/partner/tasks",
-  },
+
   {
     id: "05",
     label: "Messagerie",

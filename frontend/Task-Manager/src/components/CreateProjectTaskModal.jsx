@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Modal from "./Modal";
-import { FiCalendar, FiUser, FiUsers, FiFileText, FiPaperclip, FiX } from "react-icons/fi";
+import { FiCalendar, FiUser, FiUsers, FiX } from "react-icons/fi";
 import axiosInstance from "../utils/axiosInstance";
 import { API_PATHS } from "../utils/apiPaths";
 import toast from "react-hot-toast";
@@ -14,7 +14,6 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
     assignedTo: [],
     status: "Pending"
   });
-  const [selectedFiles, setSelectedFiles] = useState([]);
   const [assignmentType, setAssignmentType] = useState("team_leader"); // "team_leader" ou "individual"
   const [users, setUsers] = useState([]);
   const [teams, setTeams] = useState([]);
@@ -95,25 +94,14 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
 
     setLoading(true);
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('description', formData.description || '');
-      formDataToSend.append('priority', formData.priority);
-      formDataToSend.append('dueDate', new Date(formData.dueDate).toISOString());
-      formDataToSend.append('assignedTo', JSON.stringify(formData.assignedTo));
-      formDataToSend.append('status', formData.status);
-      formDataToSend.append('project', project._id);
-      
-      // Ajouter les fichiers
-      selectedFiles.forEach(file => {
-        formDataToSend.append('attachments', file);
-      });
+      const payload = {
+        ...formData,
+        dueDate: new Date(formData.dueDate).toISOString(),
+        project: project._id,
+        assignedTo: formData.assignedTo
+      };
 
-      const response = await axiosInstance.post(API_PATHS.TASKS.CREATE_TASK, formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      const response = await axiosInstance.post(API_PATHS.TASKS.CREATE_TASK, payload);
 
       toast.success("Tâche créée avec succès !");
       onTaskCreated(response.data.task);
@@ -135,7 +123,6 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
       assignedTo: [],
       status: "Pending"
     });
-    setSelectedFiles([]);
     setAssignmentType("team_leader");
     setSelectedUserSearch("");
     setShowUserDropdown(false);
@@ -165,31 +152,14 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
   const availableUsers = users.filter(u => {
     // Exclure les admins
     if (u.role === 'admin') return false;
-    
+
     // Filtrer par rôle si un filtre est sélectionné
     if (roleFilter !== 'all' && u.role !== roleFilter) return false;
-    
+
     // Filtrer par recherche
     return u.name?.toLowerCase().includes(selectedUserSearch.toLowerCase()) ||
-           u.email?.toLowerCase().includes(selectedUserSearch.toLowerCase());
+      u.email?.toLowerCase().includes(selectedUserSearch.toLowerCase());
   });
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    setSelectedFiles(prev => [...prev, ...files]);
-  };
-
-  const removeFile = (index) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-  };
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Ajouter une tâche">
@@ -294,11 +264,10 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
             <button
               type="button"
               onClick={() => handleAssignmentTypeChange("team_leader")}
-              className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                assignmentType === "team_leader"
+              className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${assignmentType === "team_leader"
                   ? "bg-[#5a8f6f] text-white"
                   : "text-[#7a8b7f] hover:text-[#2d5f3f]"
-              }`}
+                }`}
             >
               <FiUsers className="inline mr-2" />
               Chef d'équipe
@@ -306,11 +275,10 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
             <button
               type="button"
               onClick={() => handleAssignmentTypeChange("individual")}
-              className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                assignmentType === "individual"
+              className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${assignmentType === "individual"
                   ? "bg-[#5a8f6f] text-white"
                   : "text-[#7a8b7f] hover:text-[#2d5f3f]"
-              }`}
+                }`}
             >
               <FiUser className="inline mr-2" />
               Membre individuel
@@ -329,11 +297,10 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
                       key={team._id}
                       type="button"
                       onClick={() => handleTeamLeaderToggle(team.leader._id)}
-                      className={`w-full p-4 border rounded-xl text-left transition-all ${
-                        isSelected
+                      className={`w-full p-4 border rounded-xl text-left transition-all ${isSelected
                           ? "border-[#5a8f6f] bg-[#f4f7f4]"
                           : "border-[#dfe8e1] hover:border-[#5a8f6f]/50"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-3">
                         <div
@@ -400,55 +367,50 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
                   <button
                     type="button"
                     onClick={() => setRoleFilter("all")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      roleFilter === "all"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${roleFilter === "all"
                         ? "bg-[#2d5f3f] text-white"
                         : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
-                    }`}
+                      }`}
                   >
                     Tous
                   </button>
                   <button
                     type="button"
                     onClick={() => setRoleFilter("client")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      roleFilter === "client"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${roleFilter === "client"
                         ? "bg-[#2d5f3f] text-white"
                         : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
-                    }`}
+                      }`}
                   >
                     Clients
                   </button>
                   <button
                     type="button"
                     onClick={() => setRoleFilter("partner")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      roleFilter === "partner"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${roleFilter === "partner"
                         ? "bg-[#2d5f3f] text-white"
                         : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
-                    }`}
+                      }`}
                   >
                     Partenaires
                   </button>
                   <button
                     type="button"
                     onClick={() => setRoleFilter("collaborator")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      roleFilter === "collaborator"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${roleFilter === "collaborator"
                         ? "bg-[#2d5f3f] text-white"
                         : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
-                    }`}
+                      }`}
                   >
                     Collaborateurs
                   </button>
                   <button
                     type="button"
                     onClick={() => setRoleFilter("member")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      roleFilter === "member"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${roleFilter === "member"
                         ? "bg-[#2d5f3f] text-white"
                         : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
-                    }`}
+                      }`}
                   >
                     Membres
                   </button>
@@ -468,7 +430,7 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
                   className="w-full px-3 py-2.5 bg-[#fdfdfc] border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] text-sm text-[#1e4029] placeholder:text-[#7a8b7f]"
                 />
                 <FiUser className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#7a8b7f] w-4 h-4" />
-                
+
                 {showUserDropdown && availableUsers.length > 0 && (
                   <>
                     <div className="absolute left-0 right-0 z-40 mt-2 bg-white border border-[#dfe8e1] rounded-xl shadow-xl max-h-56 overflow-y-auto">
@@ -480,9 +442,8 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
                             handleUserToggle(user._id);
                             setShowUserDropdown(false);
                           }}
-                          className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f4f7f4] text-left ${
-                            formData.assignedTo.includes(user._id) ? 'bg-[#f4f7f4]' : ''
-                          }`}
+                          className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f4f7f4] text-left ${formData.assignedTo.includes(user._id) ? 'bg-[#f4f7f4]' : ''
+                            }`}
                         >
                           {user.profileImageUrl ? (
                             <img
@@ -501,10 +462,10 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
                               {user.email}
                               {user.role && (
                                 <span className="ml-2 px-2 py-0.5 bg-[#f4f7f4] rounded text-[10px]">
-                                  {user.role === 'client' ? 'Client' : 
-                                   user.role === 'partner' ? 'Partenaire' : 
-                                   user.role === 'collaborator' ? 'Collaborateur' : 
-                                   user.role === 'member' ? 'Membre' : user.role}
+                                  {user.role === 'client' ? 'Client' :
+                                    user.role === 'partner' ? 'Partenaire' :
+                                      user.role === 'collaborator' ? 'Collaborateur' :
+                                        user.role === 'member' ? 'Membre' : user.role}
                                 </span>
                               )}
                             </p>
@@ -601,64 +562,6 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
           )}
         </div>
 
-        {/* Upload de fichiers */}
-        <div>
-          <label className="block text-xs font-medium text-[#7a8b7f] mb-2">
-            <FiPaperclip className="inline mr-1" />
-            Pièces jointes (optionnel)
-          </label>
-          
-          <div className="border-2 border-dashed border-[#dfe8e1] rounded-xl p-4 hover:border-[#5a8f6f] transition-colors">
-            <input
-              type="file"
-              id="task-file-upload"
-              multiple
-              onChange={handleFileChange}
-              className="hidden"
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-            />
-            <label
-              htmlFor="task-file-upload"
-              className="flex flex-col items-center justify-center cursor-pointer"
-            >
-              <FiPaperclip className="text-3xl text-[#7a8b7f] mb-2" />
-              <span className="text-sm text-[#4a5c52] font-medium">
-                Cliquez pour ajouter des fichiers
-              </span>
-              <span className="text-xs text-[#7a8b7f] mt-1">
-                PDF, Word, Excel, Images (Max 10MB par fichier)
-              </span>
-            </label>
-          </div>
-
-          {/* Liste des fichiers sélectionnés */}
-          {selectedFiles.length > 0 && (
-            <div className="mt-3 space-y-2">
-              {selectedFiles.map((file, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-2 bg-[#f4f7f4] rounded-lg"
-                >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <FiFileText className="text-[#2d5f3f] flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[#1e4029] truncate">{file.name}</p>
-                      <p className="text-xs text-[#7a8b7f]">{formatFileSize(file.size)}</p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeFile(index)}
-                    className="ml-2 p-1 text-[#7a8b7f] hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                  >
-                    <FiX size={18} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Actions */}
         <div className="flex justify-end gap-3 pt-4 border-t border-[#dfe8e1]">
           <button
@@ -683,4 +586,3 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
 };
 
 export default CreateProjectTaskModal;
-

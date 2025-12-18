@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { FaPaperPlane, FaPaperclip, FaUsers, FaPlus, FaSearch } from 'react-icons/fa';
+import { FaPaperPlane, FaUsers, FaPlus, FaSearch } from 'react-icons/fa';
 import { io } from 'socket.io-client';
 import axios from '../utils/axiosInstance';
 import { useUser } from '../context/userContext';
@@ -172,6 +172,12 @@ const Chat = () => {
       console.log('Message pour conversation active, ajout à la liste');
       setMessages(prev => [...prev, message]);
       scrollToBottom();
+
+      // Si on est déjà dans la conversation, on marque tout comme lu
+      // pour éviter que le compteur de la sidebar n'incrémente inutilement
+      if (String(message.sender?._id) !== String(user?._id)) {
+        markAllMessagesAsRead();
+      }
     }
 
     // Mettre à jour le compteur de messages non lus si le message n'est pas de l'utilisateur
@@ -606,9 +612,7 @@ const Chat = () => {
 
             <div className="p-5 bg-white border-t border-gray-200">
               <form onSubmit={sendMessage} className="max-w-4xl mx-auto flex items-center gap-4">
-                <button type="button" className="text-gray-500 hover:text-[#2d5f3f] p-2 transition-colors">
-                  <FaPaperclip size={24} />
-                </button>
+
                 <input
                   type="text"
                   value={newMessage}

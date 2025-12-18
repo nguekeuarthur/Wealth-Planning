@@ -317,11 +317,11 @@ const PartnerProjectDetails = () => {
                         <div key={milestone._id} className="border border-[#dfe8e1] rounded-xl p-4 hover:bg-[#f4f7f4] transition-colors">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <h3 className="font-medium text-[#1e4029]">{milestone.title}</h3>
+                                    <h3 className="font-medium text-[#1e4029]">{milestone.name}</h3>
                                     <p className="text-sm text-[#7a8b7f] mt-1">{milestone.description}</p>
-                                    {milestone.dueDate && (
+                                    {milestone.completedAt && (
                                         <p className="text-xs text-[#7a8b7f] mt-2">
-                                            Échéance: {moment(milestone.dueDate).format('DD MMM YYYY')}
+                                            Échéance: {moment(milestone.completedAt).format('DD MMM YYYY')}
                                         </p>
                                     )}
                                 </div>
@@ -458,18 +458,7 @@ const PartnerProjectDetails = () => {
                                 <h1 className="text-2xl font-bold text-[#1e4029] mb-2">{project.name}</h1>
                                 <p className="text-[#7a8b7f]">{project.description}</p>
                             </div>
-                            <div className="flex items-center gap-4">
-                                <div className="text-right">
-                                    <p className="text-xs text-[#7a8b7f]">Progression</p>
-                                    <p className="text-lg font-semibold text-[#2d5f3f]">{project.completion || 0}%</p>
-                                </div>
-                                <div className="w-32 h-2 bg-[#f4f7f4] rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-[#5a8f6f] rounded-full transition-all"
-                                        style={{ width: `${project.completion || 0}%` }}
-                                    />
-                                </div>
-                            </div>
+
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-[#dfe8e1]">
@@ -532,10 +521,6 @@ const PartnerProjectDetails = () => {
                             <h2 className="text-xl font-semibold text-[#1e4029] mb-4">Vue d'ensemble</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <div className="bg-[#f4f7f4] rounded-xl p-4">
-                                    <p className="text-sm text-[#7a8b7f] mb-1">Tâches assignées</p>
-                                    <p className="text-2xl font-bold text-[#2d5f3f]">{tasks.length}</p>
-                                </div>
-                                <div className="bg-[#f4f7f4] rounded-xl p-4">
                                     <p className="text-sm text-[#7a8b7f] mb-1">Tâches terminées</p>
                                     <p className="text-2xl font-bold text-[#2d5f3f]">
                                         {tasks.filter(t => t.status === 'completed' || t.status === 'Completed').length}
@@ -550,6 +535,25 @@ const PartnerProjectDetails = () => {
                                     <p className="text-2xl font-bold text-[#2d5f3f]">{milestones.length}</p>
                                 </div>
                             </div>
+
+                            {milestones.length > 0 && (
+                                <div className="mt-8">
+                                    <h3 className="text-lg font-semibold text-[#1e4029] mb-4">Jalons du projet</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {milestones.map((milestone) => (
+                                            <div key={milestone._id} className="p-4 border border-[#dfe8e1] rounded-xl bg-[#f9fbf9]">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-medium text-[#1e4029]">{milestone.name}</span>
+                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${getMilestoneStatusBadge(milestone.status)}`}>
+                                                        {milestone.status || 'Past'}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-[#7a8b7f] mt-1 line-clamp-1">{milestone.description}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 

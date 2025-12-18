@@ -17,31 +17,41 @@ export const NotificationProvider = ({ children }) => {
   const { user } = useContext(UserContext);
 
 
-  // Charger les notifications depuis le localStorage au démarrage
+  // Charger les notifications depuis le localStorage quand l'utilisateur change
   useEffect(() => {
-    const savedNotifications = localStorage.getItem('wealth-planning-notifications');
-    if (savedNotifications) {
-      try {
-        const parsed = JSON.parse(savedNotifications);
-        setNotifications(parsed);
-        setUnreadCount(parsed.filter(n => !n.read).length);
-      } catch (error) {
-        console.error('Erreur lors du chargement des notifications:', error);
+    if (user?._id) {
+      const storageKey = `wealth-planning-notifications-${user._id}`;
+      const savedNotifications = localStorage.getItem(storageKey);
+      if (savedNotifications) {
+        try {
+          const parsed = JSON.parse(savedNotifications);
+          setNotifications(parsed);
+          setUnreadCount(parsed.filter(n => !n.read).length);
+        } catch (error) {
+          console.error('Erreur lors du chargement des notifications:', error);
+          setNotifications([]);
+          setUnreadCount(0);
+        }
+      } else {
+        setNotifications([]);
+        setUnreadCount(0);
       }
+    } else if (!user) {
+      setNotifications([]);
+      setUnreadCount(0);
     }
-  }, []);
+  }, [user?._id]);
 
   // Sauvegarder les notifications dans le localStorage et recalculer le compteur
   useEffect(() => {
-    if (notifications.length > 0) {
-      localStorage.setItem('wealth-planning-notifications', JSON.stringify(notifications));
+    if (user?._id) {
+      const storageKey = `wealth-planning-notifications-${user._id}`;
+      localStorage.setItem(storageKey, JSON.stringify(notifications));
       // Recalculer le compteur de non lus
       const unread = notifications.filter(n => !n.read).length;
       setUnreadCount(unread);
-    } else {
-      setUnreadCount(0);
     }
-  }, [notifications]);
+  }, [notifications, user?._id]);
 
   // Générer des notifications basées sur le statut du profil utilisateur
   useEffect(() => {

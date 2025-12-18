@@ -14,32 +14,15 @@ exports.getAllDocuments = async (req, res) => {
     if (type) filter.type = type;
     if (category) filter.category = category;
 
-    // Admin: voit tout
-    if (req.user.role === 'admin') {
-      if (tags) {
-        filter.allowedRoles = tags;
-      }
-    } else if (req.user.role === 'collaborator') {
-      // Collaborateur: voit UNIQUEMENT les documents des projets où il est assigné
-      const userProjectIds = (await Project.find({ assignedUsers: req.user._id }).select('_id')).map(p => p._id);
-      
-      if (userProjectIds.length === 0) {
-        // Aucun projet assigné = aucun document
-        return res.json({ documents: [] });
-      }
-      
-      filter.project = { $in: userProjectIds };
-      
-      // Filtrer aussi par tags si spécifié (pas de documents "partner")
-      if (tags) {
-        filter.allowedRoles = tags;
-      } else {
-        // Par défaut, exclure les documents "partner"
-        filter.allowedRoles = { $ne: 'partner' };
-      }
-    } else {
-      // For other roles we build an OR filter: documents targeted to user's role, assigned to the user, assigned to one of user's teams, or belong to user's projects
-      const userProjectIds = (await Project.find({ client: req.user._id }).select('_id')).map(p => p._id);
+    // Non-admin: filter by assignments and targeted roles
+    if (req.user.role !== 'admin') {
+      const userProjectIds = (await Project.find({
+        $or: [
+          { assignedUsers: req.user._id },
+          { client: req.user._id }
+        ]
+      }).select('_id')).map(p => p._id);
+
       const userTeamIds = (await Team.find({ members: req.user._id }).select('_id')).map(t => t._id);
 
       filter.$or = [
@@ -48,6 +31,11 @@ exports.getAllDocuments = async (req, res) => {
         { assignedTeams: { $in: userTeamIds } },
         { project: { $in: userProjectIds } }
       ];
+
+      // Collaborators fallback: they see everything in their projects unless it's for 'partner'
+      if (req.user.role === 'collaborator') {
+        filter.allowedRoles = { $ne: 'partner' };
+      }
     }
 
     const documents = await Document.find(filter)
@@ -81,13 +69,13 @@ exports.getDocumentById = async (req, res) => {
     } else if (req.user.role === 'collaborator') {
       // Collaborateur : accès si le document est dans un projet assigné
       if (document.project) {
-        const projectAccess = await Project.findOne({ 
+        const projectAccess = await Project.findOne({
           _id: document.project._id || document.project,
-          assignedUsers: req.user._id 
+          assignedUsers: req.user._id
         });
         hasAccess = !!projectAccess;
       }
-      
+
       // Vérifier aussi que ce n'est pas un document "partner"
       if (hasAccess && document.allowedRoles && document.allowedRoles.includes('partner')) {
         hasAccess = false;

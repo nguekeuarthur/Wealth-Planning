@@ -273,22 +273,22 @@ const AllProjects = () => {
       // Actions globales (ex: créer un projet) réservées aux admins
       return action === 'edit' ? currentUser.role === 'admin' : false;
     }
-    
+
     // Helper pour comparer les IDs (objet ou string)
     const compareIds = (id1, id2) => {
       const getId = (id) => typeof id === 'object' && id?._id ? id._id : id;
       return getId(id1) === getId(id2);
     };
-    
+
     switch (action) {
       case 'view':
         return compareIds(project.client, currentUser._id) ||
-               compareIds(project.projectLead, currentUser._id) ||
-               project.assignedUsers?.some(user => compareIds(user, currentUser._id));
+          compareIds(project.projectLead, currentUser._id) ||
+          project.assignedUsers?.some(user => compareIds(user, currentUser._id));
 
       case 'edit':
         return compareIds(project.projectLead, currentUser._id) ||
-               project.assignedUsers?.some(user => compareIds(user, currentUser._id));
+          project.assignedUsers?.some(user => compareIds(user, currentUser._id));
 
       case 'delete':
         return compareIds(project.projectLead, currentUser._id);
@@ -298,7 +298,7 @@ const AllProjects = () => {
 
       case 'change_status':
         return compareIds(project.projectLead, currentUser._id) ||
-               project.assignedUsers?.some(user => compareIds(user, currentUser._id));
+          project.assignedUsers?.some(user => compareIds(user, currentUser._id));
 
       default:
         return false;
@@ -759,8 +759,8 @@ const AllProjects = () => {
                 handleProjectClick(project._id);
               }}
               className={`bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer border ${isProjectSelected(project._id)
-                  ? 'border-[#5a8f6f] bg-[#f4f7f4]/50'
-                  : 'border-[#dfe8e1] hover:border-[#5a8f6f]/30'
+                ? 'border-[#5a8f6f] bg-[#f4f7f4]/50'
+                : 'border-[#dfe8e1] hover:border-[#5a8f6f]/30'
                 }`}
             >
               {/* Project Image */}
@@ -801,9 +801,7 @@ const AllProjects = () => {
                     tags.push({ label: `${metrics.overdueTasks} tâche(s) en retard`, color: 'bg-red-100 text-red-700' });
                   }
 
-                  if (project.completion === 100) {
-                    tags.push({ label: 'Terminé', color: 'bg-green-100 text-green-700' });
-                  }
+
 
                   return tags.length > 0 ? (
                     <div className="absolute top-3 right-12 flex flex-col gap-1">
@@ -850,23 +848,7 @@ const AllProjects = () => {
                   </p>
                 )}
 
-                {/* Progress Bar */}
-                {project.completion !== undefined && (
-                  <div className="mt-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs text-[#7a8b7f]">Progression</span>
-                      <span className="text-xs font-medium text-[#2d5f3f]">
-                        {project.completion}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-[#f4f7f4] rounded-full h-2">
-                      <div
-                        className="bg-[#5a8f6f] h-2 rounded-full transition-all"
-                        style={{ width: `${project.completion}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                )}
+
 
                 {/* Project Metrics */}
                 {(() => {
@@ -874,9 +856,9 @@ const AllProjects = () => {
                   return (
                     <div className="mt-4 grid grid-cols-2 gap-3">
                       <div className="flex items-center gap-2">
-                        <FiFolder className="text-[#7a8b7f] text-sm" />
+                        <FiCheckCircle className="text-[#7a8b7f] text-sm" />
                         <span className="text-xs text-[#7a8b7f]">
-                          {metrics.completedTasks}/{metrics.totalTasks} tâches
+                          {metrics.completedTasks} terminée(s)
                         </span>
                       </div>
 
@@ -977,7 +959,7 @@ const AllProjects = () => {
         onClose={() => setIsModalOpen(false)}
         onProjectCreated={handleProjectCreated}
       />
-    </DashboardLayout>
+    </DashboardLayout >
   );
 };
 

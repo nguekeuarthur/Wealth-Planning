@@ -98,7 +98,7 @@ const DraggableTaskCard = ({ task, onTaskClick }) => {
         transform,
         transition,
         isDragging,
-    } = useSortable({ 
+    } = useSortable({
         id: task._id,
         data: {
             status: task.status, // Ajouter le statut pour faciliter la détection
@@ -133,6 +133,7 @@ const DraggableTaskCard = ({ task, onTaskClick }) => {
                 todoChecklist={task.todoChecklist || []}
                 onClick={() => onTaskClick(task)}
                 canModify={false}
+                draggable={false}
             />
         </div>
     );
@@ -145,15 +146,13 @@ const DroppableColumn = ({ status, label, tasks, onTaskClick }) => {
     });
 
     return (
-        <div 
-            ref={setNodeRef} 
-            className={`flex flex-col transition-all duration-200 ${
-                isOver ? 'ring-2 ring-[#2d5f3f] ring-opacity-50' : ''
-            }`}
+        <div
+            ref={setNodeRef}
+            className={`flex flex-col transition-all duration-200 ${isOver ? 'ring-2 ring-[#2d5f3f] ring-opacity-50' : ''
+                }`}
         >
-            <div className={`bg-white rounded-2xl border border-[#dfe8e1] p-4 shadow-sm transition-all ${
-                isOver ? 'bg-[#f4f7f4] border-[#2d5f3f]' : ''
-            }`}>
+            <div className={`bg-white rounded-2xl border border-[#dfe8e1] p-4 shadow-sm transition-all ${isOver ? 'bg-[#f4f7f4] border-[#2d5f3f]' : ''
+                }`}>
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-[#1e4029]">{label}</h3>
                     <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-[#f4f7f4] text-[#7a8b7f]">
@@ -228,10 +227,13 @@ const ClientProjectDetails = () => {
     }, [id]);
 
     const handleDragStart = (event) => {
-        setActiveId(event.active.id);
+        // Disabled for clients
+        // setActiveId(event.active.id);
     };
 
     const handleDragEnd = async (event) => {
+        // Disabled for clients
+        /*
         const { active, over } = event;
         setActiveId(null);
 
@@ -239,18 +241,13 @@ const ClientProjectDetails = () => {
 
         const taskId = active.id;
         
-        // Déterminer le nouveau statut en fonction de l'élément survolé
         let newStatus;
-        
-        // Si on survole directement une colonne (droppable)
         if (over.data?.current?.type === undefined && ["Pending", "In Progress", "Completed"].includes(over.id)) {
             newStatus = over.id;
         }
-        // Si on survole une tâche, récupérer le conteneur parent (la colonne)
         else if (over.data?.current?.sortable?.containerId) {
             newStatus = over.data.current.sortable.containerId;
         }
-        // Sinon, essayer de trouver la tâche survolée et récupérer son statut
         else {
             const overTask = project.tasks.find(t => t._id === over.id);
             if (overTask) {
@@ -280,6 +277,7 @@ const ClientProjectDetails = () => {
             console.error("Erreur lors de la mise à jour:", error);
             toast.error("Impossible de mettre à jour le statut");
         }
+        */
     };
 
     if (loading) {
@@ -341,12 +339,33 @@ const ClientProjectDetails = () => {
                     }
                 />
                 <MetricCard
-                    icon={<FiUsers />}
-                    label="Équipe"
-                    value={project.assignedUsers?.length || 0}
-                    subtext="membres assignés"
+                    icon={<FiFlag />}
+                    label="Jalons"
+                    value={project.milestones?.length || 0}
                 />
             </div>
+
+            {project.milestones && project.milestones.length > 0 && (
+                <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6">
+                    <h3 className="text-lg font-semibold text-[#1e4029] mb-4">Jalons du projet</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {project.milestones.map((milestone) => (
+                            <div key={milestone._id} className="p-4 border border-[#dfe8e1] rounded-xl bg-[#f9fbf9]">
+                                <div className="flex items-center justify-between">
+                                    <span className="font-medium text-[#1e4029]">{milestone.name}</span>
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${milestone.status === "completed"
+                                        ? "bg-[#dff5e7] text-[#1e4029]"
+                                        : "bg-[#fff6ea] text-[#b76a28]"
+                                        }`}>
+                                        {milestone.status === "completed" ? "Terminé" : "En cours"}
+                                    </span>
+                                </div>
+                                <p className="text-xs text-[#7a8b7f] mt-1 line-clamp-2">{milestone.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {project.projectLead && (
                 <div className="bg-white rounded-2xl border border-[#dfe8e1] p-6">
@@ -461,7 +480,7 @@ const ClientProjectDetails = () => {
                                 {index + 1}
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-lg font-semibold text-[#1e4029] mb-2">{milestone.title}</h3>
+                                <h3 className="text-lg font-semibold text-[#1e4029] mb-2">{milestone.name}</h3>
                                 <p className="text-[#7a8b7f] mb-3">{milestone.description}</p>
                                 <div className="flex items-center gap-4 text-sm">
                                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${milestone.status === "completed"
@@ -470,9 +489,9 @@ const ClientProjectDetails = () => {
                                         }`}>
                                         {milestone.status === "completed" ? "Terminé" : "En cours"}
                                     </span>
-                                    {milestone.dueDate && (
+                                    {milestone.completedAt && (
                                         <span className="text-[#99aca2]">
-                                            Échéance: {new Date(milestone.dueDate).toLocaleDateString('fr-FR')}
+                                            Échéance: {new Date(milestone.completedAt).toLocaleDateString('fr-FR')}
                                         </span>
                                     )}
                                 </div>
@@ -541,19 +560,47 @@ const ClientProjectDetails = () => {
                             </div>
                             <div className="text-right">
                                 <p className="text-2xl font-bold text-[#1e4029]">{invoice.amount}€</p>
-                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                    invoice.status === "payée" || invoice.status === "paiement reçu"
+                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${invoice.status === "payée" || invoice.status === "paiement reçu"
                                     ? "bg-[#dff5e7] text-[#1e4029]"
                                     : invoice.status === "non payée"
                                         ? "bg-[#fee2e2] text-[#dc2626]"
                                         : invoice.status === "partiellement payée"
-                                        ? "bg-[#fff6ea] text-[#b76a28]"
-                                        : "bg-[#f4f7f4] text-[#7a8b7f]"
+                                            ? "bg-[#fff6ea] text-[#b76a28]"
+                                            : "bg-[#f4f7f4] text-[#7a8b7f]"
                                     }`}>
                                     {invoice.status === "payée" || invoice.status === "paiement reçu" ? "Payée" :
-                                        invoice.status === "non payée" ? "En retard" : 
-                                        invoice.status === "partiellement payée" ? "Partiellement payée" : "En attente"}
+                                        invoice.status === "non payée" ? "En retard" :
+                                            invoice.status === "partiellement payée" ? "Partiellement payée" : "En attente"}
                                 </span>
+                                {invoice.attachment?.path && (
+                                    <button
+                                        onClick={async (e) => {
+                                            e.preventDefault();
+                                            try {
+                                                const response = await axiosInstance.get(
+                                                    `${BASE_URL}${invoice.attachment.path}`,
+                                                    { responseType: 'blob' }
+                                                );
+                                                const contentType = response.headers['content-type'] || invoice.attachment.mimeType || 'application/pdf';
+                                                const blob = new Blob([response.data], { type: contentType });
+                                                const url = window.URL.createObjectURL(blob);
+                                                const link = document.createElement('a');
+                                                link.href = url;
+                                                link.setAttribute('download', invoice.attachment.originalName || `facture-${invoice.invoiceNumber}.pdf`);
+                                                document.body.appendChild(link);
+                                                link.click();
+                                                link.remove();
+                                                window.URL.revokeObjectURL(url);
+                                            } catch (err) {
+                                                console.error("Erreur téléchargement facture:", err);
+                                                toast.error("Impossible de télécharger la facture");
+                                            }
+                                        }}
+                                        className="mt-2 text-[#2d5f3f] hover:text-[#1e4029] text-xs font-medium block"
+                                    >
+                                        Télécharger
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>

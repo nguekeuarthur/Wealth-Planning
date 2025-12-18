@@ -84,7 +84,8 @@ export const UnreadMessagesProvider = ({ children }) => {
 
         socketRef.current = socket;
 
-        const userId = getUserIdFromToken(sessionToken);
+        const session = getSession();
+        const userId = session.user?._id || getUserIdFromToken(sessionToken);
 
         const joinAllConversations = async () => {
             try {
@@ -104,8 +105,10 @@ export const UnreadMessagesProvider = ({ children }) => {
 
         socket.on('newMessage', (message) => {
             // Ne pas incrémenter pour le sender
-            if (userId && String(message?.sender?._id) === String(userId)) return;
-            setUnreadCount((prev) => prev + 1);
+            const senderId = message?.sender?._id || message?.sender;
+            if (userId && String(senderId) === String(userId)) return;
+
+            incrementUnreadCount();
         });
 
         return () => {

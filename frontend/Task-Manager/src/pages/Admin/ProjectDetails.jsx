@@ -537,7 +537,6 @@ const ProjectDetails = () => {
       overdueTasks,
       totalTime,
       budgetUsed,
-      completion: data?.completion || 0,
       daysRemaining
     };
   };
@@ -663,7 +662,7 @@ const ProjectDetails = () => {
                 <h1 className="text-3xl lg:text-4xl font-bold text-white">
                   {project.name}
                 </h1>
-                {smartTags.map((tag, index) => (
+                {smartTags.filter(tag => tag.label !== "Prêt à livrer").map((tag, index) => (
                   <span
                     key={index}
                     className={`px-2 py-1 rounded-full text-xs font-medium ${tag.color}`}
@@ -732,7 +731,7 @@ const ProjectDetails = () => {
                   <MetricCard
                     icon={<FiCheckCircle />}
                     label="Tâches terminées"
-                    value={`${metrics?.completedTasks || 0}/${metrics?.totalTasks || 0}`}
+                    value={`${metrics?.completedTasks || 0}`}
                   />
                   <MetricCard
                     icon={<FiClock />}
@@ -750,11 +749,7 @@ const ProjectDetails = () => {
                         : undefined
                     }
                   />
-                  <MetricCard
-                    icon={<FiTrendingUp />}
-                    label="Progression"
-                    value={`${metrics?.completion || 0}%`}
-                  />
+
                   <MetricCard
                     icon={<FiAlertTriangle />}
                     label="Tâches en retard"

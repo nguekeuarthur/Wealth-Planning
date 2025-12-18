@@ -76,109 +76,97 @@ const TaskCard = ({
   };
 
   return <div
-      className="bg-white rounded-xl py-4 shadow-md shadow-gray-100 border border-gray-200/50 cursor-pointer hover:shadow-lg transition-shadow"
-      onClick={onClick}
-    >
-      <div className="flex items-end gap-3 px-4">
-        <div
-          className={`text-[11px] font-medium ${getStatusTagColor()} px-4 py-0.5 rounded `}
-        >
-          {getStatusLabel()}
-        </div>
-        <div
-          className={`text-[11px] font-medium ${getPriorityTagColor()} px-4 py-0.5 rounded`}
-        >
-          {getPriorityLabel()}
-        </div>
-      </div>
-
+    className="bg-white rounded-xl py-4 shadow-md shadow-gray-100 border border-gray-200/50 cursor-pointer hover:shadow-lg transition-shadow"
+    onClick={onClick}
+  >
+    <div className="flex items-end gap-3 px-4">
       <div
-        className={`px-4 border-l-[3px] ${
-          status === "In Progress"
-            ? "border-cyan-500"
-            : status === "Completed"
+        className={`text-[11px] font-medium ${getStatusTagColor()} px-4 py-0.5 rounded `}
+      >
+        {getStatusLabel()}
+      </div>
+      <div
+        className={`text-[11px] font-medium ${getPriorityTagColor()} px-4 py-0.5 rounded`}
+      >
+        {getPriorityLabel()}
+      </div>
+    </div>
+
+    <div
+      className={`px-4 border-l-[3px] ${status === "In Progress"
+          ? "border-cyan-500"
+          : status === "Completed"
             ? "border-indigo-500"
             : "border-violet-500"
         }`}
-      >
-        <p className="text-sm font-medium text-gray-800 mt-4 line-clamp-2">
-          {title}
-        </p>
+    >
+      <p className="text-sm font-medium text-gray-800 mt-4 line-clamp-2">
+        {title}
+      </p>
 
-        <p className="text-xs text-gray-500 mt-1.5 line-clamp-2 leading-[18px]">
-          {description}
-        </p>
+      <p className="text-xs text-gray-500 mt-1.5 line-clamp-2 leading-[18px]">
+        {description}
+      </p>
 
-        {canModify && (
-          <>
-            <p className="text-[13px] text-gray-700/80 font-medium mt-2 mb-2 leading-[18px]">
-              Tâches terminées:{" "}
-              <span className="font-semibold text-gray-700">
-                {completedTodoCount} / {todoChecklist.length || 0}
-              </span>
-            </p>
 
-            <Progress progress={progress} status={status} />
-          </>
-        )}
-      </div>
+    </div>
 
-      <div className="px-4">
-        <div className="flex items-center justify-between my-1">
-          <div>
-            <label className="text-xs text-gray-500">Date de début</label>
-            <p className="text-[13px] font-medium text-gray-900">
-              {moment(createdAt).format("Do MMM YYYY")}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <label className="text-xs text-gray-500">Échéance</label>
-              <p className="text-[13px] font-medium text-gray-900">
-                {moment(dueDate).format("Do MMM YYYY")}
-              </p>
-            </div>
-            
-            {canModify && (
-              <div className="flex items-center gap-1 ml-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit?.();
-                  }}
-                  className="p-1.5 hover:bg-[#f4f7f4] rounded-lg transition-colors"
-                  title="Modifier"
-                >
-                  <LuPencil className="w-4 h-4 text-[#2d5f3f]" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete?.();
-                  }}
-                  className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
-                  title="Supprimer"
-                >
-                  <LuTrash2 className="w-4 h-4 text-red-500" />
-                </button>
-              </div>
-            )}
-          </div>
+    <div className="px-4">
+      <div className="flex items-center justify-between my-1">
+        <div>
+          <label className="text-xs text-gray-500">Date de début</label>
+          <p className="text-[13px] font-medium text-gray-900">
+            {moment(createdAt).format("Do MMM YYYY")}
+          </p>
         </div>
 
-        <div className="flex items-center justify-between mt-3">
-          <AvatarGroup avatars={assignedTo || []} />
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <label className="text-xs text-gray-500">Échéance</label>
+            <p className="text-[13px] font-medium text-gray-900">
+              {moment(dueDate).format("Do MMM YYYY")}
+            </p>
+          </div>
 
-          {attachmentCount > 0 && (
-            <div className="flex items-center gap-2 bg-blue-50 px-2.5 py-1.5 rounded-lg">
-              <LuPaperclip className="text-primary" />{" "}
-              <span className="text-xs text-gray-900">{attachmentCount}</span>
+          {canModify && (
+            <div className="flex items-center gap-1 ml-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit?.();
+                }}
+                className="p-1.5 hover:bg-[#f4f7f4] rounded-lg transition-colors"
+                title="Modifier"
+              >
+                <LuPencil className="w-4 h-4 text-[#2d5f3f]" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete?.();
+                }}
+                className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                title="Supprimer"
+              >
+                <LuTrash2 className="w-4 h-4 text-red-500" />
+              </button>
             </div>
           )}
         </div>
       </div>
+
+      <div className="flex items-center justify-between mt-3">
+        <AvatarGroup avatars={assignedTo || []} />
+
+        {attachmentCount > 0 && (
+          <div className="flex items-center gap-2 bg-blue-50 px-2.5 py-1.5 rounded-lg">
+            <LuPaperclip className="text-primary" />{" "}
+            <span className="text-xs text-gray-900">{attachmentCount}</span>
+          </div>
+        )}
+      </div>
     </div>
+  </div>
 };
 
 export default TaskCard;

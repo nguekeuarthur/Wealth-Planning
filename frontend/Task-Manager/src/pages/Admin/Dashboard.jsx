@@ -96,7 +96,6 @@ import CreateProjectModal from "../../components/CreateProjectModal";
 const COLORS = ["#2d5f3f", "#5a8f6f", "#a7c9ad"];
 
 const TASK_CARD_CONFIG = [
-  { label: "Total Tâches", key: "All", icon: FaTasks },
   { label: "En Attente", key: "Pending", icon: FaClock },
   { label: "En Cours", key: "InProgress", icon: FaCircleNotch },
   { label: "Terminées", key: "Completed", icon: FaCheckCircle },
@@ -343,22 +342,6 @@ const Dashboard = () => {
                     <Icon className={`text-xl ${card.key === "InProgress" ? "animate-spin" : ""}`} />
                   </div>
                 </div>
-                <div className="mt-4">
-                  <div className="flex justify-between text-xs text-[#7a8b7f] mb-1">
-                    <span>{percentage}%</span>
-                    <span>
-                      {card.key === "All"
-                        ? "Tâches totales"
-                        : "du volume global"}
-                    </span>
-                  </div>
-                  <div className="h-1.5 w-full bg-[#f5f7f4] rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-[#5a8f6f]"
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-                </div>
               </div>
             );
           })}
@@ -418,18 +401,7 @@ const Dashboard = () => {
                     {project.description || "Description non fournie"}
                   </div>
 
-                  <div className="flex items-center justify-between text-xs text-[#7a8b7f]">
-                    <span>Avancement</span>
-                    <span className="font-semibold text-[#2d5f3f]">
-                      {project.completion || 0}%
-                    </span>
-                  </div>
-                  <div className="h-2 bg-[#f4f7f4] rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-[#5a8f6f]"
-                      style={{ width: `${project.completion || 0}%` }}
-                    />
-                  </div>
+
 
                   <div className="flex items-center gap-3 text-xs text-[#7a8b7f]">
                     <div className="flex items-center gap-1">

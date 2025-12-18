@@ -34,16 +34,22 @@ const AllNotifications = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Marquer automatiquement toutes les notifications comme lues quand on accède à la page
+  // Marquer automatiquement toutes les notifications comme lues quand on accède à la page ou que les notifications changent
   useEffect(() => {
     if (user && notifications.length > 0) {
       const unreadNotifications = notifications.filter(n => !n.read);
       if (unreadNotifications.length > 0) {
-        markAllAsRead();
+        // Un court délai peut aider à s'assurer que l'UI est prête et éviter des conflits de state concurrents
+        const timer = setTimeout(() => {
+          markAllAsRead();
+        }, 100);
+        return () => clearTimeout(timer);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]); // Se déclenche à chaque fois qu'on arrive sur cette page
+  }, [location.pathname, notifications, user]);
+  // On utilise notifications dans les dépendances pour capturer tout changement,
+  // y compris l'arrivée de nouvelles notifications ou le chargement différé.
+  // La condition unreadNotifications.length > 0 empêche les boucles infinies.
 
 
   // Formater et filtrer les notifications
@@ -268,11 +274,10 @@ const AllNotifications = () => {
               <div
                 key={notification.id}
                 onClick={() => handleNotificationClick(notification)}
-                className={`bg-white rounded-2xl border p-6 transition-all duration-300 hover:shadow-lg cursor-pointer group ${
-                  !notification.read
-                    ? 'border-[#5a8f6f] bg-[#f4f7f4]/50 shadow-sm'
-                    : 'border-[#dfe8e1] hover:border-[#5a8f6f]/30'
-                }`}
+                className={`bg-white rounded-2xl border p-6 transition-all duration-300 hover:shadow-lg cursor-pointer group ${!notification.read
+                  ? 'border-[#5a8f6f] bg-[#f4f7f4]/50 shadow-sm'
+                  : 'border-[#dfe8e1] hover:border-[#5a8f6f]/30'
+                  }`}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4 flex-1">
@@ -285,9 +290,8 @@ const AllNotifications = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <h3 className={`text-lg font-semibold ${
-                            !notification.read ? 'text-[#1e4029]' : 'text-[#2d5f3f]'
-                          }`}>
+                          <h3 className={`text-lg font-semibold ${!notification.read ? 'text-[#1e4029]' : 'text-[#2d5f3f]'
+                            }`}>
                             {notification.title}
                           </h3>
                           <p className="text-[#7a8b7f] mt-1 leading-relaxed">
@@ -299,8 +303,8 @@ const AllNotifications = () => {
                             </span>
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getPriorityColor(notification.priority)}`}>
                               {notification.priority === 'urgent' ? 'Urgent' :
-                               notification.priority === 'high' ? 'Élevé' :
-                               notification.priority === 'normal' ? 'Normal' : 'Faible'}
+                                notification.priority === 'high' ? 'Élevé' :
+                                  notification.priority === 'normal' ? 'Normal' : 'Faible'}
                             </span>
                           </div>
                         </div>
