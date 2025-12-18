@@ -98,17 +98,17 @@ const AddInvoiceModal = ({ isOpen, onClose, onInvoiceCreated, projectId, clientI
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="New invoice">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Nouvelle facture">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Invoice
+            Facture
           </label>
           <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
             <div className="flex flex-col items-center justify-center pt-5 pb-6">
               <FiUpload className="w-8 h-8 mb-2 text-gray-500" />
               <p className="mb-2 text-sm text-gray-500">
-                <span className="font-semibold">Pick a file</span>
+                <span className="font-semibold">Sélectionnez un fichier</span>
               </p>
             </div>
             <input
@@ -127,14 +127,14 @@ const AddInvoiceModal = ({ isOpen, onClose, onInvoiceCreated, projectId, clientI
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Amount <span className="text-red-500">*</span>
+            Montant <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
             name="amount"
             value={formData.amount}
             onChange={handleChange}
-            placeholder="Amount"
+            placeholder="Montant"
             step="0.01"
             min="0"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
@@ -144,14 +144,14 @@ const AddInvoiceModal = ({ isOpen, onClose, onInvoiceCreated, projectId, clientI
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Payment link
+            Lien de paiement
           </label>
           <input
             type="url"
             name="paymentLink"
             value={formData.paymentLink}
             onChange={handleChange}
-            placeholder="Payment link"
+            placeholder="Lien de paiement"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
           />
         </div>
@@ -177,14 +177,14 @@ const AddInvoiceModal = ({ isOpen, onClose, onInvoiceCreated, projectId, clientI
             className="px-6 py-2.5 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
             disabled={loading}
           >
-            Cancel
+            Annuler
           </button>
           <button
             type="submit"
             className="px-6 py-2.5 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             disabled={loading}
           >
-            {loading ? "Ajout..." : "Add"}
+            {loading ? "Ajout..." : "Ajouter"}
           </button>
         </div>
       </form>

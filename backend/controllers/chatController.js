@@ -227,6 +227,7 @@ exports.getUserConversations = async (req, res) => {
     const filter = {
       'participants.user': userId,
       isActive: true,
+      name: { $ne: 'Général' } // Exclure la conversation "Général" pour tous les rôles
     };
 
     // Ajouter des conditions basées sur le rôle
@@ -285,14 +286,26 @@ exports.getUserConversations = async (req, res) => {
       console.log('🔒 Partner conversations filtered. Removed conversations with clients.');
     }
 
+    // Récupérer la date de création de l'utilisateur pour filtrer les messages
+    const currentUser = await User.findById(req.user._id);
+    const userCreatedAt = currentUser.createdAt;
+
     // Ajouter le compteur de messages non lus pour chaque conversation
     const conversationsWithUnread = await Promise.all(
       conversations.map(async (conv) => {
-        const unreadCount = await Message.countDocuments({
+        // Construire la requête de comptage
+        const countQuery = {
           conversation: conv._id,
           sender: { $ne: req.user._id },
           'readBy.user': { $ne: req.user._id }
-        });
+        };
+
+        // Pour les conversations de groupe, ne compter que les messages postérieurs à l'inscription
+        if (conv.type === 'group' || conv.type === 'support') {
+          countQuery.createdAt = { $gte: userCreatedAt };
+        }
+
+        const unreadCount = await Message.countDocuments(countQuery);
 
         return {
           ...conv.toObject(),
@@ -350,7 +363,21 @@ exports.getConversationMessages = async (req, res) => {
       return res.status(403).json({ message: 'Accès refusé selon votre rôle' });
     }
 
-    const messages = await Message.find({ conversation: conversationId })
+    // Récupérer l'utilisateur pour obtenir sa date de création
+    const user = await User.findById(req.user._id);
+    const userCreatedAt = user.createdAt;
+
+    // Construire la requête de filtrage
+    const messageQuery = { 
+      conversation: conversationId
+    };
+
+    // Pour les conversations de groupe (comme "Général"), ne montrer que les messages postérieurs à l'inscription
+    if (conversation.type === 'group' || conversation.type === 'support') {
+      messageQuery.createdAt = { $gte: userCreatedAt };
+    }
+
+    const messages = await Message.find(messageQuery)
       .populate('sender', 'name email profileImageUrl role')
       .populate('replyTo', 'content sender')
       .populate('readBy.user', 'name')
@@ -475,7 +502,8 @@ exports.getConversations = async (req, res) => {
   try {
     let conversations = await Conversation.find({
       isActive: true,
-      'participants.user': req.user._id
+      'participants.user': req.user._id,
+      name: { $ne: 'Général' } // Exclure la conversation "Général"
     })
       .populate('participants.user', 'name email profileImageUrl role')
       .populate('project', 'name')
@@ -503,15 +531,28 @@ exports.getConversations = async (req, res) => {
       });
     }
 
+    // Récupérer la date de création de l'utilisateur pour filtrer les messages
+    const currentUser = await User.findById(req.user._id);
+    const userCreatedAt = currentUser.createdAt;
+
     // Ajouter le compteur de messages non lus pour chaque conversation
     const conversationsWithUnread = await Promise.all(
       conversations.map(async (conv) => {
         const Message = require('../models/Message');
-        const unreadCount = await Message.countDocuments({
+        
+        // Construire la requête de comptage
+        const countQuery = {
           conversation: conv._id,
           sender: { $ne: req.user._id },
           'readBy.user': { $ne: req.user._id }
-        });
+        };
+
+        // Pour les conversations de groupe, ne compter que les messages postérieurs à l'inscription
+        if (conv.type === 'group' || conv.type === 'support') {
+          countQuery.createdAt = { $gte: userCreatedAt };
+        }
+
+        const unreadCount = await Message.countDocuments(countQuery);
 
         return {
           ...conv.toObject(),

@@ -7,6 +7,7 @@ import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
 import { UserContext } from "../../context/userContext";
 import { useLanguage } from "../../context/languageContext";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 const translations = {
   FR: {
@@ -94,6 +95,7 @@ const translations = {
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -206,13 +208,22 @@ const Login = () => {
             <label className="block text-gray-700 font-light mb-2 text-base">
               {copy.passwordLabel}
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={({ target }) => setPassword(target.value)}
-              placeholder={copy.passwordPlaceholder}
-              className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#2d5f3f] transition-colors font-light text-base"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={({ target }) => setPassword(target.value)}
+                placeholder={copy.passwordPlaceholder}
+                className="w-full px-5 py-4 pr-12 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#2d5f3f] transition-colors font-light text-base"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#2d5f3f] transition-colors"
+              >
+                {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+              </button>
+            </div>
           </div>
 
           {error && (
