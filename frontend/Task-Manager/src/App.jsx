@@ -148,6 +148,7 @@ const App = () => {
                   <Route path="/admin/teams" element={<AllTeams />} />
                   <Route path="/admin/tasks" element={<ManageTasks />} />
                   <Route path="/admin/create-task" element={<CreateTask />} />
+                  <Route path="/admin/task-details/:id" element={<ViewTaskDetails />} />
                   <Route path="/admin/users" element={<ManageUsers />} />
                 </Route>
 
