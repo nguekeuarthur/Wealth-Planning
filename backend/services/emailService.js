@@ -115,8 +115,11 @@ const sendEmail = async ({ to, subject, html }) => {
     return;
   }
 
+  const fromAddress = EMAIL_FROM || SMTP_USER;
+  console.log("[emailService] Sending email from:", fromAddress);
+
   await transporter.sendMail({
-    from: EMAIL_FROM || SMTP_USER,
+    from: fromAddress,
     to,
     subject,
     html,
