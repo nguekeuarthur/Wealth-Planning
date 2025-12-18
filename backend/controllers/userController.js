@@ -10,7 +10,7 @@ const getUsers = async (req, res) => {
     const users = await User.find({})
       .select("-password")
       .populate('teams', 'name color department');
-    
+
     console.log(`Found ${users.length} members in database`);
 
     // Add task counts to each user
@@ -76,8 +76,10 @@ const createUser = async (req, res) => {
       industry,
     } = req.body;
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     // Check if user already exists
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists) {
       return res.status(400).json({ message: "User with this email already exists" });
     }
@@ -85,7 +87,7 @@ const createUser = async (req, res) => {
     // Create new user
     const user = await User.create({
       name,
-      email,
+      email: normalizedEmail,
       password,
       role: role || "member",
       phoneNumber,
@@ -129,7 +131,15 @@ const updateUser = async (req, res) => {
 
     // Update fields
     if (name) user.name = name;
-    if (email) user.email = email;
+    if (email) {
+      const normalizedEmail = email.trim().toLowerCase();
+      // Check if email is already taken by another user
+      const existingUser = await User.findOne({ email: normalizedEmail, _id: { $ne: req.params.id } });
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already in use by another account" });
+      }
+      user.email = normalizedEmail;
+    }
     if (phoneNumber !== undefined) user.phoneNumber = phoneNumber;
     if (company !== undefined) user.company = company;
     if (address !== undefined) user.address = address;
@@ -140,7 +150,7 @@ const updateUser = async (req, res) => {
 
     const updatedUser = await user.save();
     const userWithoutPassword = await User.findById(updatedUser._id).select("-password");
-    
+
     res.json({ message: "User updated successfully", user: userWithoutPassword });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -344,24 +354,22 @@ const searchUsers = async (req, res) => {
     console.log('🔎 Search regex:', searchRegex);
 
     // D'abord, compter tous les utilisateurs actifs (pour debug)
-    const totalUsers = await User.countDocuments({ deleted: { $ne: true } });
-    const allUsers = await User.find({ deleted: { $ne: true } }).select('name email');
-    console.log('📊 Total active users in database:', totalUsers);
+    const totalUsers = await User.countDocuments({});
+    const allUsers = await User.find({}).select('name email');
+    console.log('📊 Total users in database:', totalUsers);
     console.log('👥 All users in DB:', allUsers.map(u => ({ name: u.name, email: u.email })));
 
     // Essayer une recherche plus simple d'abord
     console.log('🔍 Testing simple name search...');
     const nameMatches = await User.find({
-      name: searchRegex,
-      deleted: { $ne: true }
+      name: searchRegex
     }).select('name email profileImageUrl role');
 
     console.log('📝 Name matches:', nameMatches.length, nameMatches.map(u => u.name));
 
     console.log('🔍 Testing email search...');
     const emailMatches = await User.find({
-      email: searchRegex,
-      deleted: { $ne: true }
+      email: searchRegex
     }).select('name email profileImageUrl role');
 
     console.log('📧 Email matches:', emailMatches.length, emailMatches.map(u => u.email));
@@ -375,13 +383,12 @@ const searchUsers = async (req, res) => {
             { name: searchRegex },
             { email: searchRegex }
           ]
-        },
-        { deleted: { $ne: true } } // Exclure les utilisateurs supprimés
+        }
       ]
     })
-    .select('name email profileImageUrl role')
-    .limit(parseInt(limit))
-    .sort({ name: 1 });
+      .select('name email profileImageUrl role')
+      .limit(parseInt(limit))
+      .sort({ name: 1 });
 
     console.log('✅ Found users matching query:', users.length);
     console.log('👤 Matching users:', users.map(u => ({ name: u.name, email: u.email })));
@@ -404,8 +411,8 @@ const getAllUsersDebug = async (req, res) => {
       .select('name email role deleted')
       .sort({ name: 1 });
 
-    // Utilisateurs actifs (deleted != true)
-    const activeUsers = await User.find({ deleted: { $ne: true } })
+    // Utilisateurs actifs (par défaut tous ceux qui sont en base, ou filtrer par status si nécessaire)
+    const activeUsers = await User.find({ status: { $ne: 'inactive' } })
       .select('name email role deleted')
       .sort({ name: 1 });
 
