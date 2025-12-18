@@ -52,6 +52,14 @@ const Chat = () => {
     return initials || '?';
   };
 
+  const fullImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    // Always remove 'http://localhost:8000' if it's there (historical cleanup)
+    const cleaned = url.replace(/^http:\/\/localhost:8000/, '');
+    return `${BASE_URL}${cleaned.startsWith('/') ? '' : '/'}${cleaned}`;
+  };
+
   const getOtherParticipant = (conv) => {
     const parts = Array.isArray(conv?.participants) ? conv.participants : [];
     return parts
@@ -445,7 +453,7 @@ const Chat = () => {
                           if (photo) {
                             return (
                               <img
-                                src={photo}
+                                src={fullImageUrl(photo)}
                                 alt={other?.name || 'Utilisateur'}
                                 className="w-full h-full object-cover"
                               />
@@ -497,7 +505,7 @@ const Chat = () => {
                     if (photo) {
                       return (
                         <img
-                          src={photo}
+                          src={fullImageUrl(photo)}
                           alt={other?.name || 'Utilisateur'}
                           className="w-full h-full object-cover"
                         />
@@ -553,7 +561,7 @@ const Chat = () => {
                           <span className="text-white font-bold text-sm">{initial}</span>
                           {avatarUrl && (
                             <img
-                              src={avatarUrl}
+                              src={fullImageUrl(avatarUrl)}
                               alt={sender?.name || sender?.fullName || 'Avatar'}
                               className="absolute inset-0 w-full h-full object-cover"
                               onError={(e) => {
@@ -564,12 +572,12 @@ const Chat = () => {
                         </div>
                       )}
 
-                      <div className={`max-w-md px-6 py-4 rounded-3xl shadow-md ${isOwn
-                        ? 'bg-[#2d5f3f] text-white rounded-br-lg'
-                        : 'bg-white text-gray-800 rounded-bl-lg border border-gray-200'
+                      <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl shadow-sm ${isOwn
+                        ? 'bg-[#2d5f3f] text-white rounded-br-none'
+                        : 'bg-white text-gray-800 rounded-bl-none border border-gray-100'
                         }`}>
-                        <p className="text-base leading-relaxed">{message.content}</p>
-                        <p className={`text-xs mt-2 opacity-60 ${isOwn ? 'text-right' : ''}`}>
+                        <p className="text-[15px] leading-relaxed">{message.content}</p>
+                        <p className={`text-[10px] mt-1 opacity-60 ${isOwn ? 'text-right' : ''}`}>
                           {new Date(message.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
@@ -579,7 +587,7 @@ const Chat = () => {
                           <span className="text-white font-bold text-sm">{(user?.name || user?.fullName || '?').charAt(0).toUpperCase()}</span>
                           {(user?.profileImageUrl || user?.profileImage || user?.avatar || user?.photoUrl || user?.imageUrl) && (
                             <img
-                              src={user?.profileImageUrl || user?.profileImage || user?.avatar || user?.photoUrl || user?.imageUrl}
+                              src={fullImageUrl(user?.profileImageUrl || user?.profileImage || user?.avatar || user?.photoUrl || user?.imageUrl)}
                               alt={user?.name || user?.fullName || 'Avatar'}
                               className="absolute inset-0 w-full h-full object-cover"
                               onError={(e) => {

@@ -41,11 +41,11 @@ router.post("/upload-image", upload.single("image"), protect, async (req, res) =
     }
 
     console.log("✅ File uploaded:", req.file.filename);
-    
-    // Return the file URL
-    const imageUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+
+    // Return the relative file URL
+    const imageUrl = `/uploads/${req.file.filename}`;
     console.log("🔗 Image URL:", imageUrl);
-    
+
     // Update user profile with new image URL
     const user = await User.findByIdAndUpdate(
       req.user._id,
@@ -62,9 +62,9 @@ router.post("/upload-image", upload.single("image"), protect, async (req, res) =
   } catch (error) {
     console.error("❌ Error in upload-image route:", error);
     console.error("Stack trace:", error.stack);
-    res.status(500).json({ 
-      message: "Error uploading image", 
-      error: error.message 
+    res.status(500).json({
+      message: "Error uploading image",
+      error: error.message
     });
   }
 });

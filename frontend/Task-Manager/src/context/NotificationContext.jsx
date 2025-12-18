@@ -42,102 +42,108 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [user?._id]);
 
-  // Sauvegarder les notifications dans le localStorage et recalculer le compteur
+  // Sauvegarder les notifications dans le localStorage
   useEffect(() => {
     if (user?._id) {
       const storageKey = `wealth-planning-notifications-${user._id}`;
       localStorage.setItem(storageKey, JSON.stringify(notifications));
-      // Recalculer le compteur de non lus
-      const unread = notifications.filter(n => !n.read).length;
-      setUnreadCount(unread);
     }
   }, [notifications, user?._id]);
 
   // Générer des notifications basées sur le statut du profil utilisateur
   useEffect(() => {
-    if (user && notifications.length >= 0) { // Attendre que les notifications soient chargées
-      let updatedNotifications = [...notifications];
+    if (user && user._id) {
+      setNotifications(prev => {
+        let updated = [...prev];
+        let changed = false;
 
-      // Notification pour compléter le profil (SEULEMENT pour les utilisateurs NON-admin)
-      // Vérifier si l'utilisateur a déjà complété son profil (stocké dans localStorage)
-      const profileCompletedKey = `profile-completed-${user._id}`;
-      const hasCompletedProfile = localStorage.getItem(profileCompletedKey) === 'true';
-      const needsProfileCompletion = user.role !== 'admin' && !hasCompletedProfile;
+        // 1. Notification pour compléter le profil
+        const profileCompletedKey = `profile-completed-${user._id}`;
+        const hasCompletedProfile = localStorage.getItem(profileCompletedKey) === 'true';
+        const needsProfileCompletion = user.role !== 'admin' && !hasCompletedProfile;
+        const profileNotificationExists = updated.some(n => n.id === "profile_completion");
 
-      const profileNotificationExists = notifications.some(n => n.id === "profile_completion");
+        if (needsProfileCompletion && !profileNotificationExists) {
+          updated.push({
+            id: "profile_completion",
+            type: "profile",
+            title: "Complétez votre profil",
+            message: "Ajoutez votre date de naissance, nationalité et numéro de téléphone pour finaliser votre inscription.",
+            priority: "high",
+            read: false,
+            createdAt: new Date().toISOString(),
+            actionUrl: "/profile-completion"
+          });
+          changed = true;
+        } else if (!needsProfileCompletion && profileNotificationExists) {
+          updated = updated.filter(n => n.id !== "profile_completion");
+          changed = true;
+        }
 
-      if (needsProfileCompletion && !profileNotificationExists) {
-        updatedNotifications.push({
-          id: "profile_completion",
-          type: "profile",
-          title: "Complétez votre profil",
-          message: "Ajoutez votre date de naissance, nationalité et numéro de téléphone pour finaliser votre inscription.",
-          priority: "high",
-          read: false,
-          createdAt: new Date().toISOString(),
-          actionUrl: "/profile-completion"
-        });
-      } else if (!needsProfileCompletion && profileNotificationExists) {
-        // Supprimer la notification si le profil est maintenant complété
-        updatedNotifications = updatedNotifications.filter(n => n.id !== "profile_completion");
-      }
+        // 2. Notification de bienvenue
+        const welcomeKey = `welcome-notif-sent-${user._id}`;
+        const welcomeAlreadySent = localStorage.getItem(welcomeKey);
+        const welcomeNotificationExists = updated.some(n => n.id === "welcome");
 
-      // Notification de bienvenue (toujours présente pour les nouveaux utilisateurs)
-      const welcomeNotificationExists = notifications.some(n => n.id === "welcome");
-      if (!welcomeNotificationExists) {
-        updatedNotifications.push({
-          id: "welcome",
-          type: "welcome",
-          title: "Bienvenue dans Wealth Planning !",
-          message: "Découvrez toutes les fonctionnalités disponibles pour gérer vos projets et tâches.",
-          priority: "normal",
-          read: false,
-          createdAt: new Date().toISOString()
-        });
-      }
+        if (!welcomeAlreadySent && !welcomeNotificationExists) {
+          updated.push({
+            id: "welcome",
+            type: "welcome",
+            title: "Bienvenue dans Wealth Planning !",
+            message: "Découvrez toutes les fonctionnalités disponibles pour gérer vos projets et tâches.",
+            priority: "normal",
+            read: false,
+            createdAt: new Date().toISOString()
+          });
+          localStorage.setItem(welcomeKey, 'true');
+          changed = true;
+        }
 
-      // Mettre à jour seulement si les notifications ont changé
-      if (updatedNotifications.length !== notifications.length) {
-        setNotifications(updatedNotifications);
-        setUnreadCount(updatedNotifications.filter(n => !n.read).length);
-      }
+        if (changed) {
+          setUnreadCount(updated.filter(n => !n.read).length);
+          return updated;
+        }
+        return prev;
+      });
     }
-  }, [user, notifications.length]); // Dépendre aussi de notifications.length pour éviter les boucles
+  }, [user?._id]);
 
   const markAsRead = (notificationId) => {
-    setNotifications(prev =>
-      prev.map(notification =>
-        notification.id === notificationId
-          ? { ...notification, read: true }
-          : notification
-      )
-    );
-    setUnreadCount(prev => Math.max(0, prev - 1));
+    setNotifications(prev => {
+      const next = prev.map(n => n.id === notificationId ? { ...n, read: true } : n);
+      setUnreadCount(next.filter(n => !n.read).length);
+      return next;
+    });
   };
 
   const markAllAsRead = () => {
-    setNotifications(prev =>
-      prev.map(notification => ({ ...notification, read: true }))
-    );
-    setUnreadCount(0);
+    setNotifications(prev => {
+      const next = prev.map(n => ({ ...n, read: true }));
+      setUnreadCount(0);
+      return next;
+    });
   };
 
   const dismissNotification = (notificationId) => {
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
-    // Recalculer le compteur de non lus
-    const updatedNotifications = notifications.filter(n => n.id !== notificationId);
-    setUnreadCount(updatedNotifications.filter(n => !n.read).length);
+    setNotifications(prev => {
+      const next = prev.filter(n => n.id !== notificationId);
+      setUnreadCount(next.filter(n => !n.read).length);
+      return next;
+    });
   };
 
   const addNotification = (notification) => {
-    const newNotification = {
-      id: Date.now().toString(),
-      read: false,
-      createdAt: new Date().toISOString(),
-      ...notification
-    };
-    setNotifications(prev => [newNotification, ...prev]);
-    setUnreadCount(prev => prev + 1);
+    setNotifications(prev => {
+      const newNotification = {
+        id: Date.now().toString(),
+        read: false,
+        createdAt: new Date().toISOString(),
+        ...notification
+      };
+      const next = [newNotification, ...prev];
+      setUnreadCount(next.filter(n => !n.read).length);
+      return next;
+    });
   };
 
   return (

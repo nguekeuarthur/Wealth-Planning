@@ -3,7 +3,7 @@ import DashboardLayout from "../../components/layouts/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
-import { FiSearch, FiPlus, FiFolder, FiFilter, FiCheckSquare, FiSquare, FiArchive, FiSettings, FiCalendar, FiClock, FiUser } from "react-icons/fi";
+import { FiSearch, FiPlus, FiFolder, FiFilter, FiCheckSquare, FiSquare, FiArchive, FiSettings, FiCalendar, FiClock, FiUser, FiCheckCircle } from "react-icons/fi";
 import toast from "react-hot-toast";
 import CreateProjectModal from "../../components/CreateProjectModal";
 import { UserContext } from "../../context/userContext";
