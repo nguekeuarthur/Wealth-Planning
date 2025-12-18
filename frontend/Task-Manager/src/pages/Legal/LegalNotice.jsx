@@ -3,64 +3,103 @@ import background from '../../assets/images/legal-hero-bg.jpg';
 
 const LegalNotice = () => {
     return (
-        <div className="bg-white min-h-screen">
+        <div className="bg-gradient-to-b from-white via-[#f8faf9] to-white min-h-screen">
             {/* Hero Section */}
-            <section className="relative h-[40vh] min-h-[300px] flex items-center justify-center text-white overflow-hidden">
+            <section className="relative h-[50vh] min-h-[400px] flex items-center justify-center text-white overflow-hidden">
                 <div className="absolute inset-0">
                     <img
                         src={background}
                         alt="Geneva Wealth Partners"
                         className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/50"></div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#1e4029]/80 via-[#2d5f3f]/75 to-[#1e4029]/80"></div>
                 </div>
-                <div className="relative z-10 text-center px-6">
-                    <h1 className="text-4xl md:text-5xl font-normal tracking-wide mb-4 text-white drop-shadow-2xl">Mentions légales</h1>
-                    <div className="w-24 h-0.5 bg-[#2d5f3f] mx-auto"></div>
+
+                {/* Decorative elements */}
+                <div className="absolute inset-0 opacity-20">
+                    <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white rounded-full blur-3xl"></div>
+                    <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-white rounded-full blur-3xl"></div>
+                </div>
+
+                <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
+                    <h1 className="text-5xl md:text-6xl font-light tracking-tight mb-6 text-white drop-shadow-2xl">
+                        Mentions légales
+                    </h1>
+                    <div className="w-32 h-1 bg-white/60 mx-auto mb-6"></div>
+                    <p className="text-lg md:text-xl text-white/90 font-light max-w-2xl mx-auto">
+                        Informations légales et juridiques
+                    </p>
                 </div>
             </section>
 
             {/* Content Section */}
-            <section className="py-20 px-6">
-                <div className="max-w-4xl mx-auto">
-                    <p className="text-xl md:text-2xl font-normal text-[#2d5f3f] text-center max-w-3xl mx-auto mb-16 leading-relaxed hover:scale-105 hover:text-[#1e4029] transition-all duration-300 cursor-default">
-                        Informations légales relatives à l'édition, l'hébergement et l'utilisation du site.
-                    </p>
+            <section className="py-24 px-6 relative">
+                <div className="absolute inset-0 opacity-5">
+                    <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#2d5f3f] rounded-full blur-3xl"></div>
+                    <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#5a8f6f] rounded-full blur-3xl"></div>
+                </div>
 
-                    <div className="space-y-8">
-                        <section className="p-6 rounded-lg transition-all duration-300 hover:bg-gray-50 hover:shadow-sm border-l-4 border-transparent hover:border-[#2d5f3f]">
-                            <h2 className="text-2xl font-light text-[#1e4029] mb-4 tracking-wide">Éditeur du site</h2>
-                            <p className="text-gray-600 font-light leading-relaxed">
-                                Geneva Wealth Partners, 123 Rue de la Finance, 1200 Genève, Suisse.
-                            </p>
+                <div className="max-w-5xl mx-auto relative z-10">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-10 md:p-16 mb-12 border border-[#2d5f3f]/10">
+                        <p className="text-xl md:text-2xl font-light text-[#1e4029] text-center leading-relaxed">
+                            Informations légales relatives à l'édition, l'hébergement et l'utilisation du site.
+                        </p>
+                    </div>
+
+                    <div className="space-y-6">
+                        <section className="group relative">
+                            <div className="absolute -inset-1 bg-gradient-to-br from-[#2d5f3f] via-[#5a8f6f] to-[#1e4029] rounded-2xl opacity-0 group-hover:opacity-30 blur-xl transition-all duration-500"></div>
+                            <div className="relative bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 border-l-4 border-[#2d5f3f] transform group-hover:scale-[1.02]">
+                                <h2 className="text-3xl font-light text-[#1e4029] mb-4 tracking-tight">Éditeur du site</h2>
+                                <div className="w-16 h-1 bg-gradient-to-r from-[#2d5f3f] to-[#5a8f6f] mb-4 rounded-full"></div>
+                                <p className="text-gray-700 font-light leading-relaxed text-lg">
+                                    Geneva Wealth Partners, 123 Rue de la Finance, 1200 Genève, Suisse.
+                                </p>
+                            </div>
                         </section>
 
-                        <section className="p-6 rounded-lg transition-all duration-300 hover:bg-gray-50 hover:shadow-sm border-l-4 border-transparent hover:border-[#2d5f3f]">
-                            <h2 className="text-2xl font-light text-[#1e4029] mb-4 tracking-wide">Hébergement</h2>
-                            <p className="text-gray-600 font-light leading-relaxed">
-                                Le site est hébergé par AWS France SAS, 8 Rue de la Ville, 75008 Paris, France.
-                            </p>
+                        <section className="group relative">
+                            <div className="absolute -inset-1 bg-gradient-to-br from-[#2d5f3f] via-[#5a8f6f] to-[#1e4029] rounded-2xl opacity-0 group-hover:opacity-30 blur-xl transition-all duration-500"></div>
+                            <div className="relative bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 border-l-4 border-[#2d5f3f] transform group-hover:scale-[1.02]">
+                                <h2 className="text-3xl font-light text-[#1e4029] mb-4 tracking-tight">Hébergement</h2>
+                                <div className="w-16 h-1 bg-gradient-to-r from-[#2d5f3f] to-[#5a8f6f] mb-4 rounded-full"></div>
+                                <p className="text-gray-700 font-light leading-relaxed text-lg">
+                                    Le site est hébergé par AWS France SAS, 8 Rue de la Ville, 75008 Paris, France.
+                                </p>
+                            </div>
                         </section>
 
-                        <section className="p-6 rounded-lg transition-all duration-300 hover:bg-gray-50 hover:shadow-sm border-l-4 border-transparent hover:border-[#2d5f3f]">
-                            <h2 className="text-2xl font-light text-[#1e4029] mb-4 tracking-wide">Propriété intellectuelle</h2>
-                            <p className="text-gray-600 font-light leading-relaxed">
-                                Tout le contenu du site (textes, images, logos, vidéos) est protégé par le droit d'auteur et les marques déposées de Geneva Wealth Partners. Toute reproduction, distribution ou utilisation non autorisée est strictement interdite.
-                            </p>
+                        <section className="group relative">
+                            <div className="absolute -inset-1 bg-gradient-to-br from-[#2d5f3f] via-[#5a8f6f] to-[#1e4029] rounded-2xl opacity-0 group-hover:opacity-30 blur-xl transition-all duration-500"></div>
+                            <div className="relative bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 border-l-4 border-[#2d5f3f] transform group-hover:scale-[1.02]">
+                                <h2 className="text-3xl font-light text-[#1e4029] mb-4 tracking-tight">Propriété intellectuelle</h2>
+                                <div className="w-16 h-1 bg-gradient-to-r from-[#2d5f3f] to-[#5a8f6f] mb-4 rounded-full"></div>
+                                <p className="text-gray-700 font-light leading-relaxed text-lg">
+                                    Tout le contenu du site (textes, images, logos, vidéos) est protégé par le droit d'auteur et les marques déposées de Geneva Wealth Partners. Toute reproduction, distribution ou utilisation non autorisée est strictement interdite.
+                                </p>
+                            </div>
                         </section>
 
-                        <section className="p-6 rounded-lg transition-all duration-300 hover:bg-gray-50 hover:shadow-sm border-l-4 border-transparent hover:border-[#2d5f3f]">
-                            <h2 className="text-2xl font-light text-[#1e4029] mb-4 tracking-wide">Responsabilité</h2>
-                            <p className="text-gray-600 font-light leading-relaxed">
-                                Geneva Wealth Partners ne saurait être tenu responsable des dommages directs ou indirects résultant de l'accès ou de l'utilisation du site.
-                            </p>
+                        <section className="group relative">
+                            <div className="absolute -inset-1 bg-gradient-to-br from-[#2d5f3f] via-[#5a8f6f] to-[#1e4029] rounded-2xl opacity-0 group-hover:opacity-30 blur-xl transition-all duration-500"></div>
+                            <div className="relative bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 border-l-4 border-[#2d5f3f] transform group-hover:scale-[1.02]">
+                                <h2 className="text-3xl font-light text-[#1e4029] mb-4 tracking-tight">Responsabilité</h2>
+                                <div className="w-16 h-1 bg-gradient-to-r from-[#2d5f3f] to-[#5a8f6f] mb-4 rounded-full"></div>
+                                <p className="text-gray-700 font-light leading-relaxed text-lg">
+                                    Geneva Wealth Partners ne saurait être tenu responsable des dommages directs ou indirects résultant de l'accès ou de l'utilisation du site.
+                                </p>
+                            </div>
                         </section>
 
-                        <section className="p-6 rounded-lg transition-all duration-300 hover:bg-gray-50 hover:shadow-sm border-l-4 border-transparent hover:border-[#2d5f3f]">
-                            <h2 className="text-2xl font-light text-[#1e4029] mb-4 tracking-wide">Contact</h2>
-                            <p className="text-gray-600 font-light leading-relaxed">
-                                Pour toute question relative aux mentions légales, veuillez nous contacter à <a href="mailto:info@genevawealthpartners.ch" className="text-[#2d5f3f] font-normal hover:underline">info@genevawealthpartners.ch</a>.
-                            </p>
+                        <section className="group relative">
+                            <div className="absolute -inset-1 bg-gradient-to-br from-[#2d5f3f] via-[#5a8f6f] to-[#1e4029] rounded-2xl opacity-0 group-hover:opacity-30 blur-xl transition-all duration-500"></div>
+                            <div className="relative bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 border-l-4 border-[#2d5f3f] transform group-hover:scale-[1.02]">
+                                <h2 className="text-3xl font-light text-[#1e4029] mb-4 tracking-tight">Contact</h2>
+                                <div className="w-16 h-1 bg-gradient-to-r from-[#2d5f3f] to-[#5a8f6f] mb-4 rounded-full"></div>
+                                <p className="text-gray-700 font-light leading-relaxed text-lg">
+                                    Pour toute question relative aux mentions légales, veuillez nous contacter à <a href="mailto:info@genevawealthpartners.ch" className="text-[#2d5f3f] font-medium hover:text-[#1e4029] underline decoration-2 underline-offset-4 transition-colors">info@genevawealthpartners.ch</a>.
+                                </p>
+                            </div>
                         </section>
                     </div>
                 </div>

@@ -124,8 +124,8 @@ const Footer = () => {
             </div>
             <p className="text-gray-300 mb-4 font-light leading-relaxed text-sm">{copy.description}</p>
             <div className="flex space-x-3">
-              {[FaLinkedin, FaTwitter, FaFacebook].map((Icon, index) => (
-                <a key={Icon.displayName ?? index} href="#" className="bg-gray-700 hover:bg-[#2d5f3f] w-10 h-10 flex items-center justify-center transition-colors">
+              {[FaLinkedin].map((Icon, index) => (
+                <a key={Icon.displayName ?? index} href="#" className="bg-gray-700 hover:bg-[#2d5f3f] w-10 h-10 flex items-center justify-center transition-colors text-white">
                   <Icon />
                 </a>
               ))}
@@ -133,7 +133,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="text-lg font-light mb-4 tracking-wide">{copy.quickLinksTitle}</h3>
+            <h3 className="text-lg font-light mb-4 tracking-wide text-white">{copy.quickLinksTitle}</h3>
             <ul className="space-y-2">
               <li>
                 <Link to="/" className="text-gray-300 hover:text-white transition-colors font-light">
@@ -164,7 +164,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="text-lg font-light mb-4 tracking-wide">{copy.servicesTitle}</h3>
+            <h3 className="text-lg font-light mb-4 tracking-wide text-white">{copy.servicesTitle}</h3>
             <ul className="space-y-2 text-gray-300 font-light">
               {copy.servicesList.map((service) => (
                 <li key={service}>{service}</li>
@@ -173,16 +173,16 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="text-lg font-light mb-4 tracking-wide">{copy.contactTitle}</h3>
+            <h3 className="text-lg font-light mb-4 tracking-wide text-white">{copy.contactTitle}</h3>
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
-                <FaEnvelope className="text-[#5a8f6f] mt-1 flex-shrink-0" />
+                <FaEnvelope className="text-white mt-1 flex-shrink-0" />
                 <a href="mailto:info@genevawealthpartners.ch" className="text-gray-300 hover:text-white transition-colors font-light">
                   info@genevawealthpartners.ch
                 </a>
               </li>
               <li className="flex items-start gap-3">
-                <FaPhone className="text-[#5a8f6f] mt-1 flex-shrink-0" />
+                <FaPhone className="text-white mt-1 flex-shrink-0" />
                 <a href="tel:+41779863255" className="text-gray-300 hover:text-white transition-colors font-light">
                   +41 77 98 63 255
                 </a>

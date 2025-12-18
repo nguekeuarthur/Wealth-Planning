@@ -280,7 +280,7 @@ const Services = () => {
           </p>
           <Link
             to="/connexion"
-            className="inline-block bg-[#2d5f3f] text-white px-10 py-4 rounded-lg font-semibold text-lg hover:bg-[#1e4029] transition-all transform hover:scale-105 shadow-xl"
+            className="inline-block bg-white text-[#2d5f3f] px-10 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-all transform hover:scale-105 shadow-xl"
           >
             {copy.cta.button}
           </Link>
