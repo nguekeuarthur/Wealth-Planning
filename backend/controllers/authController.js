@@ -261,7 +261,7 @@ const registerUser = async (req, res) => {
 
     try {
       console.log("[registerUser] Sending verification email to:", user.email);
-      await sendVerificationEmail(user, user.language);
+      sendVerificationEmail(user, user.language);
       console.log("[registerUser] Verification email sent successfully");
     } catch (emailError) {
       console.error("[registerUser] Error sending verification email:", emailError);
@@ -512,7 +512,7 @@ const forgotPassword = async (req, res) => {
       footerText: emailContent.footerText,
     });
 
-    await sendEmail({
+    sendEmail({
       to: user.email,
       subject: emailContent.subject,
       html,
@@ -640,7 +640,7 @@ const resendVerificationEmail = async (req, res) => {
       return res.status(400).json({ message: "Email déjà vérifié." });
     }
 
-    await sendVerificationEmail(user, language || user.language);
+    sendVerificationEmail(user, language || user.language);
     res.json({ message: "Email de vérification renvoyé." });
   } catch (error) {
     res.status(500).json({ message: "Erreur serveur", error: error.message });
@@ -747,7 +747,7 @@ const updateUserProfile = async (req, res) => {
       }
       user.email = normalizedEmail;
       user.isEmailVerified = false;
-      await sendVerificationEmail(user, req.body.language || user.language);
+      sendVerificationEmail(user, req.body.language || user.language);
     }
 
     if (newPassword) {
