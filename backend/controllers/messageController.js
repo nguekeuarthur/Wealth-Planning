@@ -321,14 +321,39 @@ exports.deleteMessage = async (req, res) => {
 // Get unread count
 exports.getUnreadCount = async (req, res) => {
   try {
-    // Compter les messages de conversation où l'utilisateur n'est pas l'expéditeur
-    // et qui ne sont pas marqués comme lus par l'utilisateur
-    const count = await Message.countDocuments({
-      sender: { $ne: req.user._id },
-      'readBy.user': { $ne: req.user._id }
+    const User = require('../models/User');
+    const Conversation = require('../models/Conversation');
+    
+    // Récupérer l'utilisateur pour obtenir sa date de création
+    const user = await User.findById(req.user._id);
+    const userCreatedAt = user.createdAt;
+
+    // Trouver toutes les conversations où l'utilisateur est participant
+    const conversations = await Conversation.find({
+      'participants.user': req.user._id,
+      isActive: true
     });
 
-    res.json({ unreadCount: count });
+    let totalUnread = 0;
+
+    for (const conversation of conversations) {
+      // Construire la requête de messages
+      const messageQuery = {
+        conversation: conversation._id,
+        sender: { $ne: req.user._id },
+        'readBy.user': { $ne: req.user._id }
+      };
+
+      // Pour les conversations de groupe, ne compter que les messages postérieurs à l'inscription
+      if (conversation.type === 'group' || conversation.type === 'support') {
+        messageQuery.createdAt = { $gte: userCreatedAt };
+      }
+
+      const count = await Message.countDocuments(messageQuery);
+      totalUnread += count;
+    }
+
+    res.json({ unreadCount: totalUnread });
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }

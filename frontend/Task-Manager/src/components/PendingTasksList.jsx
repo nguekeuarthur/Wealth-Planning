@@ -1,10 +1,34 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import { FaClock, FaUser, FaProjectDiagram, FaFlag } from 'react-icons/fa';
+import { UserContext } from '../context/userContext';
 
 const PendingTasksList = ({ tasks = [] }) => {
   const navigate = useNavigate();
+  const { user } = useContext(UserContext);
+  const role = user?.role;
+
+  const translateStatus = (status) => {
+    const statusMap = {
+      'Pending': 'En attente',
+      'In Progress': 'En cours',
+      'Completed': 'Terminé',
+      'Done': 'Terminé',
+      'In Review': 'En révision'
+    };
+    return statusMap[status] || status;
+  };
+
+  const translatePriority = (priority) => {
+    const priorityMap = {
+      'Low': 'Faible',
+      'Medium': 'Moyen',
+      'High': 'Élevé'
+    };
+    return priorityMap[priority] || priority;
+  };
+
   const getPriorityColor = (priority) => {
     switch (priority?.toLowerCase()) {
       case 'high':
@@ -29,6 +53,17 @@ const PendingTasksList = ({ tasks = [] }) => {
       default:
         return 'bg-gray-100 text-gray-700 border-gray-200';
     }
+  };
+
+  const handleTaskClick = (taskId) => {
+    const roleBasePath = {
+      admin: '/admin',
+      member: '/user',
+      partner: '/partner',
+      collaborator: '/collaborator',
+    };
+    const basePath = roleBasePath[role] || '/user';
+    navigate(`${basePath}/task-details/${taskId}`);
   };
 
   if (tasks.length === 0) {
@@ -62,7 +97,7 @@ const PendingTasksList = ({ tasks = [] }) => {
             <tr 
               key={task.taskId} 
               className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
-              onClick={() => navigate(`/user/task-details/${task.taskId}`)}
+              onClick={() => handleTaskClick(task.taskId)}
             >
               <td className="px-4 py-4 whitespace-nowrap">
                 <span className="text-xs font-mono font-semibold text-gray-600 bg-gray-100 px-2 py-1 rounded">
@@ -103,13 +138,13 @@ const PendingTasksList = ({ tasks = [] }) => {
               </td>
               <td className="px-4 py-4 whitespace-nowrap">
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(task.status)}`}>
-                  {task.status}
+                  {translateStatus(task.status)}
                 </span>
               </td>
               <td className="px-4 py-4 whitespace-nowrap">
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-1 w-fit ${getPriorityColor(task.priority)}`}>
                   <FaFlag className="text-xs" />
-                  {task.priority}
+                  {translatePriority(task.priority)}
                 </span>
               </td>
               <td className="px-4 py-4 whitespace-nowrap">

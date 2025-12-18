@@ -39,18 +39,19 @@ const AllInvoices = () => {
   const [viewingInvoice, setViewingInvoice] = useState(null);
 
   const statuses = [
-    "All Status",
-    "PAYMENT RECEIVED",
-    "PAYMENT SENT",
-    "UNPAID",
-    "OVERDUE"
+    "Tous les statuts",
+    "PAIEMENT REÇU",
+    "PAIEMENT ENVOYÉ",
+    "NON PAYÉ",
+    "EN RETARD"
   ];
 
   const statusColors = {
-    "PAYMENT RECEIVED": "bg-[#dff5e7] text-[#1e4029] border-[#dfe8e1]",
-    "PAYMENT SENT": "bg-[#e6f0ea] text-[#2d5f3f] border-[#dfe8e1]",
-    "UNPAID": "bg-red-50 text-red-700 border-red-200",
-    "OVERDUE": "bg-[#fff7d6] text-[#7b6a25] border-[#dfe8e1]"
+    "PAIEMENT REÇU": "bg-[#dff5e7] text-[#1e4029] border-[#dfe8e1]",
+    "PAIEMENT ENVOYÉ": "bg-[#e6f0ea] text-[#2d5f3f] border-[#dfe8e1]",
+    "NON PAYÉ": "bg-red-50 text-red-700 border-red-200",
+    "EN RETARD": "bg-[#fff7d6] text-[#7b6a25] border-[#dfe8e1]",
+    "EN ATTENTE": "bg-blue-50 text-blue-700 border-blue-200"
   };
 
   const getAllInvoices = async () => {
@@ -90,10 +91,27 @@ const AllInvoices = () => {
     }
 
     // Filter by status
-    if (selectedStatus !== "all" && selectedStatus !== "All Status") {
-      filtered = filtered.filter(
-        (invoice) => invoice.status?.toUpperCase() === selectedStatus.toUpperCase()
-      );
+    if (selectedStatus !== "all" && selectedStatus !== "Tous les statuts") {
+      filtered = filtered.filter((invoice) => {
+        const normalizedStatus = invoice.status?.toLowerCase();
+        const overdue = isOverdue(invoice.dueDate, invoice.status);
+        
+        // Map backend status to display status
+        let displayStatus;
+        if (overdue) {
+          displayStatus = "EN RETARD";
+        } else if (normalizedStatus === "paiement reçu" || normalizedStatus === "payée") {
+          displayStatus = "PAIEMENT REÇU";
+        } else if (normalizedStatus === "paiement envoyé") {
+          displayStatus = "PAIEMENT ENVOYÉ";
+        } else if (normalizedStatus === "en attente") {
+          displayStatus = "EN ATTENTE";
+        } else {
+          displayStatus = "NON PAYÉ";
+        }
+        
+        return displayStatus === selectedStatus;
+      });
     }
 
     setFilteredInvoices(filtered);
@@ -131,7 +149,10 @@ const AllInvoices = () => {
   };
 
   const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('fr-FR');
+    if (!date) return "Date non définie";
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) return "Date invalide";
+    return parsedDate.toLocaleDateString('fr-FR');
   };
 
   const formatAmount = (amount) => {
@@ -142,7 +163,8 @@ const AllInvoices = () => {
   };
 
   const isOverdue = (dueDate, status) => {
-    if (status?.toUpperCase() === "PAYMENT RECEIVED") return false;
+    const normalizedStatus = status?.toLowerCase();
+    if (normalizedStatus === "paiement reçu" || normalizedStatus === "payée") return false;
     return new Date(dueDate) < new Date();
   };
 
@@ -212,10 +234,7 @@ const AllInvoices = () => {
               <option value="all">Tous les statuts</option>
               {statuses.slice(1).map((status) => (
                 <option key={status} value={status}>
-                  {status === 'PAYMENT RECEIVED' ? 'Paiement reçu' :
-                   status === 'PAYMENT SENT' ? 'Paiement envoyé' :
-                   status === 'UNPAID' ? 'Non payé' :
-                   status === 'OVERDUE' ? 'En retard' : status}
+                  {status}
                 </option>
               ))}
             </select>
@@ -255,7 +274,19 @@ const AllInvoices = () => {
                 <tbody className="divide-y divide-[#dfe8e1]">
                   {filteredInvoices.map((invoice) => {
                     const overdue = isOverdue(invoice.dueDate, invoice.status);
-                    const displayStatus = overdue ? "OVERDUE" : (invoice.status?.toUpperCase() || "UNPAID");
+                    const normalizedStatus = invoice.status?.toLowerCase();
+                    let displayStatus;
+                    if (overdue) {
+                      displayStatus = "EN RETARD";
+                    } else if (normalizedStatus === "paiement reçu" || normalizedStatus === "payée") {
+                      displayStatus = "PAIEMENT REÇU";
+                    } else if (normalizedStatus === "paiement envoyé") {
+                      displayStatus = "PAIEMENT ENVOYÉ";
+                    } else if (normalizedStatus === "en attente") {
+                      displayStatus = "EN ATTENTE";
+                    } else {
+                      displayStatus = "NON PAYÉ";
+                    }
                     
                     return (
                       <tr 
@@ -291,7 +322,7 @@ const AllInvoices = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${statusColors[displayStatus] || statusColors["UNPAID"]}`}>
+                          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${statusColors[displayStatus] || statusColors["NON PAYÉ"]}`}>
                             {displayStatus}
                           </span>
                         </td>
@@ -414,12 +445,16 @@ const AllInvoices = () => {
 
                 <div>
                   <p className="text-xs text-[#7a8b7f] mb-1 uppercase tracking-wide">STATUT</p>
-                  <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full border ${statusColors[viewingInvoice.status?.toUpperCase()] || statusColors["UNPAID"]}`}>
-                    {viewingInvoice.status?.toUpperCase() === 'PAYMENT RECEIVED' ? 'Paiement reçu' :
-                     viewingInvoice.status?.toUpperCase() === 'PAYMENT SENT' ? 'Paiement envoyé' :
-                     viewingInvoice.status?.toUpperCase() === 'UNPAID' ? 'Non payé' :
-                     viewingInvoice.status?.toUpperCase() === 'OVERDUE' ? 'En retard' :
-                     viewingInvoice.status?.toUpperCase() || "Non payé"}
+                  <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full border ${statusColors[viewingInvoice.status?.toUpperCase()] || statusColors["NON PAYÉ"]}`}>
+                    {(() => {
+                      const status = viewingInvoice.status?.toLowerCase();
+                      if (status === 'paiement reçu' || status === 'payée') return 'PAIEMENT REÇU';
+                      if (status === 'paiement envoyé') return 'PAIEMENT ENVOYÉ';
+                      if (status === 'en attente') return 'EN ATTENTE';
+                      if (status === 'non payée') return 'NON PAYÉ';
+                      if (isOverdue(viewingInvoice.dueDate, viewingInvoice.status)) return 'EN RETARD';
+                      return 'NON PAYÉ';
+                    })()}
                   </span>
                 </div>
 

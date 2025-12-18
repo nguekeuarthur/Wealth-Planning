@@ -67,13 +67,13 @@ const InvoicesTable = ({ invoices, onInvoiceDeleted, onInvoiceUpdated, onEditInv
     if (status === "paiement reçu" || status === "payée") {
       return (
         <span className="inline-block px-3 py-1 bg-green-600 text-white text-xs font-medium rounded">
-          PAYMENT RECEIVED
+          PAIEMENT REÇU
         </span>
       );
     }
     return (
       <span className="inline-block px-3 py-1 bg-gray-200 text-gray-700 text-xs font-medium rounded">
-        {status || "Pending"}
+        {status || "En attente"}
       </span>
     );
   };
@@ -100,7 +100,7 @@ const InvoicesTable = ({ invoices, onInvoiceDeleted, onInvoiceUpdated, onEditInv
                   onClick={() => handleSort("amount")}
                   className="flex items-center gap-1 hover:text-gray-900"
                 >
-                  # Amount
+                  # Montant
                   {sortField === "amount" && (
                     <FiArrowUp
                       className={`w-4 h-4 transition-transform ${
@@ -116,7 +116,7 @@ const InvoicesTable = ({ invoices, onInvoiceDeleted, onInvoiceUpdated, onEditInv
                   className="flex items-center gap-1 hover:text-gray-900"
                 >
                   <FiCalendar className="w-4 h-4" />
-                  Invoiced date
+                  Date de facturation
                   {sortField === "issueDate" && (
                     <FiArrowUp
                       className={`w-4 h-4 transition-transform ${
@@ -129,13 +129,13 @@ const InvoicesTable = ({ invoices, onInvoiceDeleted, onInvoiceUpdated, onEditInv
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                 <div className="flex items-center gap-1">
                   <FiCalendar className="w-4 h-4" />
-                  Due date
+                  Échéance
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                 <div className="flex items-center gap-1">
                   <FiPaperclip className="w-4 h-4" />
-                  Project
+                  Projet
                 </div>
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
@@ -202,7 +202,7 @@ const InvoicesTable = ({ invoices, onInvoiceDeleted, onInvoiceUpdated, onEditInv
                               className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                             >
                               <FiEdit size={16} />
-                              Edit
+                              Modifier
                             </button>
                             <button
                               onClick={() => handleMarkPaymentReceived(invoice._id)}
@@ -211,7 +211,7 @@ const InvoicesTable = ({ invoices, onInvoiceDeleted, onInvoiceUpdated, onEditInv
                               <span className="w-4 h-4 flex items-center justify-center">
                                 ✓
                               </span>
-                              Mark "Payment Received"
+                              Marquer comme "Paiement reçu"
                             </button>
                           </>
                         )}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Modal from "./Modal";
 import { FiUpload, FiCalendar, FiClock, FiChevronDown } from "react-icons/fi";
 import axiosInstance from "../utils/axiosInstance";
-import { API_PATHS } from "../utils/apiPaths";
+import { API_PATHS, BASE_URL } from "../utils/apiPaths";
 import toast from "react-hot-toast";
 import moment from "moment";
 
@@ -234,8 +234,19 @@ const AddTaskModal = ({ isOpen, onClose, onTaskCreated, projectId }) => {
                         onChange={() => handleAssigneeToggle(user._id)}
                         className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900"
                       />
+                      {user.profileImageUrl ? (
+                        <img
+                          src={user.profileImageUrl.startsWith('http') ? user.profileImageUrl : `${BASE_URL}${user.profileImageUrl}`}
+                          alt={user.name || user.fullName || "Avatar"}
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                          {(user.name || user.fullName || user.email)?.charAt(0).toUpperCase()}
+                        </div>
+                      )}
                       <span className="text-sm text-gray-900">
-                        {user.fullName || user.email}
+                        {user.name || user.fullName || user.email}
                       </span>
                     </label>
                   ))

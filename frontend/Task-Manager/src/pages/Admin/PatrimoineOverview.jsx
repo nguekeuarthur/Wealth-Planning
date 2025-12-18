@@ -38,10 +38,10 @@ const PatrimoineOverview = () => {
         
         // Préparer les données pour les graphiques
         const projectsChart = response.data.charts.projectsByStatus.map(item => ({
-          name: item.status === 'in progress' ? 'En cours' : 
-                item.status === 'in review' ? 'En révision' : 
-                item.status === 'done' ? 'Terminé' : item.status,
-          value: item.count
+          status: item.status === 'in progress' ? 'En cours' : 
+                  item.status === 'in review' ? 'En révision' : 
+                  item.status === 'done' ? 'Terminé' : item.status,
+          count: item.count
         }));
         setProjectStatusData(projectsChart);
 
@@ -118,13 +118,22 @@ const PatrimoineOverview = () => {
   return (
     <DashboardLayout activeMenu="Patrimoine">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg p-8 my-5">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="relative bg-gradient-to-br from-[#1e4029] via-[#2d5f3f] to-[#1e4029] rounded-2xl shadow-2xl p-8 my-6 overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -translate-y-48 translate-x-48"></div>
+          <div className="absolute bottom-0 left-0 w-72 h-72 bg-white/10 rounded-full translate-y-36 -translate-x-36"></div>
+        </div>
+        
+        <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white">
+            <p className="text-white/70 text-sm font-medium uppercase tracking-wider mb-2">
+              Gestion Patrimoniale
+            </p>
+            <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
               Vue d'Ensemble du Patrimoine
             </h2>
-            <p className="text-sm text-blue-100 mt-2">
+            <p className="text-white/80 mt-3 text-sm">
               Bonjour, {user?.name} - Gérez vos projets et activités
             </p>
           </div>
@@ -133,59 +142,59 @@ const PatrimoineOverview = () => {
 
       {/* Statistiques principales */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-[#2d5f3f] to-[#1e4029] rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#dfe8e1] hover:shadow-xl transition-all duration-300 group">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-white/80 text-sm font-medium mb-2">Projets Actifs</p>
-              <h3 className="text-3xl font-bold">
+              <p className="text-[#7a8b7f] text-sm font-medium mb-2 uppercase tracking-wide">Projets Actifs</p>
+              <h3 className="text-4xl font-bold text-[#1e4029] group-hover:text-[#2d5f3f] transition-colors">
                 {patrimoineData?.activeProjects?.length || 0}
               </h3>
             </div>
-            <div className="bg-white/20 p-3 rounded-lg">
-              <FaProjectDiagram className="text-2xl" />
+            <div className="bg-gradient-to-br from-[#2d5f3f] to-[#1e4029] p-4 rounded-xl shadow-md group-hover:scale-110 transition-transform">
+              <FaProjectDiagram className="text-2xl text-white" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-[#5a8f6f] to-[#4a7a5f] rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#dfe8e1] hover:shadow-xl transition-all duration-300 group">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-white/80 text-sm font-medium mb-2">Factures</p>
-              <h3 className="text-3xl font-bold">
+              <p className="text-[#7a8b7f] text-sm font-medium mb-2 uppercase tracking-wide">Factures</p>
+              <h3 className="text-4xl font-bold text-[#1e4029] group-hover:text-[#2d5f3f] transition-colors">
                 {invoiceStatusData.reduce((acc, curr) => acc + curr.value, 0)}
               </h3>
             </div>
-            <div className="bg-white/20 p-3 rounded-lg">
-              <FaFileInvoiceDollar className="text-2xl" />
+            <div className="bg-gradient-to-br from-[#5a8f6f] to-[#4a7a5f] p-4 rounded-xl shadow-md group-hover:scale-110 transition-transform">
+              <FaFileInvoiceDollar className="text-2xl text-white" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-[#7a9d7e] to-[#5a8f6f] rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#dfe8e1] hover:shadow-xl transition-all duration-300 group">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-white/80 text-sm font-medium mb-2">Tâches en Attente</p>
-              <h3 className="text-3xl font-bold">
+              <p className="text-[#7a8b7f] text-sm font-medium mb-2 uppercase tracking-wide">Tâches en Attente</p>
+              <h3 className="text-4xl font-bold text-[#1e4029] group-hover:text-[#2d5f3f] transition-colors">
                 {pendingTasks.length}
               </h3>
             </div>
-            <div className="bg-white/20 p-3 rounded-lg">
-              <FaTasks className="text-2xl" />
+            <div className="bg-gradient-to-br from-[#7a9d7e] to-[#5a8f6f] p-4 rounded-xl shadow-md group-hover:scale-110 transition-transform">
+              <FaTasks className="text-2xl text-white" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-[#3d6e4f] to-[#2d5f3f] rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#dfe8e1] hover:shadow-xl transition-all duration-300 group">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-white/80 text-sm font-medium mb-2">Messages Non Lus</p>
-              <h3 className="text-3xl font-bold">
+              <p className="text-[#7a8b7f] text-sm font-medium mb-2 uppercase tracking-wide">Messages Non Lus</p>
+              <h3 className="text-4xl font-bold text-[#1e4029] group-hover:text-[#2d5f3f] transition-colors">
                 {(discussionsData?.inboxMessages?.unread || 0) + 
                  (discussionsData?.projectMessages?.messages?.filter(m => !m.isRead)?.length || 0)}
               </h3>
             </div>
-            <div className="bg-white/20 p-3 rounded-lg">
-              <FaEnvelope className="text-2xl" />
+            <div className="bg-gradient-to-br from-[#3d6e4f] to-[#2d5f3f] p-4 rounded-xl shadow-md group-hover:scale-110 transition-transform">
+              <FaEnvelope className="text-2xl text-white" />
             </div>
           </div>
         </div>
@@ -194,13 +203,13 @@ const PatrimoineOverview = () => {
       {/* Graphiques */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Projets par statut */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#dfe8e1] hover:shadow-xl transition-all duration-300">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h5 className="text-lg font-semibold text-gray-800">Projets par Statut</h5>
-              <p className="text-xs text-gray-500 mt-1">3 statuts</p>
+              <h5 className="text-lg font-bold text-[#1e4029]">Projets par Statut</h5>
+              <p className="text-xs text-[#7a8b7f] mt-1 uppercase tracking-wide">3 statuts</p>
             </div>
-            <div className="bg-gradient-to-br from-blue-500 to-cyan-600 p-3 rounded-lg">
+            <div className="bg-gradient-to-br from-[#2d5f3f] to-[#1e4029] p-3 rounded-xl shadow-md">
               <FaProjectDiagram className="text-white text-xl" />
             </div>
           </div>
@@ -208,29 +217,31 @@ const PatrimoineOverview = () => {
         </div>
 
         {/* Factures par statut */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#dfe8e1] hover:shadow-xl transition-all duration-300">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h5 className="text-lg font-semibold text-gray-800">Factures par Statut</h5>
-              <p className="text-xs text-gray-500 mt-1">6 statuts</p>
+              <h5 className="text-lg font-bold text-[#1e4029]">Factures par Statut</h5>
+              <p className="text-xs text-[#7a8b7f] mt-1 uppercase tracking-wide">6 statuts</p>
             </div>
-            <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-3 rounded-lg">
+            <div className="bg-gradient-to-br from-[#5a8f6f] to-[#4a7a5f] p-3 rounded-xl shadow-md">
               <FaFileInvoiceDollar className="text-white text-xl" />
             </div>
           </div>
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {invoiceStatusData.map((item, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:shadow-md transition-all">
+              <div key={index} className="flex items-center justify-between p-3 bg-gradient-to-r from-[#f8faf9] to-white rounded-lg hover:shadow-md transition-all border-l-4 border-[#5a8f6f]">
                 <div className="flex items-center gap-3">
                   <div 
-                    className="w-4 h-4 rounded-full" 
+                    className="w-4 h-4 rounded-full shadow-inner" 
                     style={{ backgroundColor: INVOICE_STATUS_COLORS[index % INVOICE_STATUS_COLORS.length] }}
                   />
-                  <span className="text-sm font-medium capitalize">{item.name}</span>
+                  <span className="text-sm font-semibold text-[#1e4029] capitalize">{item.name}</span>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-bold">{item.value}</div>
-                  <div className="text-xs text-gray-600">{item.amount?.toLocaleString()} €</div>
+                  <div className="text-sm font-bold text-[#2d5f3f]">{item.value}</div>
+                  <div className="text-xs text-gray-600">
+                    {new Intl.NumberFormat('fr-CH', { style: 'currency', currency: 'CHF' }).format(item.amount || 0)}
+                  </div>
                 </div>
               </div>
             ))}
@@ -238,28 +249,28 @@ const PatrimoineOverview = () => {
         </div>
 
         {/* Catégories de projets */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#dfe8e1] hover:shadow-xl transition-all duration-300">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h5 className="text-lg font-semibold text-gray-800">Par Catégories</h5>
-              <p className="text-xs text-gray-500 mt-1">Distribution</p>
+              <h5 className="text-lg font-bold text-[#1e4029]">Par Catégories</h5>
+              <p className="text-xs text-[#7a8b7f] mt-1 uppercase tracking-wide">Distribution</p>
             </div>
-            <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-3 rounded-lg">
+            <div className="bg-gradient-to-br from-[#7a9d7e] to-[#5a8f6f] p-3 rounded-xl shadow-md">
               <FaProjectDiagram className="text-white text-xl" />
             </div>
           </div>
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {categoriesData.map((item, index) => (
-              <div key={index} className="p-3 bg-gray-50 rounded-lg hover:shadow-md transition-all">
+              <div key={index} className="p-3 bg-gradient-to-r from-[#f8faf9] to-white rounded-lg hover:shadow-md transition-all border-l-4 border-[#5a8f6f]">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <div 
-                      className="w-3 h-3 rounded-full" 
+                      className="w-3 h-3 rounded-full shadow-inner" 
                       style={{ backgroundColor: CATEGORY_COLORS[index % CATEGORY_COLORS.length] }}
                     />
-                    <span className="text-xs font-semibold text-gray-700">{item.name}</span>
+                    <span className="text-xs font-semibold text-[#1e4029]">{item.name}</span>
                   </div>
-                  <span className="text-sm font-bold text-gray-800">{item.value}</span>
+                  <span className="text-sm font-bold text-[#2d5f3f]">{item.value}</span>
                 </div>
               </div>
             ))}
@@ -268,14 +279,14 @@ const PatrimoineOverview = () => {
       </div>
 
       {/* Tâches en attente */}
-      <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 mb-8">
+      <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#dfe8e1] mb-8 hover:shadow-xl transition-all duration-300">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h5 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <FaTasks className="text-orange-500" />
+            <h5 className="text-lg font-bold text-[#1e4029] flex items-center gap-2">
+              <FaTasks className="text-[#2d5f3f]" />
               Rappels des Tâches en Attente
             </h5>
-            <p className="text-xs text-gray-500 mt-1">{pendingTasks.length} tâche{pendingTasks.length > 1 ? 's' : ''} à traiter</p>
+            <p className="text-xs text-[#7a8b7f] mt-1 uppercase tracking-wide">{pendingTasks.length} tâche{pendingTasks.length > 1 ? 's' : ''} à traiter</p>
           </div>
         </div>
         <PendingTasksList tasks={pendingTasks} />
@@ -284,14 +295,14 @@ const PatrimoineOverview = () => {
       {/* Discussions et Documents */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Discussions récentes */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#dfe8e1] hover:shadow-xl transition-all duration-300">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h5 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                <FaEnvelope className="text-blue-500" />
+              <h5 className="text-lg font-bold text-[#1e4029] flex items-center gap-2">
+                <FaEnvelope className="text-[#2d5f3f]" />
                 Accès Rapide aux Discussions
               </h5>
-              <p className="text-xs text-gray-500 mt-1">Dernières 24 heures</p>
+              <p className="text-xs text-[#7a8b7f] mt-1 uppercase tracking-wide">Dernières 24 heures</p>
             </div>
           </div>
           <RecentDiscussions 
@@ -301,14 +312,14 @@ const PatrimoineOverview = () => {
         </div>
 
         {/* Documents récents */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#dfe8e1] hover:shadow-xl transition-all duration-300">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h5 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                <FaFile className="text-green-500" />
+              <h5 className="text-lg font-bold text-[#1e4029] flex items-center gap-2">
+                <FaFile className="text-[#5a8f6f]" />
                 Documents Récents
               </h5>
-              <p className="text-xs text-gray-500 mt-1">Dernières 24 heures</p>
+              <p className="text-xs text-[#7a8b7f] mt-1 uppercase tracking-wide">Dernières 24 heures</p>
             </div>
           </div>
           <RecentDocuments documents={discussionsData?.recentDocuments?.documents || []} />

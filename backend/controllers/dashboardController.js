@@ -103,24 +103,38 @@ exports.getPendingTasks = async (req, res) => {
       status: { $in: ['Pending', 'In Progress'] }
     })
       .populate('client', 'fullName email')
-      .populate('project', 'name')
+      .populate({
+        path: 'project',
+        select: 'name client',
+        populate: {
+          path: 'client',
+          select: 'fullName email'
+        }
+      })
       .populate('assignedTo', 'fullName')
       .sort({ dueDate: 1 });
 
     // Formater les résultats selon les colonnes demandées
-    const formattedTasks = pendingTasks.map(task => ({
-      taskId: task._id,
-      taskName: task.title,
-      taskDescription: task.description,
-      entryDate: task.createdAt,
-      dueDate: task.dueDate,
-      clientName: task.client?.fullName || 'N/A',
-      projectName: task.project?.name || 'N/A',
-      status: task.status,
-      priority: task.priority,
-      progress: task.progress,
-      assignedTo: task.assignedTo?.map(u => u.fullName).join(', ') || 'Non assigné'
-    }));
+    const formattedTasks = pendingTasks.map(task => {
+      // Essayer de récupérer le client de la tâche ou du projet
+      const clientName = task.client?.fullName || 
+                        task.project?.client?.fullName || 
+                        'N/A';
+      
+      return {
+        taskId: task._id,
+        taskName: task.title,
+        taskDescription: task.description,
+        entryDate: task.createdAt,
+        dueDate: task.dueDate,
+        clientName: clientName,
+        projectName: task.project?.name || 'N/A',
+        status: task.status,
+        priority: task.priority,
+        progress: task.progress,
+        assignedTo: task.assignedTo?.map(u => u.fullName).join(', ') || 'Non assigné'
+      };
+    });
 
     res.json({
       count: formattedTasks.length,

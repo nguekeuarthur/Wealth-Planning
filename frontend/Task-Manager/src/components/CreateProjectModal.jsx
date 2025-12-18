@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Modal from "./Modal";
 import { FiUpload, FiX, FiSearch, FiUser } from "react-icons/fi";
 import axiosInstance from "../utils/axiosInstance";
-import { API_PATHS } from "../utils/apiPaths";
+import { API_PATHS, BASE_URL } from "../utils/apiPaths";
 import toast from "react-hot-toast";
 
 const CreateProjectModal = ({
@@ -300,7 +300,7 @@ const CreateProjectModal = ({
                       <div className="flex items-center gap-2">
                         {selectedLead.profileImageUrl ? (
                           <img
-                            src={selectedLead.profileImageUrl}
+                            src={selectedLead.profileImageUrl.startsWith('http') ? selectedLead.profileImageUrl : `${BASE_URL}${selectedLead.profileImageUrl}`}
                             alt={selectedLead.name || "Avatar"}
                             className="w-8 h-8 rounded-full object-cover"
                           />
@@ -340,7 +340,7 @@ const CreateProjectModal = ({
                         <>
                           <div className="absolute left-0 right-0 z-40 mt-2 bg-white border border-[#dfe8e1] rounded-xl shadow-xl max-h-56 overflow-y-auto">
                             {users
-                              .filter(u => u.role !== 'admin' && u.role !== 'client')
+                              .filter(u => u.role === 'member')
                               .filter(u =>
                                 u.name?.toLowerCase().includes(leadSearch.toLowerCase()) ||
                                 u.email?.toLowerCase().includes(leadSearch.toLowerCase())
@@ -358,7 +358,7 @@ const CreateProjectModal = ({
                                 >
                                   {user.profileImageUrl ? (
                                     <img
-                                      src={user.profileImageUrl}
+                                      src={user.profileImageUrl.startsWith('http') ? user.profileImageUrl : `${BASE_URL}${user.profileImageUrl}`}
                                       alt={user.name || "Avatar"}
                                       className="w-8 h-8 rounded-full object-cover"
                                     />
@@ -373,7 +373,7 @@ const CreateProjectModal = ({
                                   </div>
                                 </button>
                               ))}
-                            {users.filter(u => u.role !== 'admin' && u.role !== 'client').filter(u =>
+                            {users.filter(u => u.role === 'member').filter(u =>
                               u.name?.toLowerCase().includes(leadSearch.toLowerCase()) ||
                               u.email?.toLowerCase().includes(leadSearch.toLowerCase())
                             ).length === 0 && (
@@ -425,7 +425,7 @@ const CreateProjectModal = ({
                     <>
                       <div className="absolute left-0 right-0 z-40 mt-2 bg-white border border-[#dfe8e1] rounded-xl shadow-xl max-h-56 overflow-y-auto">
                         {users
-                          .filter(u => u.role !== 'admin')
+                          .filter(u => ['member', 'collaborator', 'partner'].includes(u.role))
                           .filter(u => !formData.assignedUsers.includes(u._id))
                           .filter(u => selectedRoleFilter === 'all' || u.role === selectedRoleFilter)
                           .filter(u =>
@@ -448,7 +448,7 @@ const CreateProjectModal = ({
                             >
                               {user.profileImageUrl ? (
                                 <img
-                                  src={user.profileImageUrl}
+                                  src={user.profileImageUrl.startsWith('http') ? user.profileImageUrl : `${BASE_URL}${user.profileImageUrl}`}
                                   alt={user.name || "Avatar"}
                                   className="w-8 h-8 rounded-full object-cover"
                                 />
@@ -465,7 +465,7 @@ const CreateProjectModal = ({
                             </button>
                           ))}
                         {users
-                          .filter(u => u.role !== 'admin')
+                          .filter(u => ['member', 'collaborator', 'partner'].includes(u.role))
                           .filter(u => !formData.assignedUsers.includes(u._id))
                           .filter(u => selectedRoleFilter === 'all' || u.role === selectedRoleFilter)
                           .filter(u =>
@@ -490,7 +490,7 @@ const CreateProjectModal = ({
                         >
                           {member.profileImageUrl ? (
                             <img
-                              src={member.profileImageUrl}
+                              src={member.profileImageUrl.startsWith('http') ? member.profileImageUrl : `${BASE_URL}${member.profileImageUrl}`}
                               alt={member.name || "Avatar"}
                               className="w-6 h-6 rounded-full object-cover"
                             />
