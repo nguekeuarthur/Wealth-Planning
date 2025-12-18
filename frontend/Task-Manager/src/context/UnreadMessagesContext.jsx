@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import axios from '../utils/axiosInstance';
-import { API_PATHS } from '../utils/apiPaths';
+import { API_PATHS, BASE_URL } from '../utils/apiPaths';
 import { getSession, subscribeSession } from '../utils/authStorage';
 
 const UnreadMessagesContext = createContext();
@@ -78,7 +78,7 @@ export const UnreadMessagesProvider = ({ children }) => {
 
         loadUnreadCount();
 
-        const socket = io('http://localhost:8000', {
+        const socket = io(BASE_URL, {
             auth: { token: sessionToken }
         });
 

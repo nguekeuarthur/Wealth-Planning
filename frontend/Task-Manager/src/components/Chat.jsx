@@ -5,7 +5,7 @@ import axios from '../utils/axiosInstance';
 import { useUser } from '../context/userContext';
 import { useLanguage } from '../context/languageContext';
 import { useUnreadMessages } from '../context/UnreadMessagesContext';
-import { API_PATHS } from '../utils/apiPaths';
+import { API_PATHS, BASE_URL } from '../utils/apiPaths';
 import { getSession, subscribeSession } from '../utils/authStorage';
 import toast from 'react-hot-toast';
 import CreateConversationModal from './CreateConversationModal';
@@ -212,7 +212,7 @@ const Chat = () => {
       return;
     }
 
-    const socket = io('http://localhost:8000', {
+    const socket = io(BASE_URL, {
       auth: { token: sessionToken }
     });
 

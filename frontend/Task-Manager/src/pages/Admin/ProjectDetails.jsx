@@ -131,7 +131,7 @@ const ProjectDetails = () => {
   // Socket.io for real-time updates
   useEffect(() => {
     const { token } = getSession();
-    const socket = io("http://localhost:8000", {
+    const socket = io(BASE_URL, {
       transports: ['websocket', 'polling'],
       withCredentials: true,
       auth: {
@@ -797,7 +797,7 @@ const ProjectDetails = () => {
                           <div className="p-3 border border-[#dfe8e1] rounded-xl flex items-center gap-3 bg-[#f4f7f4]">
                             {project.projectLead.profileImageUrl ? (
                               <img
-                                src={project.projectLead.profileImageUrl.startsWith('http') ? project.projectLead.profileImageUrl : `http://localhost:8000${project.projectLead.profileImageUrl}`}
+                                src={project.projectLead.profileImageUrl.startsWith('http') ? project.projectLead.profileImageUrl : `${BASE_URL}${project.projectLead.profileImageUrl}`}
                                 alt={project.projectLead.name || "Avatar"}
                                 className="w-10 h-10 rounded-full object-cover"
                               />
