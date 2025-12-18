@@ -111,6 +111,7 @@ app.use("/api/chat", chatRoutes);
 
 // Serve uploads folder
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/api/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Configuration Socket.io pour le chat
 // userId -> Set(socketId)

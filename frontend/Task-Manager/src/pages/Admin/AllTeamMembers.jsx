@@ -2,9 +2,19 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
-import { API_PATHS } from "../../utils/apiPaths";
-import { 
-  FiSearch, FiMail, FiPhone, FiUser, FiPlus, 
+import { API_PATHS, BASE_URL } from "../../utils/apiPaths";
+
+const fullImageUrl = (url) => {
+  if (!url) return null;
+  // Aggressive cleanup of historical localhost URLs
+  let cleaned = url.replace(/^https?:\/\/localhost:8000/, '');
+  if (cleaned.startsWith('http')) return cleaned;
+  const baseUrlClean = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+  const pathClean = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+  return `${baseUrlClean}${pathClean}`;
+};
+import {
+  FiSearch, FiMail, FiPhone, FiUser, FiPlus,
   FiEdit3, FiTrash2, FiExternalLink, FiFlag, FiCalendar
 } from "react-icons/fi";
 import toast from "react-hot-toast";
@@ -187,7 +197,7 @@ const UserManagement = () => {
 
           {/* Action Button */}
           <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
-          <button
+            <button
               onClick={handleAddUser}
               className="group bg-[#5a8f6f]/90 backdrop-blur-sm text-white px-6 py-3 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl hover:bg-[#5a8f6f] hover:scale-105 border border-white/10"
             >
@@ -195,7 +205,7 @@ const UserManagement = () => {
                 <FiPlus className="text-lg" />
               </div>
               Nouvel utilisateur
-          </button>
+            </button>
           </div>
         </div>
       </div>
@@ -207,11 +217,11 @@ const UserManagement = () => {
           <div className="md:col-span-2">
             <div className="relative">
               <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#7a8b7f]" />
-            <input
-              type="text"
+              <input
+                type="text"
                 placeholder="Rechercher par nom, email ou téléphone..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors"
               />
             </div>
@@ -220,7 +230,7 @@ const UserManagement = () => {
             <select
               value={selectedRole}
 
-      
+
               onChange={(e) => setSelectedRole(e.target.value)}
               className="w-full px-4 py-3 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] cursor-pointer transition-colors"
             >
@@ -264,11 +274,11 @@ const UserManagement = () => {
             <div className="text-2xl font-bold text-gray-500">{userStats.inactive}</div>
             <div className="text-xs text-[#7a8b7f] font-medium">Inactifs</div>
           </div>
-                </div>
+        </div>
 
         {/* Users Grid */}
         {filteredUsers.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredUsers.map((user) => {
               const isActive = user.lastLoginAt && new Date(user.lastLoginAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 jours
 
@@ -276,78 +286,76 @@ const UserManagement = () => {
                 <div
                   key={user._id}
                   className="group bg-white rounded-2xl border border-[#dfe8e1] hover:border-[#5a8f6f] hover:shadow-xl hover:shadow-[#5a8f6f]/5 transition-all duration-300 overflow-hidden"
-                    >
+                >
                   {/* Header with role color */}
                   <div
-                    className={`h-12 flex items-center justify-center ${
-                      user.role === 'admin' ? 'bg-gradient-to-r from-red-500 to-red-600' :
-                      'bg-gradient-to-r from-[#5a8f6f] to-[#4a7f5f]'
-                    }`}
+                    className={`h-12 flex items-center justify-center ${user.role === 'admin' ? 'bg-gradient-to-r from-red-500 to-red-600' :
+                        'bg-gradient-to-r from-[#5a8f6f] to-[#4a7f5f]'
+                      }`}
                   >
                     <span className="text-white text-xs font-semibold uppercase tracking-wider">
                       {user.role === 'admin' ? 'Administrateur' :
-                       user.role === 'member' ? 'Membre' :
-                       user.role === 'client' ? 'Client' :
-                       user.role === 'partner' ? 'Partenaire' :
-                       user.role === 'collaborator' ? 'Collaborateur' :
-                       'Utilisateur'}
+                        user.role === 'member' ? 'Membre' :
+                          user.role === 'client' ? 'Client' :
+                            user.role === 'partner' ? 'Partenaire' :
+                              user.role === 'collaborator' ? 'Collaborateur' :
+                                'Utilisateur'}
                     </span>
                   </div>
-                      
+
                   {/* Avatar */}
                   <div className="flex justify-center -mt-6">
                     <div className="w-12 h-12 rounded-full bg-white border-4 border-white shadow-md flex items-center justify-center">
                       {user.profileImageUrl ? (
-                              <img
-                          src={user.profileImageUrl}
+                        <img
+                          src={fullImageUrl(user.profileImageUrl)}
                           alt={user.name}
                           className="w-full h-full rounded-full object-cover"
-                                onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-                              />
-                           ) : null}
+                          onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                        />
+                      ) : null}
                       <div className={`w-full h-full rounded-full bg-gradient-to-br from-[#5a8f6f] to-[#2d5f3f] flex items-center justify-center ${user.profileImageUrl ? 'hidden' : 'flex'}`}>
                         <span className="text-white font-bold">
                           {user.name?.charAt(0).toUpperCase() || 'U'}
-                              </span>
-                           </div>
-                        </div>
+                        </span>
                       </div>
+                    </div>
+                  </div>
 
-                      {/* Content */}
+                  {/* Content */}
                   <div className="px-6 pb-6">
                     <div className="text-center mb-4">
                       <h3 className="font-bold text-[#1e4029] text-lg leading-tight group-hover:text-[#2d5f3f] transition-colors line-clamp-1">
                         {user.name || "Utilisateur sans nom"}
-                             </h3>
-                      <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mt-2 ${
-                        isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                      }`}>
+                      </h3>
+                      <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mt-2 ${isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                        }`}>
                         <div className={`w-2 h-2 rounded-full mr-2 ${isActive ? 'bg-green-500' : 'bg-gray-400'}`}></div>
                         {isActive ? 'Actif' : 'Inactif'}
-                          </div>
-                        </div>
+                      </div>
+                    </div>
 
                     {/* Contact Info */}
                     <div className="space-y-3 mb-4">
                       <div className="flex items-center gap-2">
                         <FiMail className="text-[#7a8b7f] flex-shrink-0" size={14} />
                         <span className="text-sm text-[#7a8b7f] truncate">{user.email}</span>
-                            </div>
+                      </div>
 
                       {user.phoneNumber && (
-                            <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                           <FiPhone className="text-[#7a8b7f] flex-shrink-0" size={14} />
                           <span className="text-sm text-[#7a8b7f]">{user.phoneNumber}</span>
-                            </div>
-                          )}
+                        </div>
+                      )}
 
                       {user.company && (
-                            <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                           <FiUser className="text-[#7a8b7f] flex-shrink-0" size={14} />
                           <span className="text-sm text-[#7a8b7f] truncate">{user.company}</span>
-                            </div>
-                          )}
                         </div>
+                      )}
+                    </div>
 
                     {/* Last Login */}
                     <div className="mb-4 p-2 bg-[#f4f7f4] rounded-lg">
@@ -361,20 +369,20 @@ const UserManagement = () => {
                           month: 'short',
                           year: 'numeric'
                         }) : 'Jamais connecté'}
-                            </span>
+                      </span>
                     </div>
-                            
+
                     {/* Actions */}
-                            <div className="flex gap-2">
-                                <button
+                    <div className="flex gap-2">
+                      <button
                         onClick={(e) => { e.stopPropagation(); handleEditUser(user); }}
                         className="flex-1 p-2 rounded-lg text-[#2d5f3f] bg-[#e6f0ea] hover:bg-[#e6f0ea]/80 transition-colors text-xs font-medium"
                         title="Modifier"
-                                >
+                      >
                         <FiEdit3 size={14} className="mx-auto" />
-                                </button>
-                                <button
-                              onClick={(e) => { e.stopPropagation(); handleDeleteUser(user); }}
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteUser(user); }}
                         disabled={deletingUser === user._id}
                         className="flex-1 p-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors text-xs font-medium disabled:opacity-50"
                         title="Supprimer"
@@ -384,9 +392,9 @@ const UserManagement = () => {
                         ) : (
                           <FiTrash2 size={14} className="mx-auto" />
                         )}
-                                </button>
-                            </div>
-                        </div>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -406,7 +414,7 @@ const UserManagement = () => {
                 : "Commencez par ajouter votre premier utilisateur"}
             </p>
             {!searchQuery && (
-              <button 
+              <button
                 onClick={handleAddUser}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-[#2d5f3f] text-white rounded-xl hover:bg-[#1e4029] transition-colors font-medium"
               >

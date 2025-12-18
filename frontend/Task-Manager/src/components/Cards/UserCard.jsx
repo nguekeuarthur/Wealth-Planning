@@ -1,4 +1,15 @@
 import React from "react";
+import { BASE_URL } from "../../utils/apiPaths";
+
+const fullImageUrl = (url) => {
+  if (!url) return null;
+  // Aggressive cleanup of historical localhost URLs
+  let cleaned = url.replace(/^https?:\/\/localhost:8000/, '');
+  if (cleaned.startsWith('http')) return cleaned;
+  const baseUrlClean = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+  const pathClean = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+  return `${baseUrlClean}${pathClean}`;
+};
 
 const UserCard = ({ userInfo }) => {
   return (
@@ -6,7 +17,7 @@ const UserCard = ({ userInfo }) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <img
-            src={userInfo?.profileImageUrl || null}
+            src={fullImageUrl(userInfo?.profileImageUrl)}
             alt={`Avatar`}
             className="w-12 h-12 rounded-full border-2 border-white"
           />
@@ -43,7 +54,7 @@ export default UserCard;
 
 const StatCard = ({ label, count, status }) => {
 
-    const getStatusTagColor = () => {
+  const getStatusTagColor = () => {
     switch (status) {
       case "In Progress":
         return "text-cyan-500 bg-gray-50";

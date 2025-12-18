@@ -1,7 +1,17 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
-import { API_PATHS } from "../../utils/apiPaths";
+import { API_PATHS, BASE_URL } from "../../utils/apiPaths";
+
+const fullImageUrl = (url) => {
+  if (!url) return null;
+  // Aggressive cleanup of historical localhost URLs
+  let cleaned = url.replace(/^https?:\/\/localhost:8000/, '');
+  if (cleaned.startsWith('http')) return cleaned;
+  const baseUrlClean = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+  const pathClean = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+  return `${baseUrlClean}${pathClean}`;
+};
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import AvatarGroup from "../../components/AvatarGroup";
 import EditTaskModal from "../../components/EditTaskModal";
@@ -104,8 +114,8 @@ const ViewTaskDetails = () => {
   };
 
   // Check if user can edit/delete (admin, task creator, or assigned user)
-  const canModify = 
-    user?.role === 'admin' || 
+  const canModify =
+    user?.role === 'admin' ||
     task?.createdBy?._id === user?._id ||
     task?.assignedTo?.some(assignedUser => assignedUser._id === user?._id) ||
     (task?.assignedRoles && task.assignedRoles.includes(user?.role));
@@ -114,7 +124,7 @@ const ViewTaskDetails = () => {
     if (id) {
       getTaskDetailsByID();
     }
-    return () => {};
+    return () => { };
   }, [id]);
 
   return (
@@ -136,7 +146,7 @@ const ViewTaskDetails = () => {
                   >
                     {task?.status}
                   </div>
-                  
+
                   {canModify && (
                     <div className="flex gap-2">
                       <button
@@ -183,7 +193,7 @@ const ViewTaskDetails = () => {
 
                   <AvatarGroup
                     avatars={
-                      task?.assignedTo?.map((item) => item?.profileImageUrl) ||
+                      task?.assignedTo?.map((item) => fullImageUrl(item?.profileImageUrl)) ||
                       []
                     }
                     maxVisible={5}
@@ -203,9 +213,9 @@ const ViewTaskDetails = () => {
                         className="px-3 py-1 bg-[#e8f0e8] text-[#2d5f3f] text-xs font-medium rounded-lg border border-[#d5e8db]"
                       >
                         {role === 'admin' ? 'Administrateur' :
-                         role === 'partner' ? 'Partenaire' :
-                         role === 'collaborator' ? 'Collaborateur' :
-                         role === 'client' ? 'Client' : role}
+                          role === 'partner' ? 'Partenaire' :
+                            role === 'collaborator' ? 'Collaborateur' :
+                              role === 'client' ? 'Client' : role}
                       </span>
                     ))
                   ) : (
@@ -240,7 +250,7 @@ const ViewTaskDetails = () => {
                       key={`link_${index}`}
                       link={link}
                       index={index}
-                      onClick={() => handleLinkClick(link)}
+                      onClick={() => handleLinkClick(fullImageUrl(link))}
                     />
                   ))}
                 </div>
@@ -252,7 +262,7 @@ const ViewTaskDetails = () => {
 
       {/* Modal de confirmation de suppression */}
       {showDeleteModal && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
           onClick={(e) => e.target === e.currentTarget && setShowDeleteModal(false)}
         >

@@ -4,6 +4,17 @@ import { FiCalendar, FiUser, FiUsers, FiX } from "react-icons/fi";
 import axiosInstance from "../utils/axiosInstance";
 import { API_PATHS } from "../utils/apiPaths";
 import toast from "react-hot-toast";
+import { BASE_URL } from "../utils/apiPaths";
+
+const fullImageUrl = (url) => {
+  if (!url) return null;
+  // Aggressive cleanup of historical localhost URLs
+  let cleaned = url.replace(/^https?:\/\/localhost:8000/, '');
+  if (cleaned.startsWith('http')) return cleaned;
+  const baseUrlClean = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+  const pathClean = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+  return `${baseUrlClean}${pathClean}`;
+};
 
 const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => {
   const [formData, setFormData] = useState({
@@ -265,8 +276,8 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
               type="button"
               onClick={() => handleAssignmentTypeChange("team_leader")}
               className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${assignmentType === "team_leader"
-                  ? "bg-[#5a8f6f] text-white"
-                  : "text-[#7a8b7f] hover:text-[#2d5f3f]"
+                ? "bg-[#5a8f6f] text-white"
+                : "text-[#7a8b7f] hover:text-[#2d5f3f]"
                 }`}
             >
               <FiUsers className="inline mr-2" />
@@ -276,8 +287,8 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
               type="button"
               onClick={() => handleAssignmentTypeChange("individual")}
               className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${assignmentType === "individual"
-                  ? "bg-[#5a8f6f] text-white"
-                  : "text-[#7a8b7f] hover:text-[#2d5f3f]"
+                ? "bg-[#5a8f6f] text-white"
+                : "text-[#7a8b7f] hover:text-[#2d5f3f]"
                 }`}
             >
               <FiUser className="inline mr-2" />
@@ -298,8 +309,8 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
                       type="button"
                       onClick={() => handleTeamLeaderToggle(team.leader._id)}
                       className={`w-full p-4 border rounded-xl text-left transition-all ${isSelected
-                          ? "border-[#5a8f6f] bg-[#f4f7f4]"
-                          : "border-[#dfe8e1] hover:border-[#5a8f6f]/50"
+                        ? "border-[#5a8f6f] bg-[#f4f7f4]"
+                        : "border-[#dfe8e1] hover:border-[#5a8f6f]/50"
                         }`}
                     >
                       <div className="flex items-center gap-3">
@@ -319,7 +330,7 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
                           <div className="flex items-center gap-2">
                             {team.leader.profileImageUrl ? (
                               <img
-                                src={team.leader.profileImageUrl}
+                                src={fullImageUrl(team.leader.profileImageUrl)}
                                 alt={team.leader.name || "Avatar"}
                                 className="w-6 h-6 rounded-full object-cover"
                               />
@@ -368,8 +379,8 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
                     type="button"
                     onClick={() => setRoleFilter("all")}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${roleFilter === "all"
-                        ? "bg-[#2d5f3f] text-white"
-                        : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
+                      ? "bg-[#2d5f3f] text-white"
+                      : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
                       }`}
                   >
                     Tous
@@ -378,8 +389,8 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
                     type="button"
                     onClick={() => setRoleFilter("client")}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${roleFilter === "client"
-                        ? "bg-[#2d5f3f] text-white"
-                        : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
+                      ? "bg-[#2d5f3f] text-white"
+                      : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
                       }`}
                   >
                     Clients
@@ -388,8 +399,8 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
                     type="button"
                     onClick={() => setRoleFilter("partner")}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${roleFilter === "partner"
-                        ? "bg-[#2d5f3f] text-white"
-                        : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
+                      ? "bg-[#2d5f3f] text-white"
+                      : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
                       }`}
                   >
                     Partenaires
@@ -398,8 +409,8 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
                     type="button"
                     onClick={() => setRoleFilter("collaborator")}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${roleFilter === "collaborator"
-                        ? "bg-[#2d5f3f] text-white"
-                        : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
+                      ? "bg-[#2d5f3f] text-white"
+                      : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
                       }`}
                   >
                     Collaborateurs
@@ -408,8 +419,8 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
                     type="button"
                     onClick={() => setRoleFilter("member")}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${roleFilter === "member"
-                        ? "bg-[#2d5f3f] text-white"
-                        : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
+                      ? "bg-[#2d5f3f] text-white"
+                      : "bg-[#f4f7f4] text-[#7a8b7f] hover:bg-[#dfe8e1]"
                       }`}
                   >
                     Membres
@@ -447,7 +458,7 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
                         >
                           {user.profileImageUrl ? (
                             <img
-                              src={user.profileImageUrl}
+                              src={fullImageUrl(user.profileImageUrl)}
                               alt={user.name || "Avatar"}
                               className="w-8 h-8 rounded-full object-cover"
                             />
@@ -493,7 +504,7 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
                     >
                       {user.profileImageUrl ? (
                         <img
-                          src={user.profileImageUrl}
+                          src={fullImageUrl(user.profileImageUrl)}
                           alt={user.name || "Avatar"}
                           className="w-5 h-5 rounded-full object-cover"
                         />
@@ -530,7 +541,7 @@ const CreateProjectTaskModal = ({ isOpen, onClose, project, onTaskCreated }) => 
                     <div className="flex items-center gap-2">
                       {leader.profileImageUrl ? (
                         <img
-                          src={leader.profileImageUrl}
+                          src={fullImageUrl(leader.profileImageUrl)}
                           alt={leader.name || "Avatar"}
                           className="w-6 h-6 rounded-full object-cover"
                         />
