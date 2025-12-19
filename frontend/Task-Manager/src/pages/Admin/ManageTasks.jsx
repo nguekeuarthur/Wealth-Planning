@@ -2,7 +2,17 @@ import React, { useEffect, useState, useContext } from "react";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
-import { API_PATHS } from "../../utils/apiPaths";
+import { API_PATHS, BASE_URL } from "../../utils/apiPaths";
+
+const fullImageUrl = (url) => {
+  if (!url) return null;
+  // Aggressive cleanup of historical localhost URLs
+  let cleaned = url.replace(/^https?:\/\/localhost:8000/, '');
+  if (cleaned.startsWith('http')) return cleaned;
+  const baseUrlClean = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+  const pathClean = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+  return `${baseUrlClean}${pathClean}`;
+};
 import { UserContext } from "../../context/userContext";
 import { LuFileSpreadsheet, LuTrash2 } from "react-icons/lu";
 import TaskStatusTabs from "../../components/TaskStatusTabs";
@@ -107,7 +117,7 @@ const ManageTasks = () => {
 
   useEffect(() => {
     getAllTasks(filterStatus);
-    return () => {};
+    return () => { };
   }, [filterStatus]);
 
   return (
@@ -153,7 +163,7 @@ const ManageTasks = () => {
               progress={item.progress}
               createdAt={item.createdAt}
               dueDate={item.dueDate}
-              assignedTo={item.assignedTo?.map((item) => item.profileImageUrl)}
+              assignedTo={item.assignedTo?.map((item) => fullImageUrl(item.profileImageUrl))}
               attachmentCount={item.attachments?.length || 0}
               completedTodoCount={item.completedTodoCount || 0}
               todoChecklist={item.todoChecklist || []}
@@ -179,7 +189,7 @@ const ManageTasks = () => {
 
       {/* Modal de confirmation de suppression */}
       {showDeleteModal && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
           onClick={(e) => e.target === e.currentTarget && setShowDeleteModal(false)}
         >

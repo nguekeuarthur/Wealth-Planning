@@ -6,6 +6,16 @@ import { API_PATHS, BASE_URL } from "../utils/apiPaths";
 import toast from "react-hot-toast";
 import moment from "moment";
 
+const fullImageUrl = (url) => {
+  if (!url) return null;
+  // Aggressive cleanup of historical localhost URLs
+  let cleaned = url.replace(/^https?:\/\/localhost:8000/, '');
+  if (cleaned.startsWith('http')) return cleaned;
+  const baseUrlClean = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+  const pathClean = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+  return `${baseUrlClean}${pathClean}`;
+};
+
 const AddTaskModal = ({ isOpen, onClose, onTaskCreated, projectId }) => {
   const [formData, setFormData] = useState({
     title: "",
@@ -236,7 +246,7 @@ const AddTaskModal = ({ isOpen, onClose, onTaskCreated, projectId }) => {
                       />
                       {user.profileImageUrl ? (
                         <img
-                          src={user.profileImageUrl.startsWith('http') ? user.profileImageUrl : `${BASE_URL}${user.profileImageUrl}`}
+                          src={fullImageUrl(user.profileImageUrl)}
                           alt={user.name || user.fullName || "Avatar"}
                           className="w-8 h-8 rounded-full object-cover"
                         />

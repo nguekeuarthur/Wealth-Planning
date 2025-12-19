@@ -13,6 +13,17 @@ import { useUnreadMessages } from "../../context/UnreadMessagesContext";
 import { useNavigate } from "react-router-dom";
 import { FiEdit2 } from "react-icons/fi";
 import ChangeProfilePhotoModal from "../ChangeProfilePhotoModal";
+import { BASE_URL } from "../../utils/apiPaths";
+
+const fullImageUrl = (url) => {
+  if (!url) return null;
+  // Aggressive cleanup of historical localhost URLs
+  let cleaned = url.replace(/^https?:\/\/localhost:8000/, '');
+  if (cleaned.startsWith('http')) return cleaned;
+  const baseUrlClean = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+  const pathClean = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+  return `${baseUrlClean}${pathClean}`;
+};
 
 const SideMenu = ({ activeMenu }) => {
   const { user, logout, updateUser } = useContext(UserContext);
@@ -73,7 +84,7 @@ const SideMenu = ({ activeMenu }) => {
     <div className="flex flex-col items-center justify-center mb-6 pt-12">
       <div className="relative group">
         <img
-          src={user?.profileImageUrl || null}
+          src={fullImageUrl(user?.profileImageUrl)}
           alt="Profile Image"
           className="w-20 h-20 bg-slate-400 rounded-full cursor-pointer"
           onClick={() => setIsPhotoModalOpen(true)}

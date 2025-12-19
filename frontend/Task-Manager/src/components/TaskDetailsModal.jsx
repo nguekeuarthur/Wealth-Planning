@@ -14,7 +14,17 @@ import {
   FiDownload
 } from "react-icons/fi";
 import axiosInstance from "../utils/axiosInstance";
-import { API_PATHS } from "../utils/apiPaths";
+import { API_PATHS, BASE_URL } from "../utils/apiPaths";
+
+const fullImageUrl = (url) => {
+  if (!url) return null;
+  // Aggressive cleanup of historical localhost URLs
+  let cleaned = url.replace(/^https?:\/\/localhost:8000/, '');
+  if (cleaned.startsWith('http')) return cleaned;
+  const baseUrlClean = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+  const pathClean = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+  return `${baseUrlClean}${pathClean}`;
+};
 import toast from "react-hot-toast";
 import EditTaskModal from "./EditTaskModal";
 
@@ -203,7 +213,7 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdated, onTaskDeleted,
                   <div key={user._id || index} className="flex items-center gap-3 p-2 bg-[#f4f7f4] rounded-lg">
                     {user.profileImageUrl ? (
                       <img
-                        src={user.profileImageUrl}
+                        src={fullImageUrl(user.profileImageUrl)}
                         alt={user.name || "Avatar"}
                         className="w-10 h-10 rounded-full object-cover"
                       />
@@ -244,7 +254,7 @@ const TaskDetailsModal = ({ isOpen, onClose, task, onTaskUpdated, onTaskDeleted,
                       </p>
                     </div>
                     <a
-                      href={`${axiosInstance.defaults.baseURL}${attachment}`}
+                      href={fullImageUrl(attachment)}
                       target="_blank"
                       rel="noopener noreferrer"
                       download

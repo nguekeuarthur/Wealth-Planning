@@ -2,7 +2,17 @@ import React, { useEffect, useState, useContext } from "react";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
-import { API_PATHS } from "../../utils/apiPaths";
+import { API_PATHS, BASE_URL } from "../../utils/apiPaths";
+
+const fullImageUrl = (url) => {
+  if (!url) return null;
+  // Aggressive cleanup of historical localhost URLs
+  let cleaned = url.replace(/^https?:\/\/localhost:8000/, '');
+  if (cleaned.startsWith('http')) return cleaned;
+  const baseUrlClean = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+  const pathClean = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+  return `${baseUrlClean}${pathClean}`;
+};
 import { UserContext } from "../../context/userContext";
 import { LuFileSpreadsheet, LuTrash2 } from "react-icons/lu";
 import TaskStatusTabs from "../../components/TaskStatusTabs";
@@ -128,7 +138,7 @@ const MyTasks = () => {
               <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm overflow-hidden translate-y-4">
                 {user?.profileImageUrl ? (
                   <img
-                    src={user.profileImageUrl}
+                    src={fullImageUrl(user?.profileImageUrl)}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
@@ -188,7 +198,7 @@ const MyTasks = () => {
                 progress={item.progress}
                 createdAt={item.createdAt}
                 dueDate={item.dueDate}
-                assignedTo={item.assignedTo?.map((item) => item.profileImageUrl)}
+                assignedTo={item.assignedTo?.map((item) => fullImageUrl(item.profileImageUrl))}
                 attachmentCount={item.attachments?.length || 0}
                 completedTodoCount={item.completedTodoCount || 0}
                 todoChecklist={item.todoChecklist || []}

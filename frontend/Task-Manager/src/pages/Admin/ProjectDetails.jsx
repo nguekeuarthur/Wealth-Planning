@@ -63,6 +63,16 @@ const getStatusBadgeClass = (status) => {
   }
 };
 
+const fullImageUrl = (url) => {
+  if (!url) return null;
+  // Aggressive cleanup of historical localhost URLs
+  let cleaned = url.replace(/^https?:\/\/localhost:8000/, '');
+  if (cleaned.startsWith('http')) return cleaned;
+  const baseUrlClean = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+  const pathClean = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+  return `${baseUrlClean}${pathClean}`;
+};
+
 const getRoleLabel = (role) => {
   switch (role) {
     case 'admin': return 'Administrateur';
@@ -792,7 +802,7 @@ const ProjectDetails = () => {
                           <div className="p-3 border border-[#dfe8e1] rounded-xl flex items-center gap-3 bg-[#f4f7f4]">
                             {project.projectLead.profileImageUrl ? (
                               <img
-                                src={project.projectLead.profileImageUrl.startsWith('http') ? project.projectLead.profileImageUrl : `${BASE_URL}${project.projectLead.profileImageUrl}`}
+                                src={fullImageUrl(project.projectLead.profileImageUrl)}
                                 alt={project.projectLead.name || "Avatar"}
                                 className="w-10 h-10 rounded-full object-cover"
                               />
@@ -815,7 +825,7 @@ const ProjectDetails = () => {
                               map(userItem => (
                                 <div key={userItem._id} className="flex items-center gap-3 p-3 border border-[#dfe8e1] rounded-lg bg-white">
                                   {userItem.profileImageUrl ? (
-                                    <img src={userItem.profileImageUrl} alt={userItem.name} className="w-10 h-10 rounded-full object-cover" />
+                                    <img src={fullImageUrl(userItem.profileImageUrl)} alt={userItem.name} className="w-10 h-10 rounded-full object-cover" />
                                   ) : (
                                     <div className="w-10 h-10 rounded-full bg-[#5a8f6f] flex items-center justify-center text-white font-medium">{(userItem.name || userItem.email || '').charAt(0).toUpperCase()}</div>
                                   )}
@@ -868,7 +878,7 @@ const ProjectDetails = () => {
                                     <div className="mb-4 p-3 bg-white rounded-lg border border-[#dfe8e1]">
                                       <div className="flex items-center gap-2 mb-2"><FiUser className="text-[#5a8f6f] text-sm" /><span className="text-xs text-[#7a8b7f] font-medium uppercase">Chef d'équipe</span></div>
                                       <div className="flex items-center gap-3">
-                                        {team.leader.profileImageUrl ? <img src={team.leader.profileImageUrl} alt={team.leader.name} className="w-8 h-8 rounded-full object-cover" /> : <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">{team.leader.name?.charAt(0).toUpperCase() || 'L'}</div>}
+                                        {team.leader.profileImageUrl ? <img src={fullImageUrl(team.leader.profileImageUrl)} alt={team.leader.name} className="w-8 h-8 rounded-full object-cover" /> : <div className="w-8 h-8 bg-[#5a8f6f] rounded-full flex items-center justify-center text-white text-sm font-semibold">{team.leader.name?.charAt(0).toUpperCase() || 'L'}</div>}
                                         <div><p className="text-sm font-semibold text-[#1e4029]">{team.leader.name || team.leader.email}</p><p className="text-xs text-[#7a8b7f]">{team.leader.email}</p></div>
                                       </div>
                                     </div>
@@ -879,7 +889,7 @@ const ProjectDetails = () => {
                                       <div className="space-y-2">
                                         {team.members.filter(member => !(team.leader && member._id && team.leader._id && member._id.toString() === team.leader._id.toString())).map((member) => (
                                           <div key={member._id} className="flex items-center gap-3 p-2 bg-white rounded-lg border border-[#dfe8e1] hover:border-[#5a8f6f]/30 transition-colors">
-                                            {member.profileImageUrl ? <img src={member.profileImageUrl} alt={member.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" /> : <div className="w-8 h-8 bg-[#f4f7f4] rounded-full flex items-center justify-center text-[#2d5f3f] text-xs font-semibold flex-shrink-0">{member.name?.charAt(0).toUpperCase() || 'U'}</div>}
+                                            {member.profileImageUrl ? <img src={fullImageUrl(member.profileImageUrl)} alt={member.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" /> : <div className="w-8 h-8 bg-[#f4f7f4] rounded-full flex items-center justify-center text-[#2d5f3f] text-xs font-semibold flex-shrink-0">{member.name?.charAt(0).toUpperCase() || 'U'}</div>}
                                             <div className="flex-1 min-w-0"><p className="text-sm font-medium text-[#1e4029] truncate">{member.name || 'Membre'}</p><p className="text-xs text-[#7a8b7f] truncate">{member.email} • <span className="font-medium">{member.role}</span></p></div>
                                           </div>
                                         ))}
@@ -1422,7 +1432,7 @@ const ProjectDetails = () => {
                                 Pièce jointe disponible
                               </span>
                               <a
-                                href={`${BASE_URL}${invoice.attachment.path}`}
+                                href={fullImageUrl(invoice.attachment.path)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="px-3 py-1.5 text-xs bg-[#2d5f3f] text-white rounded-lg hover:bg-[#1e4029] transition-colors font-medium flex items-center gap-1.5"
@@ -1561,7 +1571,7 @@ const ProjectDetails = () => {
                             <div className="flex-shrink-0">
                               {message.sender?.profileImageUrl ? (
                                 <img
-                                  src={message.sender.profileImageUrl}
+                                  src={fullImageUrl(message.sender.profileImageUrl)}
                                   alt={message.sender.name || "Avatar"}
                                   className="w-10 h-10 rounded-full object-cover"
                                 />

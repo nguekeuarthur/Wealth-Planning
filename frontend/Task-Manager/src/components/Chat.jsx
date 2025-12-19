@@ -54,10 +54,17 @@ const Chat = () => {
 
   const fullImageUrl = (url) => {
     if (!url) return null;
-    if (url.startsWith('http')) return url;
-    // Always remove 'http://localhost:8000' if it's there (historical cleanup)
-    const cleaned = url.replace(/^http:\/\/localhost:8000/, '');
-    return `${BASE_URL}${cleaned.startsWith('/') ? '' : '/'}${cleaned}`;
+
+    // Aggressive cleanup of historical localhost URLs
+    let cleaned = url.replace(/^https?:\/\/localhost:8000/, '');
+
+    if (cleaned.startsWith('http')) return cleaned;
+
+    // Ensure we don't have double slashes when joining with BASE_URL
+    const baseUrlClean = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+    const pathClean = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+
+    return `${baseUrlClean}${pathClean}`;
   };
 
   const getOtherParticipant = (conv) => {

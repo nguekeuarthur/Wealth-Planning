@@ -1,12 +1,22 @@
 import React, { useState } from "react";
 import { FiX, FiUpload, FiCamera } from "react-icons/fi";
 import axiosInstance from "../utils/axiosInstance";
-import { API_PATHS } from "../utils/apiPaths";
+import { API_PATHS, BASE_URL } from "../utils/apiPaths";
+
+const fullImageUrl = (url) => {
+  if (!url) return null;
+  // Aggressive cleanup of historical localhost URLs
+  let cleaned = url.replace(/^https?:\/\/localhost:8000/, '');
+  if (cleaned.startsWith('http')) return cleaned;
+  const baseUrlClean = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+  const pathClean = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+  return `${baseUrlClean}${pathClean}`;
+};
 import toast from "react-hot-toast";
 
 const ChangeProfilePhotoModal = ({ isOpen, onClose, currentImage, onSuccess }) => {
   const [selectedFile, setSelectedFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(currentImage);
+  const [previewUrl, setPreviewUrl] = useState(fullImageUrl(currentImage));
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = (e) => {
@@ -25,7 +35,7 @@ const ChangeProfilePhotoModal = ({ isOpen, onClose, currentImage, onSuccess }) =
       }
 
       setSelectedFile(file);
-      
+
       // Créer une prévisualisation
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -72,7 +82,7 @@ const ChangeProfilePhotoModal = ({ isOpen, onClose, currentImage, onSuccess }) =
 
   const handleClose = () => {
     setSelectedFile(null);
-    setPreviewUrl(currentImage);
+    setPreviewUrl(fullImageUrl(currentImage));
     onClose();
   };
 
@@ -85,7 +95,7 @@ const ChangeProfilePhotoModal = ({ isOpen, onClose, currentImage, onSuccess }) =
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50"
       onClick={handleBackdropClick}
     >

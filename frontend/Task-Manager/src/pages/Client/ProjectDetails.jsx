@@ -524,14 +524,74 @@ const ClientProjectDetails = () => {
                                     Ajouté le {new Date(doc.uploadDate).toLocaleDateString('fr-FR')}
                                 </p>
                             </div>
-                            <a
-                                href={doc.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-4 py-2 bg-[#2d5f3f] text-white rounded-xl hover:bg-[#1e4029] text-sm font-medium"
+                            <button
+                                onClick={async (e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    try {
+                                        const response = await axiosInstance.get(
+                                            `${API_PATHS.DOCUMENTS.GET_DOCUMENT_BY_ID(doc._id)}/download`,
+                                            { responseType: 'blob' }
+                                        );
+
+                                        const contentType = response.headers?.['content-type'] || doc.fileType || 'application/octet-stream';
+                                        const blob = new Blob([response.data], { type: contentType });
+
+                                        const contentDisposition = response.headers?.['content-disposition'];
+                                        let fileName = doc.name || 'document';
+                                        if (contentDisposition) {
+                                            const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;\n]*)/);
+                                            const asciiMatch = contentDisposition.match(/filename="?([^";\n]*)"?/);
+                                            const rawName = utf8Match?.[1] || asciiMatch?.[1];
+                                            if (rawName) {
+                                                try {
+                                                    fileName = decodeURIComponent(rawName);
+                                                } catch {
+                                                    fileName = rawName;
+                                                }
+                                            }
+                                        }
+
+                                        const mimeToExt = {
+                                            'application/pdf': '.pdf',
+                                            'application/msword': '.doc',
+                                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+                                            'application/vnd.ms-excel': '.xls',
+                                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+                                            'application/vnd.ms-powerpoint': '.ppt',
+                                            'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+                                            'image/jpeg': '.jpg',
+                                            'image/png': '.png',
+                                            'image/gif': '.gif',
+                                            'text/plain': '.txt',
+                                            'text/csv': '.csv'
+                                        };
+                                        const hasExtension = /\.[\\w]+$/.test(fileName);
+                                        const ext = mimeToExt[contentType] || mimeToExt[doc.fileType];
+                                        if (!hasExtension && ext) {
+                                            fileName += ext;
+                                        }
+
+                                        const url = window.URL.createObjectURL(blob);
+                                        const link = document.createElement('a');
+                                        link.href = url;
+                                        link.download = fileName;
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        document.body.removeChild(link);
+                                        window.URL.revokeObjectURL(url);
+                                    } catch (error) {
+                                        console.error('Erreur lors du téléchargement:', error);
+                                        toast.error(
+                                            error.response?.data?.message ||
+                                            'Erreur lors du téléchargement du fichier'
+                                        );
+                                    }
+                                }}
+                                className="px-4 py-2 bg-[#2d5f3f] text-white rounded-xl hover:bg-[#1e4029] text-sm font-medium transition-colors cursor-pointer"
                             >
                                 Télécharger
-                            </a>
+                            </button>
                         </div>
                     </div>
                 ))
