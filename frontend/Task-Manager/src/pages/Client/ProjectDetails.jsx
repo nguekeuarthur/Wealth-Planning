@@ -45,8 +45,7 @@ const clientTabs = [
     { id: "tasks", label: "Tâches", icon: FiCheckCircle },
     { id: "milestones", label: "Jalons", icon: FiFlag },
     { id: "documents", label: "Documents", icon: FiFileText },
-    { id: "invoices", label: "Finances", icon: FiDollarSign },
-    { id: "updates", label: "Messages", icon: FiMessageSquare }
+    { id: "invoices", label: "Finances", icon: FiDollarSign }
 ];
 
 const getStatusBadgeClass = (status) => {
@@ -227,13 +226,10 @@ const ClientProjectDetails = () => {
     }, [id]);
 
     const handleDragStart = (event) => {
-        // Disabled for clients
-        // setActiveId(event.active.id);
+        setActiveId(event.active.id);
     };
 
     const handleDragEnd = async (event) => {
-        // Disabled for clients
-        /*
         const { active, over } = event;
         setActiveId(null);
 
@@ -277,7 +273,6 @@ const ClientProjectDetails = () => {
             console.error("Erreur lors de la mise à jour:", error);
             toast.error("Impossible de mettre à jour le statut");
         }
-        */
     };
 
     if (loading) {

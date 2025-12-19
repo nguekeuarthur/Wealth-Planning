@@ -15,7 +15,11 @@ import {
     FiClock,
     FiFile,
     FiFlag,
-    FiCheckSquare
+    FiCheckSquare,
+    FiX,
+    FiCircle,
+    FiPlayCircle,
+    FiCheckCircle as FiCheck
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { UserContext } from "../../context/userContext";
@@ -49,6 +53,8 @@ const UserProjectDetails = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("overview");
     const [draggedTaskId, setDraggedTaskId] = useState(null);
+    const [selectedTask, setSelectedTask] = useState(null);
+    const [showTaskModal, setShowTaskModal] = useState(false);
 
     const fetchProjectData = async () => {
         try {
@@ -192,11 +198,20 @@ const UserProjectDetails = () => {
         const isCompleted = task.status === "Completed" || task.status === "completed";
         const isOverdue = dueDate && dueDate < new Date() && !isCompleted;
 
-
+        // Vérifier si la tâche est assignée au membre actuel
+        const isAssignedToMe = task.assignedTo?.some(assignedUser =>
+            assignedUser._id === user?._id || assignedUser === user?._id
+        );
 
         return (
             <div
                 draggable={!!onDragStart}
+                onClick={() => {
+                    if (isAssignedToMe) {
+                        setSelectedTask(task);
+                        setShowTaskModal(true);
+                    }
+                }}
                 onDragStart={(e) => {
                     e.dataTransfer.effectAllowed = "move";
                     onDragStart && onDragStart(task);
@@ -204,7 +219,12 @@ const UserProjectDetails = () => {
                 onDragEnd={() => {
                     onDragEnd && onDragEnd();
                 }}
-                className="p-4 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 hover:shadow-md transition-all bg-white cursor-move"
+                className={`p-4 border border-[#dfe8e1] rounded-2xl transition-all bg-white ${
+                    isAssignedToMe
+                        ? 'cursor-pointer hover:border-[#5a8f6f]/40 hover:shadow-md'
+                        : 'cursor-default opacity-60'
+                }`}
+                title={!isAssignedToMe ? "Vous ne pouvez modifier que les tâches qui vous sont assignées" : "Cliquez pour voir les détails"}
             >
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
@@ -491,6 +511,217 @@ const UserProjectDetails = () => {
         </div>
     );
 
+    const handleUpdateTaskStatus = async (newStatus) => {
+        if (!selectedTask) return;
+
+        try {
+            await axiosInstance.put(
+                API_PATHS.TASKS.UPDATE_TASK_STATUS(selectedTask._id),
+                { status: newStatus }
+            );
+            toast.success("Statut de la tâche mis à jour");
+
+            setTasks((prevTasks) =>
+                prevTasks.map((t) =>
+                    t._id === selectedTask._id
+                        ? { ...t, status: newStatus }
+                        : t
+                )
+            );
+
+            setShowTaskModal(false);
+            setSelectedTask(null);
+
+            try {
+                const projectRes = await axiosInstance.get(API_PATHS.PROJECTS.GET_PROJECT_BY_ID(id));
+                setProject(projectRes.data?.project || projectRes.data);
+            } catch (projectError) {
+                console.error("Erreur lors du rechargement du projet:", projectError);
+            }
+        } catch (error) {
+            console.error("Erreur lors de la mise à jour du statut:", error);
+            toast.error(
+                error.response?.data?.message ||
+                "Impossible de mettre à jour le statut de la tâche"
+            );
+        }
+    };
+
+    const TaskModal = () => {
+        if (!showTaskModal || !selectedTask) return null;
+
+        const dueDate = selectedTask.dueDate ? new Date(selectedTask.dueDate) : null;
+        const isOverdue = dueDate && dueDate < new Date() && selectedTask.status !== "Completed";
+
+        const getStatusLabel = (status) => {
+            switch (status) {
+                case "In Progress":
+                    return "En cours";
+                case "Completed":
+                    return "Terminée";
+                default:
+                    return "En attente";
+            }
+        };
+
+        return (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                    {/* Header */}
+                    <div className="sticky top-0 bg-white border-b border-[#dfe8e1] px-6 py-4 flex items-center justify-between">
+                        <h2 className="text-xl font-semibold text-[#1e4029]">Détails de la tâche</h2>
+                        <button
+                            onClick={() => {
+                                setShowTaskModal(false);
+                                setSelectedTask(null);
+                            }}
+                            className="text-[#7a8b7f] hover:text-[#1e4029] transition-colors"
+                        >
+                            <FiX size={24} />
+                        </button>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-6 space-y-6">
+                        {/* Title */}
+                        <div>
+                            <h3 className="text-2xl font-bold text-[#1e4029] mb-2">
+                                {selectedTask.title}
+                            </h3>
+                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                                selectedTask.status === "Completed" 
+                                    ? "bg-[#dff5e7] text-[#1e4029]"
+                                    : selectedTask.status === "In Progress"
+                                    ? "bg-[#fff6ea] text-[#b76a28]"
+                                    : "bg-[#f4f7f4] text-[#7a8b7f]"
+                            }`}>
+                                {getStatusLabel(selectedTask.status)}
+                            </span>
+                        </div>
+
+                        {/* Description */}
+                        {selectedTask.description && (
+                            <div className="bg-[#f9fbf9] rounded-xl p-4">
+                                <h4 className="text-sm font-semibold text-[#1e4029] mb-2">Description</h4>
+                                <p className="text-[#7a8b7f] text-sm leading-relaxed">
+                                    {selectedTask.description}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Date d'échéance */}
+                        {selectedTask.dueDate && (
+                            <div className="flex items-center gap-3 p-4 bg-[#f9fbf9] rounded-xl">
+                                <FiCalendar className={`w-5 h-5 ${isOverdue ? 'text-red-500' : 'text-[#2d5f3f]'}`} />
+                                <div>
+                                    <p className="text-xs text-[#7a8b7f]">Date d'échéance</p>
+                                    <p className={`text-sm font-medium ${isOverdue ? 'text-red-500' : 'text-[#1e4029]'}`}>
+                                        {moment(selectedTask.dueDate).format('DD MMMM YYYY')}
+                                        {isOverdue && " (En retard)"}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Modifier le statut */}
+                        <div className="border-t border-[#dfe8e1] pt-6">
+                            <h4 className="text-sm font-semibold text-[#1e4029] mb-4">Modifier le statut</h4>
+                            <div className="space-y-3">
+                                <button
+                                    onClick={() => handleUpdateTaskStatus("Pending")}
+                                    disabled={selectedTask.status === "Pending"}
+                                    className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4 ${
+                                        selectedTask.status === "Pending"
+                                            ? "border-[#2d5f3f] bg-[#e6f0ea] shadow-sm"
+                                            : "border-[#dfe8e1] hover:border-[#5a8f6f] hover:bg-[#f9fbf9]"
+                                    } disabled:opacity-70 disabled:cursor-not-allowed`}
+                                >
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                        selectedTask.status === "Pending" 
+                                            ? "bg-[#2d5f3f] text-white" 
+                                            : "bg-[#f4f7f4] text-[#7a8b7f]"
+                                    }`}>
+                                        <FiCircle size={20} />
+                                    </div>
+                                    <div className="flex-1 text-left">
+                                        <p className="text-sm font-semibold text-[#1e4029]">En attente</p>
+                                        <p className="text-xs text-[#7a8b7f]">La tâche est en attente de démarrage</p>
+                                    </div>
+                                    {selectedTask.status === "Pending" && (
+                                        <FiCheck className="text-[#2d5f3f]" size={20} />
+                                    )}
+                                </button>
+
+                                <button
+                                    onClick={() => handleUpdateTaskStatus("In Progress")}
+                                    disabled={selectedTask.status === "In Progress"}
+                                    className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4 ${
+                                        selectedTask.status === "In Progress"
+                                            ? "border-[#b76a28] bg-[#fff6ea] shadow-sm"
+                                            : "border-[#dfe8e1] hover:border-[#d4985c] hover:bg-[#fffaf2]"
+                                    } disabled:opacity-70 disabled:cursor-not-allowed`}
+                                >
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                        selectedTask.status === "In Progress" 
+                                            ? "bg-[#b76a28] text-white" 
+                                            : "bg-[#fff6ea] text-[#b76a28]"
+                                    }`}>
+                                        <FiPlayCircle size={20} />
+                                    </div>
+                                    <div className="flex-1 text-left">
+                                        <p className="text-sm font-semibold text-[#1e4029]">En cours</p>
+                                        <p className="text-xs text-[#7a8b7f]">La tâche est actuellement en cours</p>
+                                    </div>
+                                    {selectedTask.status === "In Progress" && (
+                                        <FiCheck className="text-[#b76a28]" size={20} />
+                                    )}
+                                </button>
+
+                                <button
+                                    onClick={() => handleUpdateTaskStatus("Completed")}
+                                    disabled={selectedTask.status === "Completed"}
+                                    className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4 ${
+                                        selectedTask.status === "Completed"
+                                            ? "border-[#2d5f3f] bg-[#dff5e7] shadow-sm"
+                                            : "border-[#dfe8e1] hover:border-[#5a8f6f] hover:bg-[#f4faf6]"
+                                    } disabled:opacity-70 disabled:cursor-not-allowed`}
+                                >
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                        selectedTask.status === "Completed" 
+                                            ? "bg-[#2d5f3f] text-white" 
+                                            : "bg-[#dff5e7] text-[#2d5f3f]"
+                                    }`}>
+                                        <FiCheckCircle size={20} />
+                                    </div>
+                                    <div className="flex-1 text-left">
+                                        <p className="text-sm font-semibold text-[#1e4029]">Terminée</p>
+                                        <p className="text-xs text-[#7a8b7f]">La tâche est complètement terminée</p>
+                                    </div>
+                                    {selectedTask.status === "Completed" && (
+                                        <FiCheck className="text-[#2d5f3f]" size={20} />
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="sticky bottom-0 bg-[#f9fbf9] border-t border-[#dfe8e1] px-6 py-4">
+                        <button
+                            onClick={() => {
+                                setShowTaskModal(false);
+                                setSelectedTask(null);
+                            }}
+                            className="w-full px-4 py-2 bg-[#2d5f3f] text-white rounded-xl hover:bg-[#1e4029] transition-colors font-medium"
+                        >
+                            Fermer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <DashboardLayout>
             <div className="max-w-7xl mx-auto p-6">
@@ -629,6 +860,9 @@ const UserProjectDetails = () => {
                     {activeTab === 'documents' && renderDocuments()}
                 </div>
             </div>
+
+            {/* Modal de modification de statut de tâche */}
+            <TaskModal />
         </DashboardLayout>
     );
 };
