@@ -53,6 +53,7 @@ const UserProjectDetails = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("overview");
     const [draggedTaskId, setDraggedTaskId] = useState(null);
+    const [dragOverColumn, setDragOverColumn] = useState(null);
     const [selectedTask, setSelectedTask] = useState(null);
     const [showTaskModal, setShowTaskModal] = useState(false);
 
@@ -152,7 +153,42 @@ const UserProjectDetails = () => {
 
     const handleStatusDrop = async (event, newStatus) => {
         event.preventDefault();
-        if (!draggedTaskId) return;
+        event.stopPropagation();
+
+        // Récupérer l'ID depuis dataTransfer OU depuis l'état comme backup
+        let taskId = event.dataTransfer.getData('text/plain');
+
+        // Si dataTransfer est vide, utiliser l'état comme fallback
+        if (!taskId && draggedTaskId) {
+            taskId = draggedTaskId;
+            console.log("Utilisation de l'état draggedTaskId comme fallback:", taskId);
+        }
+
+        console.log("Drop événement déclenché:", { taskId, newStatus, draggedTaskId });
+
+        if (!taskId) {
+            console.log("Aucune tâche en cours de drag");
+            return;
+        }
+
+        // Vérifier que la tâche est assignée au membre
+        const task = tasks.find(t => t._id === taskId);
+        if (!task) {
+            console.log("Tâche non trouvée:", taskId);
+            return;
+        }
+
+        const isAssignedToMe = task.assignedTo?.some(assignedUser =>
+            assignedUser._id === user?._id || assignedUser === user?._id
+        );
+
+        console.log("Tâche trouvée:", { title: task.title, isAssignedToMe, currentStatus: task.status });
+
+        if (!isAssignedToMe) {
+            toast.error("Vous ne pouvez modifier que les tâches qui vous sont assignées");
+            setDraggedTaskId(null);
+            return;
+        }
 
         const statusMap = {
             'pending': 'Pending',
@@ -161,16 +197,26 @@ const UserProjectDetails = () => {
         };
         const formattedStatus = statusMap[newStatus] || newStatus;
 
+        console.log("Changement de statut:", { from: task.status, to: formattedStatus });
+
+        // Ne pas mettre à jour si c'est déjà le même statut
+        if (task.status === formattedStatus) {
+            console.log("Même statut, pas de mise à jour");
+            setDraggedTaskId(null);
+            return;
+        }
+
         try {
             await axiosInstance.put(
-                API_PATHS.TASKS.UPDATE_TASK_STATUS(draggedTaskId),
+                API_PATHS.TASKS.UPDATE_TASK_STATUS(taskId),
                 { status: formattedStatus }
             );
             toast.success("Statut de la tâche mis à jour");
+            console.log("Statut mis à jour avec succès");
 
             setTasks((prevTasks) =>
                 prevTasks.map((t) =>
-                    t._id === draggedTaskId
+                    t._id === taskId
                         ? { ...t, status: formattedStatus }
                         : t
                 )
@@ -213,17 +259,22 @@ const UserProjectDetails = () => {
                     }
                 }}
                 onDragStart={(e) => {
+                    console.log("Début du drag:", task._id, task.title);
+                    if (onDragStart) {
+                        onDragStart(task);
+                    }
                     e.dataTransfer.effectAllowed = "move";
-                    onDragStart && onDragStart(task);
+                    e.dataTransfer.setData('text/plain', task._id);
+                    e.dataTransfer.setData('application/json', JSON.stringify({ taskId: task._id }));
                 }}
-                onDragEnd={() => {
+                onDragEnd={(e) => {
+                    console.log("Fin du drag:", task._id);
                     onDragEnd && onDragEnd();
                 }}
-                className={`p-4 border border-[#dfe8e1] rounded-2xl transition-all bg-white ${
-                    isAssignedToMe
-                        ? 'cursor-pointer hover:border-[#5a8f6f]/40 hover:shadow-md'
-                        : 'cursor-default opacity-60'
-                }`}
+                className={`p-4 border border-[#dfe8e1] rounded-2xl transition-all bg-white ${isAssignedToMe
+                    ? 'cursor-pointer hover:border-[#5a8f6f]/40 hover:shadow-md'
+                    : 'cursor-default opacity-60'
+                    }`}
                 title={!isAssignedToMe ? "Vous ne pouvez modifier que les tâches qui vous sont assignées" : "Cliquez pour voir les détails"}
             >
                 <div className="flex items-start justify-between gap-4">
@@ -282,9 +333,22 @@ const UserProjectDetails = () => {
                 {tasks.length > 0 ? (
                     <div className="mt-4 grid gap-4 md:grid-cols-3">
                         <div
-                            className="bg-[#f9fbf9] rounded-2xl border border-[#e1ebe4] p-4 flex flex-col gap-3 min-h-[160px]"
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) => handleStatusDrop(e, "pending")}
+                            className={`bg-[#f9fbf9] rounded-2xl border ${dragOverColumn === 'pending' ? 'border-[#2d5f3f] border-2 bg-[#e6f0ea]' : 'border-[#e1ebe4]'
+                                } p-4 flex flex-col gap-3 min-h-[160px] transition-all`}
+                            onDragOver={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setDragOverColumn('pending');
+                            }}
+                            onDragLeave={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setDragOverColumn(null);
+                            }}
+                            onDrop={(e) => {
+                                setDragOverColumn(null);
+                                handleStatusDrop(e, "pending");
+                            }}
                         >
                             <div className="flex items-center justify-between mb-1">
                                 <h3 className="text-sm font-semibold text-[#1e4029]">En attente</h3>
@@ -307,9 +371,22 @@ const UserProjectDetails = () => {
                         </div>
 
                         <div
-                            className="bg-[#fffaf2] rounded-2xl border border-[#f3e0c8] p-4 flex flex-col gap-3 min-h-[160px]"
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) => handleStatusDrop(e, "in-progress")}
+                            className={`bg-[#fffaf2] rounded-2xl border ${dragOverColumn === 'in-progress' ? 'border-[#b76a28] border-2 bg-[#fff3d9]' : 'border-[#f3e0c8]'
+                                } p-4 flex flex-col gap-3 min-h-[160px] transition-all`}
+                            onDragOver={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setDragOverColumn('in-progress');
+                            }}
+                            onDragLeave={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setDragOverColumn(null);
+                            }}
+                            onDrop={(e) => {
+                                setDragOverColumn(null);
+                                handleStatusDrop(e, "in-progress");
+                            }}
                         >
                             <div className="flex items-center justify-between mb-1">
                                 <h3 className="text-sm font-semibold text-[#8a5a24]">En cours</h3>
@@ -332,9 +409,22 @@ const UserProjectDetails = () => {
                         </div>
 
                         <div
-                            className="bg-[#f4faf6] rounded-2xl border border-[#d5ecde] p-4 flex flex-col gap-3 min-h-[160px]"
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) => handleStatusDrop(e, "completed")}
+                            className={`bg-[#f4faf6] rounded-2xl border ${dragOverColumn === 'completed' ? 'border-[#2d5f3f] border-2 bg-[#dff5e7]' : 'border-[#d5ecde]'
+                                } p-4 flex flex-col gap-3 min-h-[160px] transition-all`}
+                            onDragOver={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setDragOverColumn('completed');
+                            }}
+                            onDragLeave={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setDragOverColumn(null);
+                            }}
+                            onDrop={(e) => {
+                                setDragOverColumn(null);
+                                handleStatusDrop(e, "completed");
+                            }}
                         >
                             <div className="flex items-center justify-between mb-1">
                                 <h3 className="text-sm font-semibold text-[#1e4029]">Terminée</h3>
@@ -588,13 +678,12 @@ const UserProjectDetails = () => {
                             <h3 className="text-2xl font-bold text-[#1e4029] mb-2">
                                 {selectedTask.title}
                             </h3>
-                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                                selectedTask.status === "Completed" 
-                                    ? "bg-[#dff5e7] text-[#1e4029]"
-                                    : selectedTask.status === "In Progress"
+                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${selectedTask.status === "Completed"
+                                ? "bg-[#dff5e7] text-[#1e4029]"
+                                : selectedTask.status === "In Progress"
                                     ? "bg-[#fff6ea] text-[#b76a28]"
                                     : "bg-[#f4f7f4] text-[#7a8b7f]"
-                            }`}>
+                                }`}>
                                 {getStatusLabel(selectedTask.status)}
                             </span>
                         </div>
@@ -630,17 +719,15 @@ const UserProjectDetails = () => {
                                 <button
                                     onClick={() => handleUpdateTaskStatus("Pending")}
                                     disabled={selectedTask.status === "Pending"}
-                                    className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4 ${
-                                        selectedTask.status === "Pending"
-                                            ? "border-[#2d5f3f] bg-[#e6f0ea] shadow-sm"
-                                            : "border-[#dfe8e1] hover:border-[#5a8f6f] hover:bg-[#f9fbf9]"
-                                    } disabled:opacity-70 disabled:cursor-not-allowed`}
+                                    className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4 ${selectedTask.status === "Pending"
+                                        ? "border-[#2d5f3f] bg-[#e6f0ea] shadow-sm"
+                                        : "border-[#dfe8e1] hover:border-[#5a8f6f] hover:bg-[#f9fbf9]"
+                                        } disabled:opacity-70 disabled:cursor-not-allowed`}
                                 >
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                                        selectedTask.status === "Pending" 
-                                            ? "bg-[#2d5f3f] text-white" 
-                                            : "bg-[#f4f7f4] text-[#7a8b7f]"
-                                    }`}>
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${selectedTask.status === "Pending"
+                                        ? "bg-[#2d5f3f] text-white"
+                                        : "bg-[#f4f7f4] text-[#7a8b7f]"
+                                        }`}>
                                         <FiCircle size={20} />
                                     </div>
                                     <div className="flex-1 text-left">
@@ -655,17 +742,15 @@ const UserProjectDetails = () => {
                                 <button
                                     onClick={() => handleUpdateTaskStatus("In Progress")}
                                     disabled={selectedTask.status === "In Progress"}
-                                    className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4 ${
-                                        selectedTask.status === "In Progress"
-                                            ? "border-[#b76a28] bg-[#fff6ea] shadow-sm"
-                                            : "border-[#dfe8e1] hover:border-[#d4985c] hover:bg-[#fffaf2]"
-                                    } disabled:opacity-70 disabled:cursor-not-allowed`}
+                                    className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4 ${selectedTask.status === "In Progress"
+                                        ? "border-[#b76a28] bg-[#fff6ea] shadow-sm"
+                                        : "border-[#dfe8e1] hover:border-[#d4985c] hover:bg-[#fffaf2]"
+                                        } disabled:opacity-70 disabled:cursor-not-allowed`}
                                 >
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                                        selectedTask.status === "In Progress" 
-                                            ? "bg-[#b76a28] text-white" 
-                                            : "bg-[#fff6ea] text-[#b76a28]"
-                                    }`}>
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${selectedTask.status === "In Progress"
+                                        ? "bg-[#b76a28] text-white"
+                                        : "bg-[#fff6ea] text-[#b76a28]"
+                                        }`}>
                                         <FiPlayCircle size={20} />
                                     </div>
                                     <div className="flex-1 text-left">
@@ -680,17 +765,15 @@ const UserProjectDetails = () => {
                                 <button
                                     onClick={() => handleUpdateTaskStatus("Completed")}
                                     disabled={selectedTask.status === "Completed"}
-                                    className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4 ${
-                                        selectedTask.status === "Completed"
-                                            ? "border-[#2d5f3f] bg-[#dff5e7] shadow-sm"
-                                            : "border-[#dfe8e1] hover:border-[#5a8f6f] hover:bg-[#f4faf6]"
-                                    } disabled:opacity-70 disabled:cursor-not-allowed`}
+                                    className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4 ${selectedTask.status === "Completed"
+                                        ? "border-[#2d5f3f] bg-[#dff5e7] shadow-sm"
+                                        : "border-[#dfe8e1] hover:border-[#5a8f6f] hover:bg-[#f4faf6]"
+                                        } disabled:opacity-70 disabled:cursor-not-allowed`}
                                 >
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                                        selectedTask.status === "Completed" 
-                                            ? "bg-[#2d5f3f] text-white" 
-                                            : "bg-[#dff5e7] text-[#2d5f3f]"
-                                    }`}>
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${selectedTask.status === "Completed"
+                                        ? "bg-[#2d5f3f] text-white"
+                                        : "bg-[#dff5e7] text-[#2d5f3f]"
+                                        }`}>
                                         <FiCheckCircle size={20} />
                                     </div>
                                     <div className="flex-1 text-left">
