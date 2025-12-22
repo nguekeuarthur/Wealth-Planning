@@ -899,6 +899,8 @@ exports.cleanupInvalidConversations = async (req, res) => {
 // Helper references for exports
 const _initializeDefaultConversations = exports.initializeDefaultConversations;
 const _getConversations = exports.getConversations;
+const _getConversationMessages = exports.getConversationMessages;
+const _sendMessage = exports.sendMessage;
 const _createConversation = exports.createConversation;
 const _addParticipant = exports.addParticipant;
 const _removeParticipant = exports.removeParticipant;
@@ -909,6 +911,8 @@ const _canAccessConversation = exports.canAccessConversation;
 module.exports = {
   initializeDefaultConversations: _initializeDefaultConversations,
   getConversations: _getConversations,
+  getConversationMessages: _getConversationMessages,
+  sendMessage: _sendMessage,
   createConversation: _createConversation,
   addParticipant: _addParticipant,
   removeParticipant: _removeParticipant,
