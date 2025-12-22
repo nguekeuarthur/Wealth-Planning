@@ -897,15 +897,22 @@ exports.cleanupInvalidConversations = async (req, res) => {
 };
 
 // Helper references for exports
-const initializeDefaultConversations = exports.initializeDefaultConversations;
+const _initializeDefaultConversations = exports.initializeDefaultConversations;
+const _getConversations = exports.getConversations;
+const _createConversation = exports.createConversation;
+const _addParticipant = exports.addParticipant;
+const _removeParticipant = exports.removeParticipant;
+const _cleanupInvalidConversations = exports.cleanupInvalidConversations;
+const _canCreateConversation = exports.canCreateConversation;
+const _canAccessConversation = exports.canAccessConversation;
 
 module.exports = {
-  initializeDefaultConversations,
-  getConversations,
-  createConversation,
-  addParticipant,
-  removeParticipant,
-  cleanupInvalidConversations,
-  canCreateConversation,
-  canAccessConversation
+  initializeDefaultConversations: _initializeDefaultConversations,
+  getConversations: _getConversations,
+  createConversation: _createConversation,
+  addParticipant: _addParticipant,
+  removeParticipant: _removeParticipant,
+  cleanupInvalidConversations: _cleanupInvalidConversations,
+  canCreateConversation: _canCreateConversation,
+  canAccessConversation: _canAccessConversation
 };
