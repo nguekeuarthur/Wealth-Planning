@@ -19,11 +19,13 @@ import {
     FiX,
     FiCircle,
     FiPlayCircle,
-    FiCheckCircle as FiCheck
+    FiCheckCircle as FiCheck,
+    FiPlus
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { UserContext } from "../../context/userContext";
 import { getSession } from "../../utils/authStorage";
+import FileUploadModal from "../../components/FileUploadModal";
 
 moment.locale('fr');
 
@@ -56,6 +58,7 @@ const UserProjectDetails = () => {
     const [dragOverColumn, setDragOverColumn] = useState(null);
     const [selectedTask, setSelectedTask] = useState(null);
     const [showTaskModal, setShowTaskModal] = useState(false);
+    const [showUploadModal, setShowUploadModal] = useState(false);
 
     const fetchProjectData = async () => {
         try {
@@ -110,6 +113,18 @@ const UserProjectDetails = () => {
 
         socket.on("taskUpdated", (updatedTask) => {
             if (id && updatedTask.project.toString() === id.toString()) {
+                // Pour les non-admin, ne montrer que les tâches qui leur sont assignées
+                const isAssignedToMe = user.role === 'admin' ||
+                    updatedTask.assignedTo?.some(assignedUser =>
+                        assignedUser._id === user._id || assignedUser === user._id
+                    );
+
+                if (!isAssignedToMe) {
+                    // Si la tâche n'est pas assignée à l'utilisateur, on la retire de la liste si elle y était
+                    setTasks(prevTasks => prevTasks.filter(t => t._id !== updatedTask._id));
+                    return;
+                }
+
                 setTasks(prevTasks => {
                     const exists = prevTasks.some(t => t._id === updatedTask._id);
                     if (exists) {
@@ -127,10 +142,18 @@ const UserProjectDetails = () => {
 
         socket.on("taskCreated", (newTask) => {
             if (id && newTask.project.toString() === id.toString()) {
-                setTasks(prev => {
-                    if (prev.some(t => t._id === newTask._id)) return prev;
-                    return [...prev, newTask];
-                });
+                // Pour les non-admin, ne montrer que les tâches qui leur sont assignées
+                const isAssignedToMe = user.role === 'admin' ||
+                    newTask.assignedTo?.some(assignedUser =>
+                        assignedUser._id === user._id || assignedUser === user._id
+                    );
+
+                if (isAssignedToMe) {
+                    setTasks(prev => {
+                        if (prev.some(t => t._id === newTask._id)) return prev;
+                        return [...prev, newTask];
+                    });
+                }
             }
         });
 
@@ -504,9 +527,23 @@ const UserProjectDetails = () => {
         </div>
     );
 
+    const handleUploadSuccess = (newDocument) => {
+        setDocuments(prev => [newDocument, ...prev]);
+        toast.success('Document ajouté avec succès !');
+    };
+
     const renderDocuments = () => (
         <div>
-            <h2 className="text-xl font-semibold text-[#1e4029] mb-4">Documents partagés</h2>
+            <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-[#1e4029]">Documents partagés</h2>
+                <button
+                    onClick={() => setShowUploadModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-[#2d5f3f] text-white rounded-lg hover:bg-[#1e4029] transition-colors text-sm font-medium"
+                >
+                    <FiPlus size={16} />
+                    Uploader un document
+                </button>
+            </div>
             {documents.length > 0 ? (
                 <div className="space-y-3">
                     {documents.map((doc) => (
@@ -517,6 +554,9 @@ const UserProjectDetails = () => {
                                     <p className="text-sm text-[#7a8b7f] mt-1">{doc.description}</p>
                                     <p className="text-xs text-[#7a8b7f] mt-2">
                                         Ajouté le {moment(doc.createdAt).format('DD MMM YYYY')}
+                                        {user.role === 'admin' && doc.uploadedBy && (
+                                            <span> • Par {doc.uploadedBy.name}</span>
+                                        )}
                                     </p>
                                 </div>
                                 <button
@@ -946,6 +986,14 @@ const UserProjectDetails = () => {
 
             {/* Modal de modification de statut de tâche */}
             <TaskModal />
+
+            {/* Modal d'upload de document */}
+            <FileUploadModal
+                isOpen={showUploadModal}
+                onClose={() => setShowUploadModal(false)}
+                onUploadSuccess={handleUploadSuccess}
+                projectId={id}
+            />
         </DashboardLayout>
     );
 };

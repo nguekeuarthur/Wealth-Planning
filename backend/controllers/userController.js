@@ -216,6 +216,65 @@ const deleteUser = async (req, res) => {
   }
 };
 
+// @desc    Delete own account (Authenticated users)
+// @route   DELETE /api/users/me
+// @access  Private
+const deleteOwnAccount = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+
+    // Créer une trace de l'utilisateur supprimé
+    const DeletedUser = require("../models/DeletedUser");
+    const deletedUserTrace = new DeletedUser({
+      originalUserId: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      profileImageUrl: user.profileImageUrl,
+      phoneNumber: user.phoneNumber,
+      birthDate: user.birthDate,
+      nationality: user.nationality,
+      nationality2: user.nationality2,
+      gender: user.gender,
+      role: user.role,
+      company: user.company,
+      address: user.address,
+      website: user.website,
+      companySize: user.companySize,
+      industry: user.industry,
+      contactName: user.contactName,
+      companyEmail: user.companyEmail,
+      companyPhone: user.companyPhone,
+      status: user.status,
+      notes: user.notes,
+      organizationName: user.organizationName,
+      position: user.position,
+      professionalPhone: user.professionalPhone,
+      professionalEmail: user.professionalEmail,
+      professionalAddress: user.professionalAddress,
+      specialization: user.specialization,
+      experience: user.experience,
+      deletedBy: user._id.toString(), // L'utilisateur se supprime lui-même
+      deletionReason: "Suppression par l'utilisateur"
+    });
+
+    await deletedUserTrace.save();
+
+    // Supprimer l'utilisateur
+    await User.findByIdAndDelete(req.user._id);
+
+    res.json({
+      message: "Votre compte a été supprimé avec succès",
+      traceCreated: true
+    });
+  } catch (error) {
+    console.error("Erreur lors de la suppression du compte:", error);
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
+  }
+};
+
 // @desc    Get deleted users (Admin only)
 // @route   GET /api/users/deleted
 // @access  Private (Admin)
@@ -485,4 +544,108 @@ const seedUsers = async (req, res) => {
   }
 };
 
-module.exports = { getUsers, getUserById, createUser, updateUser, deleteUser, getDeletedUsers, getCompanyNames, cleanupDeletedUsers, searchUsers, getAllUsersDebug, seedUsers };
+// @desc    Search users for chat (filtered by permissions)
+// @route   GET /api/users/search/chat
+// @access  Private
+const searchUsersForChat = async (req, res) => {
+  try {
+    const { q, limit = 20 } = req.query;
+
+    if (!q || q.length < 2) {
+      return res.json({ users: [] });
+    }
+
+    const searchRegex = new RegExp(q, 'i');
+
+    let roleFilter = {};
+
+    // Appliquer les filtres selon le rôle pour le chat
+    if (req.user.role === 'member') {
+      // Les membres ne peuvent voir que l'admin et les collaborateurs de leurs projets
+      const Project = require('../models/Project');
+      const Team = require('../models/Team');
+
+      // Récupérer les projets où le membre est assigné (directement ou via son équipe)
+      const memberProjects = await Project.find({
+        $or: [
+          { assignedUsers: req.user._id },
+          { assignedTeams: { $in: await Team.find({ members: req.user._id }).select('_id') } }
+        ]
+      }).select('assignedUsers assignedTeams');
+
+      // Récupérer tous les collaborateurs de ces projets
+      const authorizedUserIds = new Set(['admin']); // L'admin est toujours autorisé
+
+      for (const project of memberProjects) {
+        // Ajouter les utilisateurs assignés directement (s'ils sont collaborateurs)
+        for (const userId of project.assignedUsers) {
+          const user = await User.findById(userId).select('role');
+          if (user && user.role === 'collaborator') {
+            authorizedUserIds.add(userId.toString());
+          }
+        }
+
+        // Ajouter les membres des équipes assignées (s'ils sont collaborateurs)
+        for (const teamId of project.assignedTeams) {
+          const team = await Team.findById(teamId).populate('members', 'role _id');
+          for (const member of team.members) {
+            if (member.role === 'collaborator') {
+              authorizedUserIds.add(member._id.toString());
+            }
+          }
+        }
+      }
+
+      roleFilter = {
+        $or: [
+          { role: 'admin' },
+          { _id: { $in: Array.from(authorizedUserIds) } }
+        ]
+      };
+    } else if (req.user.role === 'partner') {
+      // Les partenaires ne parlent qu'avec l'admin
+      roleFilter = { role: 'admin' };
+    } else if (req.user.role === 'collaborator') {
+      // Les collaborateurs parlent avec l'admin et les partenaires
+      roleFilter = {
+        $or: [
+          { role: 'admin' },
+          { role: 'partner' }
+        ]
+      };
+    } else if (req.user.role === 'client') {
+      // Les clients parlent avec l'admin et les collaborateurs
+      roleFilter = {
+        $or: [
+          { role: 'admin' },
+          { role: 'collaborator' }
+        ]
+      };
+    }
+    // Pour l'admin : pas de filtre
+
+    // Recherche complète avec filtrage
+    const users = await User.find({
+      $and: [
+        { _id: { $ne: req.user._id } }, // Exclure l'utilisateur actuel
+        roleFilter, // Appliquer le filtre de rôle
+        {
+          $or: [
+            { name: searchRegex },
+            { email: searchRegex }
+          ]
+        }
+      ]
+    })
+      .select('name email profileImageUrl role')
+      .limit(parseInt(limit))
+      .sort({ name: 1 });
+
+    res.json({ users });
+  } catch (error) {
+    console.error("❌ Error searching users for chat:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+module.exports = { getUsers, getUserById, createUser, updateUser, deleteUser, deleteOwnAccount, getDeletedUsers, getCompanyNames, cleanupDeletedUsers, searchUsers, searchUsersForChat, getAllUsersDebug, seedUsers };

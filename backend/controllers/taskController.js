@@ -24,20 +24,37 @@ const getTasks = async (req, res) => {
       const Project = require("../models/Project");
       const userProjects = await Project.find({ assignedUsers: req.user._id }).select("_id");
       const projectIds = userProjects.map(p => p._id);
-      countFilter.project = { $in: projectIds };
+      // Pour les collaborateurs, si un projet spécifique est demandé, on le respecte
+      // Sinon on montre tous les projets auxquels ils ont accès
+      if (project) {
+        countFilter.project = project; // Respecte le projet demandé
+      } else {
+        countFilter.project = { $in: projectIds };
+      }
     } else if (req.user.role === "client") {
       const Project = require("../models/Project");
       const userProjects = await Project.find({ client: req.user._id }).select("_id");
       const projectIds = userProjects.map(p => p._id);
-      countFilter.project = { $in: projectIds };
+      // Pour les clients, si un projet spécifique est demandé, on le respecte
+      if (project) {
+        countFilter.project = project; // Respecte le projet demandé
+      } else {
+        countFilter.project = { $in: projectIds };
+      }
     } else if (req.user.role === "partner") {
       const Project = require("../models/Project");
       const userProjects = await Project.find({ assignedUsers: req.user._id }).select("_id");
       const projectIds = userProjects.map(p => p._id);
-      countFilter.project = { $in: projectIds };
+      // Pour les partenaires, si un projet spécifique est demandé, on le respecte
+      if (project) {
+        countFilter.project = project; // Respecte le projet demandé
+      } else {
+        countFilter.project = { $in: projectIds };
+      }
     } else {
-      // Pour les autres (dont 'member/user'), on montre les tâches assignées
+      // Pour les membres, on combine le filtre projet avec assignedTo
       countFilter.assignedTo = req.user._id;
+      // Le filtre project est déjà dans countFilter via filter
     }
 
     // 1. Fetching tasks

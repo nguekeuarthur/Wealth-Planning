@@ -18,10 +18,12 @@ import {
     FiX,
     FiCircle,
     FiPlayCircle,
-    FiCheckCircle as FiCheck
+    FiCheckCircle as FiCheck,
+    FiPlus
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { UserContext } from "../../context/userContext";
+import FileUploadModal from "../../components/FileUploadModal";
 
 moment.locale('fr');
 
@@ -53,6 +55,7 @@ const PartnerProjectDetails = () => {
     const [draggedTaskId, setDraggedTaskId] = useState(null);
     const [dragOverColumn, setDragOverColumn] = useState(null);
     const [selectedTask, setSelectedTask] = useState(null);
+    const [showUploadModal, setShowUploadModal] = useState(false);
     const [showTaskModal, setShowTaskModal] = useState(false);
 
     const fetchProjectData = async () => {
@@ -475,9 +478,23 @@ const PartnerProjectDetails = () => {
         </div>
     );
 
+    const handleUploadSuccess = (newDocument) => {
+        setDocuments(prev => [newDocument, ...prev]);
+        toast.success('Document ajouté avec succès !');
+    };
+
     const renderDocuments = () => (
         <div>
-            <h2 className="text-xl font-semibold text-[#1e4029] mb-4">Documents partagés</h2>
+            <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-[#1e4029]">Documents partagés</h2>
+                <button
+                    onClick={() => setShowUploadModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-[#2d5f3f] text-white rounded-lg hover:bg-[#1e4029] transition-colors text-sm font-medium"
+                >
+                    <FiPlus size={16} />
+                    Uploader un document
+                </button>
+            </div>
             {documents.length > 0 ? (
                 <div className="space-y-3">
                     {documents.map((doc) => (
@@ -488,6 +505,9 @@ const PartnerProjectDetails = () => {
                                     <p className="text-sm text-[#7a8b7f] mt-1">{doc.description}</p>
                                     <p className="text-xs text-[#7a8b7f] mt-2">
                                         Ajouté le {moment(doc.createdAt).format('DD MMM YYYY')}
+                                        {user.role === 'admin' && doc.uploadedBy && (
+                                            <span> • Par {doc.uploadedBy.name}</span>
+                                        )}
                                     </p>
                                 </div>
                                 <button
@@ -902,7 +922,12 @@ const PartnerProjectDetails = () => {
                                                         {milestone.status || 'Past'}
                                                     </span>
                                                 </div>
-                                                <p className="text-xs text-[#7a8b7f] mt-1 line-clamp-1">{milestone.description}</p>
+                                                <p className="text-xs text-[#7a8b7f] mt-1">
+                                        Ajouté le {moment(doc.createdAt).format('DD MMM YYYY')}
+                                        {user.role === 'admin' && doc.uploadedBy && (
+                                            <span> • Par {doc.uploadedBy.name}</span>
+                                        )}
+                                    </p>
                                             </div>
                                         ))}
                                     </div>
@@ -919,6 +944,14 @@ const PartnerProjectDetails = () => {
 
             {/* Task Modal */}
             <TaskModal />
+
+            {/* Modal d'upload de document */}
+            <FileUploadModal
+                isOpen={showUploadModal}
+                onClose={() => setShowUploadModal(false)}
+                onUploadSuccess={handleUploadSuccess}
+                projectId={id}
+            />
         </DashboardLayout>
     );
 };
