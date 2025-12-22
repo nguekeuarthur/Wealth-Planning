@@ -896,6 +896,9 @@ exports.cleanupInvalidConversations = async (req, res) => {
   }
 };
 
+// Helper references for exports
+const initializeDefaultConversations = exports.initializeDefaultConversations;
+
 module.exports = {
   initializeDefaultConversations,
   getConversations,
