@@ -29,7 +29,7 @@ const getTasks = async (req, res) => {
       if (project) {
         countFilter.project = project; // Respecte le projet demandé
       } else {
-        countFilter.project = { $in: projectIds };
+      countFilter.project = { $in: projectIds };
       }
     } else if (req.user.role === "client") {
       const Project = require("../models/Project");
@@ -39,7 +39,7 @@ const getTasks = async (req, res) => {
       if (project) {
         countFilter.project = project; // Respecte le projet demandé
       } else {
-        countFilter.project = { $in: projectIds };
+      countFilter.project = { $in: projectIds };
       }
     } else if (req.user.role === "partner") {
       const Project = require("../models/Project");
@@ -49,7 +49,7 @@ const getTasks = async (req, res) => {
       if (project) {
         countFilter.project = project; // Respecte le projet demandé
       } else {
-        countFilter.project = { $in: projectIds };
+      countFilter.project = { $in: projectIds };
       }
     } else {
       // Pour les membres, on combine le filtre projet avec assignedTo

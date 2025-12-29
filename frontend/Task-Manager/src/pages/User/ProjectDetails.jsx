@@ -149,10 +149,10 @@ const UserProjectDetails = () => {
                     );
 
                 if (isAssignedToMe) {
-                    setTasks(prev => {
-                        if (prev.some(t => t._id === newTask._id)) return prev;
-                        return [...prev, newTask];
-                    });
+                setTasks(prev => {
+                    if (prev.some(t => t._id === newTask._id)) return prev;
+                    return [...prev, newTask];
+                });
                 }
             }
         });

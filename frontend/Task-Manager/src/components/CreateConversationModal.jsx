@@ -249,22 +249,22 @@ const CreateConversationModal = ({ isOpen, onClose, onConversationCreated }) => 
                 </div>
               </button>
               {user?.role === 'admin' && (
-                <button
-                  type="button"
-                  onClick={() => setConversationType('group')}
-                  className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${conversationType === 'group'
-                    ? 'border-[#2d5f3f] bg-[#2d5f3f]/10'
-                    : 'border-gray-200 hover:bg-gray-50'
-                    }`}
-                >
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${conversationType === 'group' ? 'bg-[#2d5f3f] text-white' : 'bg-gray-100 text-gray-600'}`}>
-                    <FaUsers size={16} />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-sm font-medium text-gray-900">{copy.group}</div>
-                    <div className="text-xs text-gray-500">Plusieurs participants</div>
-                  </div>
-                </button>
+              <button
+                type="button"
+                onClick={() => setConversationType('group')}
+                className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${conversationType === 'group'
+                  ? 'border-[#2d5f3f] bg-[#2d5f3f]/10'
+                  : 'border-gray-200 hover:bg-gray-50'
+                  }`}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${conversationType === 'group' ? 'bg-[#2d5f3f] text-white' : 'bg-gray-100 text-gray-600'}`}>
+                  <FaUsers size={16} />
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-medium text-gray-900">{copy.group}</div>
+                  <div className="text-xs text-gray-500">Plusieurs participants</div>
+                </div>
+              </button>
               )}
             </div>
           </div>

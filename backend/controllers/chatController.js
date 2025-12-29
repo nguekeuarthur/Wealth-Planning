@@ -156,14 +156,14 @@ exports.createConversation = async (req, res) => {
       const participantRoles = participantUsers.map(u => u.role);
       const hasClient = req.user.role === 'client' || participantRoles.includes('client');
       const hasPartner = req.user.role === 'partner' || participantRoles.includes('partner');
-
+      
       if (hasClient && hasPartner) {
         console.log('❌ Cannot create conversation: Client and Partner cannot be in the same conversation');
-        return res.status(403).json({
-          message: 'Les clients et les partenaires ne peuvent pas être dans la même conversation'
+        return res.status(403).json({ 
+          message: 'Les clients et les partenaires ne peuvent pas être dans la même conversation' 
         });
       }
-
+      
       // Vérifier les permissions pour les membres : ils ne peuvent parler qu'avec l'admin ou les collaborateurs de leurs projets
       if (req.user.role === 'member') {
         const Project = require('../models/Project');

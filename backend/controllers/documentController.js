@@ -102,7 +102,7 @@ exports.getDocumentById = async (req, res) => {
           });
 
           if (teamAccess) {
-            hasAccess = true;
+        hasAccess = true;
           }
         }
       }
@@ -433,7 +433,7 @@ exports.downloadDocument = async (req, res) => {
           });
 
           if (teamAccess) {
-            hasAccess = true;
+        hasAccess = true;
           }
         }
       }
