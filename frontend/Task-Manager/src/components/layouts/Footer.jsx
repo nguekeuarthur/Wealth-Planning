@@ -23,7 +23,7 @@ const translations = {
       "Optimisation fiscale",
     ],
     contactTitle: "Contact",
-    legalLinks: ["Politique de confidentialité", "Conditions d'utilisation", "Mentions légales"],
+    legalLinks: ["Politique de confidentialité", "Conditions d'utilisation", "Gestion des Cookies"],
     copyright: "Tous droits réservés.",
   },
   EN: {
@@ -200,7 +200,7 @@ const Footer = () => {
               const paths = {
                 "Politique de confidentialité": "/privacy-policy",
                 "Conditions d'utilisation": "/terms-of-use",
-                "Mentions légales": "/legal-notice",
+                "Gestion des Cookies": "/legal-notice",
                 "Privacy policy": "/privacy-policy",
                 "Terms of use": "/terms-of-use",
                 "Legal notice": "/legal-notice",
