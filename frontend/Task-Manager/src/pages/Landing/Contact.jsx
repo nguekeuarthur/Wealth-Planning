@@ -466,14 +466,14 @@ const Contact = () => {
       <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
         {/* Background Image */}
         <div className="absolute inset-0">
-          <img 
-            src={bgImage} 
-            alt="Geneva Landscape" 
+          <img
+            src={bgImage}
+            alt="Geneva Landscape"
             className="w-full h-full object-cover"
           />
           {/* <div className="absolute inset-0 bg-gradient-to-br from-[#1e4029]/90 via-[#2d5f3f]/85 to-[#1e4029]/90"></div> */}
         </div>
-        
+
         {/* Radial gradient overlays */}
         <div className="absolute inset-0">
           <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-white/10 rounded-full blur-3xl"></div>
@@ -512,7 +512,7 @@ const Contact = () => {
               <div className="relative bg-gradient-to-br from-white via-[#fafdfb] to-white rounded-3xl p-12 shadow-2xl border-2 border-[#2d5f3f]/20">
                 <h2 className="text-4xl font-light text-[#1e4029] mb-8 tracking-tight">{copy.form.title}</h2>
                 <div className="w-24 h-1.5 bg-gradient-to-r from-[#2d5f3f] via-[#5a8f6f] to-transparent mb-10 rounded-full"></div>
-                
+
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
@@ -629,7 +629,7 @@ const Contact = () => {
             <div>
               <h2 className="text-4xl font-light text-[#1e4029] mb-8 tracking-tight">{copy.contactInfo.title}</h2>
               <div className="w-24 h-1.5 bg-gradient-to-r from-[#2d5f3f] via-[#5a8f6f] to-transparent mb-10 rounded-full"></div>
-              
+
               <p className="text-gray-700 mb-12 leading-relaxed text-lg font-light">
                 {copy.contactInfo.description}
               </p>
@@ -708,7 +708,7 @@ const Contact = () => {
             <div className="inline-flex items-center justify-center mb-8 gap-3">
               <FaCalendarAlt className="text-[#2d5f3f] text-3xl" />
               <div className="w-4 h-4 rounded-full bg-gradient-to-br from-[#2d5f3f] to-[#5a8f6f] animate-pulse shadow-lg"></div>
-              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-[#5a8f6f] to-[#2d5f3f] animate-pulse shadow-lg" style={{animationDelay: '0.2s'}}></div>
+              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-[#5a8f6f] to-[#2d5f3f] animate-pulse shadow-lg" style={{ animationDelay: '0.2s' }}></div>
               <FaClock className="text-[#2d5f3f] text-3xl" />
             </div>
             <h2 className="text-5xl md:text-6xl font-light text-[#1e4029] mb-6 tracking-tight">
@@ -734,7 +734,7 @@ const Contact = () => {
                 {/* Cal.com Inline Embed */}
                 <div className="bg-gray-50 rounded-lg p-4">
                   <iframe
-                    src="https://cal.com/edima-evina-fanzjf/wealth-plannig?embed=inline"
+                    src="https://cal.com/geneva-wealth-partners-en2zam?embed=inline"
                     width="100%"
                     height="600"
                     frameBorder="0"
@@ -757,8 +757,8 @@ const Contact = () => {
           <div className="text-center mb-20">
             <div className="inline-flex items-center justify-center mb-8 gap-3">
               <div className="w-4 h-4 rounded-full bg-gradient-to-br from-[#2d5f3f] to-[#5a8f6f] animate-pulse shadow-lg"></div>
-              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-[#5a8f6f] to-[#2d5f3f] animate-pulse shadow-lg" style={{animationDelay: '0.2s'}}></div>
-              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-[#2d5f3f] to-[#1e4029] animate-pulse shadow-lg" style={{animationDelay: '0.4s'}}></div>
+              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-[#5a8f6f] to-[#2d5f3f] animate-pulse shadow-lg" style={{ animationDelay: '0.2s' }}></div>
+              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-[#2d5f3f] to-[#1e4029] animate-pulse shadow-lg" style={{ animationDelay: '0.4s' }}></div>
             </div>
             <h2 className="text-5xl md:text-6xl font-light text-[#1e4029] mb-6 tracking-tight">
               {copy.faq.title}
@@ -778,7 +778,7 @@ const Contact = () => {
                     <div className="w-full h-1 bg-gradient-to-r from-[#2d5f3f] to-transparent rounded-full"></div>
                   </div>
                 </div>
-                
+
                 {section.questions.map((faq, index) => (
                   <div key={index} className="group relative">
                     <div className="absolute -inset-0.5 bg-gradient-to-r from-[#2d5f3f] to-[#5a8f6f] rounded-2xl opacity-20 group-hover:opacity-40 blur transition-all duration-500"></div>
