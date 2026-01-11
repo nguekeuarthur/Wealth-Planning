@@ -18,7 +18,8 @@ import {
     FiTrendingUp,
     FiActivity,
     FiAlertTriangle,
-    FiFlag
+    FiFlag,
+    FiPlus
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { UserContext } from "../../context/userContext";
@@ -39,6 +40,7 @@ import {
 } from "@dnd-kit/sortable";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import FileUploadModal from "../../components/FileUploadModal";
 
 const clientTabs = [
     { id: "overview", label: "Vue d'ensemble", icon: FiFolder },
@@ -195,6 +197,7 @@ const ClientProjectDetails = () => {
     const [selectedTask, setSelectedTask] = useState(null);
     const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
     const [activeId, setActiveId] = useState(null);
+    const [showUploadModal, setShowUploadModal] = useState(false);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -504,8 +507,26 @@ const ClientProjectDetails = () => {
         </div>
     );
 
+    const handleUploadSuccess = (newDocument) => {
+        setProject(prev => ({
+            ...prev,
+            documents: [newDocument, ...(prev.documents || [])]
+        }));
+        toast.success('Document ajouté avec succès !');
+    };
+
     const renderDocuments = () => (
         <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-[#1e4029]">Documents</h2>
+                <button
+                    onClick={() => setShowUploadModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-[#2d5f3f] text-white rounded-lg hover:bg-[#1e4029] transition-colors text-sm font-medium"
+                >
+                    <FiPlus size={16} />
+                    Uploader un document
+                </button>
+            </div>
             {project.documents && project.documents.length > 0 ? (
                 project.documents.map((doc) => (
                     <div key={doc._id} className="bg-white rounded-2xl border border-[#dfe8e1] p-6">
@@ -517,6 +538,9 @@ const ClientProjectDetails = () => {
                                 <h3 className="text-lg font-semibold text-[#1e4029]">{doc.name}</h3>
                                 <p className="text-sm text-[#7a8b7f]">
                                     Ajouté le {new Date(doc.uploadDate).toLocaleDateString('fr-FR')}
+                                    {user.role === 'admin' && doc.uploadedBy && (
+                                        <span> • Par {doc.uploadedBy.name}</span>
+                                    )}
                                 </p>
                             </div>
                             <button
@@ -781,6 +805,14 @@ const ClientProjectDetails = () => {
 
                 {/* Content */}
                 {renderContent()}
+
+                {/* Modal d'upload de document */}
+                <FileUploadModal
+                    isOpen={showUploadModal}
+                    onClose={() => setShowUploadModal(false)}
+                    onUploadSuccess={handleUploadSuccess}
+                    projectId={id}
+                />
             </div>
         </DashboardLayout>
     );

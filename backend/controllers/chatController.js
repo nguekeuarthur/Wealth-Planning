@@ -164,6 +164,115 @@ exports.createConversation = async (req, res) => {
         });
       }
       
+      // Vérifier les permissions pour les membres : ils ne peuvent parler qu'avec l'admin ou les collaborateurs de leurs projets
+      if (req.user.role === 'member') {
+        const Project = require('../models/Project');
+        const Team = require('../models/Team');
+
+        // Récupérer les projets où le membre est assigné (directement ou via son équipe)
+        const memberProjects = await Project.find({
+          $or: [
+            { assignedUsers: req.user._id },
+            { assignedTeams: { $in: await Team.find({ members: req.user._id }).select('_id') } }
+          ]
+        }).select('assignedUsers assignedTeams');
+
+        // Récupérer tous les collaborateurs de ces projets
+        const projectCollaborators = new Set();
+        for (const project of memberProjects) {
+          // Ajouter les utilisateurs assignés directement
+          project.assignedUsers.forEach(userId => projectCollaborators.add(userId.toString()));
+
+          // Ajouter les membres des équipes assignées
+          for (const teamId of project.assignedTeams) {
+            const team = await Team.findById(teamId).populate('members', 'role');
+            team.members.forEach(member => {
+              if (member.role === 'collaborator') {
+                projectCollaborators.add(member._id.toString());
+              }
+            });
+          }
+        }
+
+        // Vérifier que chaque participant est soit l'admin, soit un collaborateur autorisé
+        for (const participantId of participants) {
+          const participant = participantUsers.find(u => u._id.toString() === participantId);
+          if (!participant) continue;
+
+          const isAdmin = participant.role === 'admin';
+          const isAuthorizedCollaborator = participant.role === 'collaborator' && projectCollaborators.has(participantId);
+
+          if (!isAdmin && !isAuthorizedCollaborator) {
+            console.log('❌ Member cannot create conversation with this participant:', {
+              participantId,
+              participantRole: participant.role,
+              isAuthorizedCollaborator
+            });
+            return res.status(403).json({
+              message: 'En tant que membre, vous ne pouvez discuter qu\'avec l\'administrateur ou les collaborateurs de vos projets'
+            });
+          }
+        }
+      }
+
+      // Vérifier les permissions pour les partenaires : ils ne parlent qu'avec l'admin
+      if (req.user.role === 'partner') {
+        for (const participantId of participants) {
+          const participant = participantUsers.find(u => u._id.toString() === participantId);
+          if (!participant) continue;
+
+          if (participant.role !== 'admin') {
+            console.log('❌ Partner cannot create conversation with this participant:', {
+              participantId,
+              participantRole: participant.role
+            });
+            return res.status(403).json({
+              message: 'En tant que partenaire, vous ne pouvez discuter qu\'avec l\'administrateur'
+            });
+          }
+        }
+      }
+
+      // Vérifier les permissions pour les collaborateurs : ils parlent avec l'admin et les partenaires
+      if (req.user.role === 'collaborator') {
+        for (const participantId of participants) {
+          const participant = participantUsers.find(u => u._id.toString() === participantId);
+          if (!participant) continue;
+
+          const isAllowed = participant.role === 'admin' || participant.role === 'partner';
+
+          if (!isAllowed) {
+            console.log('❌ Collaborator cannot create conversation with this participant:', {
+              participantId,
+              participantRole: participant.role
+            });
+            return res.status(403).json({
+              message: 'En tant que collaborateur, vous ne pouvez discuter qu\'avec l\'administrateur ou les partenaires'
+            });
+          }
+        }
+      }
+
+      // Vérifier les permissions pour les clients : ils parlent avec l'admin et les collaborateurs
+      if (req.user.role === 'client') {
+        for (const participantId of participants) {
+          const participant = participantUsers.find(u => u._id.toString() === participantId);
+          if (!participant) continue;
+
+          const isAllowed = participant.role === 'admin' || participant.role === 'collaborator';
+
+          if (!isAllowed) {
+            console.log('❌ Client cannot create conversation with this participant:', {
+              participantId,
+              participantRole: participant.role
+            });
+            return res.status(403).json({
+              message: 'En tant que client, vous ne pouvez discuter qu\'avec l\'administrateur ou les collaborateurs'
+            });
+          }
+        }
+      }
+      
       for (const participantId of participants) {
         console.log('➕ Adding participant:', participantId);
         if (participantId !== req.user._id.toString()) {
@@ -509,25 +618,79 @@ exports.getConversations = async (req, res) => {
       .populate('project', 'name')
       .populate('lastMessage');
 
-    // Filtrer les conversations pour les clients : ne pas voir les conversations avec des Partenaires
-    // Filtrer les conversations pour les partenaires : ne pas voir les conversations avec des Clients
+    // Pour les membres, précharger les données des projets pour filtrer correctement
+    let authorizedCollaboratorIds = new Set();
+    if (req.user.role === 'member') {
+      const Project = require('../models/Project');
+      const Team = require('../models/Team');
+
+      const memberProjects = await Project.find({
+        $or: [
+          { assignedUsers: req.user._id },
+          { assignedTeams: { $in: await Team.find({ members: req.user._id }).select('_id') } }
+        ]
+      }).select('assignedUsers assignedTeams');
+
+      for (const project of memberProjects) {
+        // Ajouter les collaborateurs assignés directement
+        for (const userId of project.assignedUsers) {
+          const user = await User.findById(userId).select('role');
+          if (user && user.role === 'collaborator') {
+            authorizedCollaboratorIds.add(userId.toString());
+          }
+        }
+
+        // Ajouter les collaborateurs des équipes assignées
+        for (const teamId of project.assignedTeams) {
+          const team = await Team.findById(teamId).populate('members', 'role _id');
+          for (const member of team.members) {
+            if (member.role === 'collaborator') {
+              authorizedCollaboratorIds.add(member._id.toString());
+            }
+          }
+        }
+      }
+    }
+
+    // Filtrer les conversations selon les permissions de chaque rôle
     if (req.user.role === 'client') {
       conversations = conversations.filter(conv => {
-        // Vérifier si la conversation contient un partenaire
-        const hasPartner = conv.participants.some(p => 
-          p.user && p.user.role === 'partner'
+        // Les clients ne voient que les conversations avec l'admin ou les collaborateurs
+        return conv.participants.every(p =>
+          !p.user || p.user.role === 'admin' || p.user.role === 'collaborator' || p.user._id.toString() === req.user._id.toString()
         );
-        // Ne garder que les conversations sans partenaire
-        return !hasPartner;
       });
     } else if (req.user.role === 'partner') {
       conversations = conversations.filter(conv => {
-        // Vérifier si la conversation contient un client
-        const hasClient = conv.participants.some(p => 
-          p.user && p.user.role === 'client'
+        // Les partenaires ne voient que les conversations avec l'admin
+        return conv.participants.every(p =>
+          !p.user || p.user.role === 'admin' || p.user._id.toString() === req.user._id.toString()
         );
-        // Ne garder que les conversations sans client
-        return !hasClient;
+      });
+    } else if (req.user.role === 'collaborator') {
+      conversations = conversations.filter(conv => {
+        // Les collaborateurs ne voient que les conversations avec l'admin ou les partenaires
+        return conv.participants.every(p =>
+          !p.user || p.user.role === 'admin' || p.user.role === 'partner' || p.user._id.toString() === req.user._id.toString()
+        );
+      });
+    } else if (req.user.role === 'member') {
+      // Pour les membres, vérifier que tous les autres participants sont autorisés
+      conversations = conversations.filter(conv => {
+        return conv.participants.every(p => {
+          if (!p.user || p.user._id.toString() === req.user._id.toString()) return true;
+
+          // L'admin est toujours autorisé
+          if (p.user.role === 'admin') return true;
+
+          // Les collaborateurs autorisés sont autorisés
+          if (p.user.role === 'collaborator' && authorizedCollaboratorIds.has(p.user._id.toString())) {
+            return true;
+          }
+
+          // Tout autre participant n'est pas autorisé
+          return false;
+        });
       });
     }
 
@@ -600,15 +763,13 @@ exports.removeParticipant = async (req, res) => {
 function canCreateConversation(userRole, conversationType) {
   switch (userRole) {
     case 'admin':
-      return true;
+      return true; // Admin peut créer tous types de conversations
     case 'collaborator':
-    case 'user':
-    case 'member': // Les membres/utilisateurs ont les mêmes permissions que les collaborateurs
-      return ['private', 'project', 'group'].includes(conversationType);
     case 'client':
-      return ['private', 'group'].includes(conversationType);
     case 'partner':
-      return ['private', 'group'].includes(conversationType);
+    case 'member':
+      // Seuls les admins peuvent créer des groupes, les autres ne peuvent créer que des conversations privées
+      return conversationType === 'private';
     default:
       return false;
   }
@@ -697,3 +858,65 @@ function canAccessConversation(user, conversation) {
   console.log('❌ No matching role, access denied');
   return false;
 }
+
+// @desc    Clean up invalid conversations after permission changes (Admin only)
+// @route   DELETE /api/chat/cleanup
+// @access  Private (Admin)
+exports.cleanupInvalidConversations = async (req, res) => {
+  try {
+    // Vérifier que c'est un admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Accès refusé - Admin uniquement' });
+    }
+
+    // Supprimer TOUTES les conversations privées et de groupe (car la logique a changé)
+    const result = await Conversation.deleteMany({
+      type: { $in: ['private', 'group', 'project'] }
+    });
+
+    // Supprimer tous les messages associés
+    await Message.deleteMany({
+      conversation: {
+        $nin: await Conversation.find({
+          type: { $nin: ['private', 'group', 'project'] }
+        }).distinct('_id')
+      }
+    });
+
+    console.log(`🧹 Cleanup: ${result.deletedCount} conversations supprimées`);
+
+    res.json({
+      message: 'Conversations nettoyées avec succès',
+      deletedConversations: result.deletedCount,
+      message: 'Toutes les conversations privées et groupes ont été supprimées car la logique de permissions a changé'
+    });
+  } catch (error) {
+    console.error('Erreur lors du nettoyage des conversations:', error);
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+// Helper references for exports
+const _initializeDefaultConversations = exports.initializeDefaultConversations;
+const _getConversations = exports.getConversations;
+const _getConversationMessages = exports.getConversationMessages;
+const _sendMessage = exports.sendMessage;
+const _createConversation = exports.createConversation;
+const _addParticipant = exports.addParticipant;
+const _removeParticipant = exports.removeParticipant;
+const _cleanupInvalidConversations = exports.cleanupInvalidConversations;
+const _canCreateConversation = exports.canCreateConversation;
+const _canAccessConversation = exports.canAccessConversation;
+
+module.exports = {
+  initializeDefaultConversations: _initializeDefaultConversations,
+  getConversations: _getConversations,
+  getConversationMessages: _getConversationMessages,
+  sendMessage: _sendMessage,
+  createConversation: _createConversation,
+  addParticipant: _addParticipant,
+  removeParticipant: _removeParticipant,
+  cleanupInvalidConversations: _cleanupInvalidConversations,
+  canCreateConversation: _canCreateConversation,
+  canAccessConversation: _canAccessConversation
+};

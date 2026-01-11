@@ -35,6 +35,7 @@ import MyTasks from "./pages/User/MyTasks";
 import ViewTaskDetails from "./pages/User/ViewTaskDetails";
 import Chat from "./pages/User/Chat";
 import UserDocuments from "./pages/User/UserDocuments";
+import UserProfile from "./pages/User/UserProfile";
 import ClientDocuments from "./pages/Client/ClientDocuments";
 import ClientDashboard from "./pages/Client/ClientDashboard";
 import ClientTasks from "./pages/Client/ClientTasks";
@@ -167,6 +168,7 @@ const App = () => {
                   <Route path="/user/dashboard" element={<UserDashboard />} />
                   <Route path="/user/projects" element={<UserProjects />} />
                   <Route path="/user/tasks" element={<MyTasks />} />
+                  <Route path="/user/profile" element={<UserProfile />} />
                   <Route
                     path="/user/task-details/:id"
                     element={<ViewTaskDetails />}
@@ -184,6 +186,7 @@ const App = () => {
                   <Route path="/client/invoices" element={<AllInvoices />} />
                   <Route path="/client/documents" element={<ClientDocuments />} />
                   <Route path="/client/messages" element={<AllNotifications />} />
+                  <Route path="/client/profile" element={<UserProfile />} />
                 </Route>
 
                 {/* Partner Routes - Accès à messages (admin+collaborateur), tâches, milestones, documents tagés partenaire */}
@@ -191,6 +194,7 @@ const App = () => {
                   <Route path="/partner/dashboard" element={<PartnerDashboard />} />
                   <Route path="/partner/projects" element={<PartnerProjects />} />
                   <Route path="/partner/project/:id" element={<PartnerProjectDetails />} />
+                  <Route path="/partner/profile" element={<UserProfile />} />
                   <Route path="/partner/tasks" element={<MyTasks />} />
                   <Route path="/partner/task-details/:id" element={<ViewTaskDetails />} />
                   <Route path="/partner/chat" element={<DashboardLayout activeMenu="Messagerie" fullWidth={true}><Chat /></DashboardLayout>} />
@@ -205,6 +209,7 @@ const App = () => {
                   <Route path="/collaborator/task-details/:id" element={<ViewTaskDetails />} />
                   <Route path="/collaborator/chat" element={<DashboardLayout activeMenu="Messagerie" fullWidth={true}><Chat /></DashboardLayout>} />
                   <Route path="/collaborator/invoices" element={<AllInvoices />} />
+                  <Route path="/collaborator/profile" element={<UserProfile />} />
                   <Route path="/collaborator/messages" element={<AllNotifications />} />
                 </Route>
               </Routes>

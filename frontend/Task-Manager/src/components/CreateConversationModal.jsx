@@ -97,7 +97,7 @@ const CreateConversationModal = ({ isOpen, onClose, onConversationCreated }) => 
         console.log('🌐 Making request to:', `${API_PATHS.USERS.SEARCH_USERS}?q=${searchTerm}&limit=10`);
       }
 
-      const response = await axios.get(`${API_PATHS.USERS.SEARCH_USERS}?q=${searchTerm}&limit=10`);
+      const response = await axios.get(`${API_PATHS.USERS.SEARCH_USERS_FOR_CHAT}?q=${searchTerm}&limit=10`);
 
       if (isDev) {
         console.log('✅ Search response received:', response);
@@ -105,8 +105,9 @@ const CreateConversationModal = ({ isOpen, onClose, onConversationCreated }) => 
         console.log('👥 Raw users from response:', response.data.users);
       }
 
-      // Filtrer l'utilisateur actuel
+      // Filtrer seulement l'utilisateur actuel (l'API fait déjà le filtrage par permissions)
       const filteredUsers = response.data.users.filter(u => u._id !== user?._id);
+
       if (isDev) console.log('🎯 Filtered users (excluding current user):', filteredUsers);
 
       setSearchResults(filteredUsers);
@@ -230,7 +231,7 @@ const CreateConversationModal = ({ isOpen, onClose, onConversationCreated }) => 
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Type de conversation
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className={`grid gap-3 ${user?.role === 'admin' ? 'grid-cols-2' : 'grid-cols-1'}`}>
               <button
                 type="button"
                 onClick={() => setConversationType('private')}
@@ -247,6 +248,7 @@ const CreateConversationModal = ({ isOpen, onClose, onConversationCreated }) => 
                   <div className="text-xs text-gray-500">1 à 1</div>
                 </div>
               </button>
+              {user?.role === 'admin' && (
               <button
                 type="button"
                 onClick={() => setConversationType('group')}
@@ -263,6 +265,7 @@ const CreateConversationModal = ({ isOpen, onClose, onConversationCreated }) => 
                   <div className="text-xs text-gray-500">Plusieurs participants</div>
                 </div>
               </button>
+              )}
             </div>
           </div>
 

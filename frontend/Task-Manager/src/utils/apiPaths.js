@@ -18,6 +18,7 @@ export const API_PATHS = {
   USERS: {
     GET_ALL_USERS: "/api/users", // Get all users (Admin only)
     SEARCH_USERS: "/api/users/search", // Search users (Authenticated users)
+    SEARCH_USERS_FOR_CHAT: "/api/users/search/chat", // Search users for chat (filtered by permissions)
     GET_COMPANIES: "/api/users/companies", // Get company names for autocomplete (Authenticated users)
     GET_USER_BY_ID: (userId) => `/api/users/${userId}`, // Get user by ID
     CREATE_USER: "/api/users", // Create a new user (Admin only)
@@ -27,6 +28,7 @@ export const API_PATHS = {
     CLEANUP_DELETED_USERS: "/api/users/cleanup-deleted", // Clean up orphaned deleted users (Admin only)
     DEBUG_USERS: "/api/users/debug", // Debug: Get all users (Authenticated users)
     SEED_USERS: "/api/users/seed", // Seed test users (Admin only)
+    DELETE_OWN_ACCOUNT: "/api/users/me", // Delete own account (Authenticated users)
   },
 
   CLIENTS: {
@@ -141,5 +143,6 @@ export const API_PATHS = {
     SEND_MESSAGE: "/api/chat/messages",
     ADD_PARTICIPANT: "/api/chat/conversations/participants",
     REMOVE_PARTICIPANT: "/api/chat/conversations/participants",
+    CLEANUP_INVALID_CONVERSATIONS: "/api/chat/cleanup",
   },
 };

@@ -14,7 +14,7 @@ exports.getAllDocuments = async (req, res) => {
     if (type) filter.type = type;
     if (category) filter.category = category;
 
-    // Non-admin: filter by assignments and targeted roles
+    // Non-admin: see their own documents, explicitly assigned documents, and documents from their projects/teams
     if (req.user.role !== 'admin') {
       const userProjectIds = (await Project.find({
         $or: [
@@ -23,19 +23,21 @@ exports.getAllDocuments = async (req, res) => {
         ]
       }).select('_id')).map(p => p._id);
 
-      const userTeamIds = (await Team.find({ members: req.user._id }).select('_id')).map(t => t._id);
+      // For members and collaborators, also include projects where their team is assigned
+      if (req.user.role === 'member' || req.user.role === 'collaborator') {
+        const userTeams = await Team.find({ members: req.user._id }).select('_id');
+        const teamProjectIds = (await Project.find({
+          assignedTeams: { $in: userTeams.map(t => t._id) }
+        }).select('_id')).map(p => p._id);
+
+        userProjectIds.push(...teamProjectIds);
+      }
 
       filter.$or = [
-        { allowedRoles: req.user.role },
-        { assignedUsers: req.user._id },
-        { assignedTeams: { $in: userTeamIds } },
-        { project: { $in: userProjectIds } }
+        { uploadedBy: req.user._id }, // Documents qu'ils ont uploadés eux-mêmes
+        { assignedUsers: req.user._id }, // Documents qui leur sont explicitement assignés
+        { project: { $in: [...new Set(userProjectIds)] } } // Documents des projets auxquels ils ont accès
       ];
-
-      // Collaborators fallback: they see everything in their projects unless it's for 'partner'
-      if (req.user.role === 'collaborator') {
-        filter.allowedRoles = { $ne: 'partner' };
-      }
     }
 
     const documents = await Document.find(filter)
@@ -62,51 +64,52 @@ exports.getDocumentById = async (req, res) => {
       return res.status(404).json({ message: 'Document non trouvé' });
     }
 
-    // Check permissions selon le rôle and explicit assignments
+    // Check permissions: admin sees all, others see documents from their accessible projects
     let hasAccess = false;
     if (req.user.role === 'admin') {
       hasAccess = true;
-    } else if (req.user.role === 'collaborator') {
-      // Collaborateur : accès si le document est dans un projet assigné
-      if (document.project) {
-        const projectAccess = await Project.findOne({
-          _id: document.project._id || document.project,
-          assignedUsers: req.user._id
-        });
-        hasAccess = !!projectAccess;
-      }
-
-      // Vérifier aussi que ce n'est pas un document "partner"
-      if (hasAccess && document.allowedRoles && document.allowedRoles.includes('partner')) {
-        hasAccess = false;
-      }
     } else {
-      // Access if document allowedRoles contains user's role OR assignedUsers includes user
-      if (document.allowedRoles && document.allowedRoles.includes(req.user.role)) {
+      // Check if user uploaded the document themselves
+      if (document.uploadedBy && document.uploadedBy.toString() === req.user._id.toString()) {
         hasAccess = true;
       }
 
+      // Check if document is explicitly assigned to user
       if (!hasAccess && document.assignedUsers && document.assignedUsers.some(u => u.toString() === req.user._id.toString())) {
         hasAccess = true;
       }
 
-      // Check assigned teams: if any team includes the user
-      if (!hasAccess && document.assignedTeams && document.assignedTeams.length) {
-        const userTeams = await Team.find({ members: req.user._id }).select('_id');
-        const userTeamIds = userTeams.map(t => t._id.toString());
-        if (document.assignedTeams.some(tid => userTeamIds.includes(tid.toString()))) {
+      // Check if document is from a project the user has access to
+      if (!hasAccess && document.project) {
+        const projectAccess = await Project.findOne({
+          _id: document.project._id || document.project,
+          $or: [
+            { assignedUsers: req.user._id },
+            { client: req.user._id }
+          ]
+        });
+
+        if (projectAccess) {
           hasAccess = true;
         }
-      }
 
-      // Fallback: clients can access documents for their projects if project.client matches and allowedRoles contains 'client'
-      if (!hasAccess && req.user.role === 'client' && document.project && document.project.client && document.project.client.toString() === req.user._id.toString() && document.allowedRoles && document.allowedRoles.includes('client')) {
+        // For members and collaborators, also check team access
+        if (!hasAccess && (req.user.role === 'member' || req.user.role === 'collaborator')) {
+          const userTeams = await Team.find({ members: req.user._id }).select('_id');
+          const teamAccess = await Project.findOne({
+            _id: document.project._id || document.project,
+            assignedTeams: { $in: userTeams.map(t => t._id) }
+          });
+
+          if (teamAccess) {
         hasAccess = true;
+          }
+        }
       }
     }
 
     if (!hasAccess) {
-      return res.status(403).json({ message: 'Accès refusé' });
+      return res.status(403).json({ message: 'Accès refusé - vous n\'avez pas accès à ce document' });
     }
 
     res.json({ document });
@@ -131,8 +134,32 @@ exports.uploadDocument = async (req, res) => {
         return res.status(404).json({ message: 'Projet non trouvé' });
       }
 
-      if (req.user.role !== 'admin' && projectDoc.client.toString() !== req.user._id.toString()) {
-        return res.status(403).json({ message: 'Accès refusé' });
+      // Check if user has access to upload documents to this project
+      if (req.user.role !== 'admin') {
+        let hasProjectAccess = false;
+
+        // Check if user is directly assigned to project
+        if (projectDoc.assignedUsers?.some(user => user.toString() === req.user._id.toString())) {
+          hasProjectAccess = true;
+        }
+
+        // Check if user is the client of the project
+        if (projectDoc.client.toString() === req.user._id.toString()) {
+          hasProjectAccess = true;
+        }
+
+        // Check if user's team is assigned to the project (for members and collaborators)
+        if (!hasProjectAccess && (req.user.role === 'member' || req.user.role === 'collaborator')) {
+          const userTeams = await Team.find({ members: req.user._id }).select('_id');
+          const userTeamIds = userTeams.map(t => t._id.toString());
+          if (projectDoc.assignedTeams?.some(teamId => userTeamIds.includes(teamId.toString()))) {
+            hasProjectAccess = true;
+          }
+        }
+
+        if (!hasProjectAccess) {
+          return res.status(403).json({ message: 'Accès refusé - vous n\'avez pas accès à ce projet' });
+        }
       }
     }
 
@@ -211,9 +238,9 @@ exports.updateDocument = async (req, res) => {
       return res.status(404).json({ message: 'Document non trouvé' });
     }
 
-    // Check permissions
-    if (req.user.role !== 'admin' && document.project?.client?.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Accès refusé' });
+    // Check permissions: admin can update all documents, others only their own
+    if (req.user.role !== 'admin' && document.uploadedBy?.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Accès refusé - vous ne pouvez modifier que vos propres documents' });
     }
 
     // Update metadata
@@ -368,34 +395,52 @@ exports.downloadDocument = async (req, res) => {
       return res.status(404).json({ message: 'Document non trouvé' });
     }
 
-    // Check permissions (same logic as getDocumentById)
+    // Check permissions: admin can download all files, others can download from their accessible projects
     let hasAccess = false;
-    if (req.user.role === 'admin' || req.user.role === 'collaborator') {
+    if (req.user.role === 'admin') {
       hasAccess = true;
     } else {
-      if (document.allowedRoles && document.allowedRoles.includes(req.user.role)) {
+      // Check if user uploaded the document themselves
+      if (document.uploadedBy && document.uploadedBy.toString() === req.user._id.toString()) {
         hasAccess = true;
       }
 
+      // Check if document is explicitly assigned to user
       if (!hasAccess && document.assignedUsers && document.assignedUsers.some(u => u.toString() === req.user._id.toString())) {
         hasAccess = true;
       }
 
-      if (!hasAccess && document.assignedTeams && document.assignedTeams.length) {
-        const userTeams = await Team.find({ members: req.user._id }).select('_id');
-        const userTeamIds = userTeams.map(t => t._id.toString());
-        if (document.assignedTeams.some(tid => userTeamIds.includes(tid.toString()))) {
+      // Check if document is from a project the user has access to
+      if (!hasAccess && document.project) {
+        const projectAccess = await Project.findOne({
+          _id: document.project._id || document.project,
+          $or: [
+            { assignedUsers: req.user._id },
+            { client: req.user._id }
+          ]
+        });
+
+        if (projectAccess) {
           hasAccess = true;
         }
-      }
 
-      if (!hasAccess && req.user.role === 'client' && document.project && document.project.client && document.project.client.toString() === req.user._id.toString() && document.allowedRoles && document.allowedRoles.includes('client')) {
+        // For members and collaborators, also check team access
+        if (!hasAccess && (req.user.role === 'member' || req.user.role === 'collaborator')) {
+          const userTeams = await Team.find({ members: req.user._id }).select('_id');
+          const teamAccess = await Project.findOne({
+            _id: document.project._id || document.project,
+            assignedTeams: { $in: userTeams.map(t => t._id) }
+          });
+
+          if (teamAccess) {
         hasAccess = true;
+          }
+        }
       }
     }
 
     if (!hasAccess) {
-      return res.status(403).json({ message: 'Accès refusé' });
+      return res.status(403).json({ message: 'Accès refusé - vous ne pouvez télécharger que les documents de vos projets' });
     }
 
     // Définir le Content-Type basé sur le type de fichier

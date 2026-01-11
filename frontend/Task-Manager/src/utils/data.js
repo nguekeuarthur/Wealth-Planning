@@ -9,6 +9,7 @@ import {
   LuBell,
   LuMessageSquare,
   LuFolder,
+  LuUser,
 
 } from "react-icons/lu";
 
@@ -98,6 +99,12 @@ export const SIDE_MENU_MEMBER_DATA = [
   },
   {
     id: "08",
+    label: "Profil",
+    icon: LuUser,
+    path: "/user/profile",
+  },
+  {
+    id: "09",
     label: "Déconnexion",
     icon: LuLogOut,
     path: "logout",
@@ -115,6 +122,12 @@ export const SIDE_MENU_USER_DATA = [
   },
   {
     id: "08",
+    label: "Profil",
+    icon: LuUser,
+    path: "/user/profile",
+  },
+  {
+    id: "09",
     label: "Déconnexion",
     icon: LuLogOut,
     path: "logout",
@@ -160,6 +173,12 @@ export const SIDE_MENU_CLIENT_DATA = [
   },
   {
     id: "07",
+    label: "Profil",
+    icon: LuUser,
+    path: "/client/profile",
+  },
+  {
+    id: "08",
     label: "Déconnexion",
     icon: LuLogOut,
     path: "logout",
@@ -193,7 +212,13 @@ export const SIDE_MENU_PARTNER_DATA = [
     path: "/partner/messages",
   },
   {
-    id: "06",
+    id: "07",
+    label: "Profil",
+    icon: LuUser,
+    path: "/partner/profile",
+  },
+  {
+    id: "08",
     label: "Déconnexion",
     icon: LuLogOut,
     path: "logout",
@@ -232,7 +257,13 @@ export const SIDE_MENU_COLLABORATOR_DATA = [
     path: "/collaborator/messages",
   },
   {
-    id: "07",
+    id: "08",
+    label: "Profil",
+    icon: LuUser,
+    path: "/collaborator/profile",
+  },
+  {
+    id: "09",
     label: "Déconnexion",
     icon: LuLogOut,
     path: "logout",
