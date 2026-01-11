@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import lacLemanImage from "../../assets/images/lac-leman-alpes.jpg";
 import { useLanguage } from "../../context/languageContext";
+import CookieConsent from "../../components/CookieConsent";
 
 const content = {
   FR: {
@@ -478,6 +479,8 @@ const Home = () => {
           </Link>
         </div>
       </section>
+
+      <CookieConsent />
     </div>
   );
 };
