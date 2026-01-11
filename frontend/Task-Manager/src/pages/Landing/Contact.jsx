@@ -128,7 +128,7 @@ const content = {
         emailLabel: "Email",
         emailPlaceholder: "your.email@example.com",
         phoneLabel: "Phone",
-        phonePlaceholder: "+41 22 345 67 89",
+        phonePlaceholder: "+41 77 986 32 55",
         serviceLabel: "Service of interest",
         servicePlaceholder: "Select a service",
         services: [
@@ -235,7 +235,7 @@ const content = {
         emailLabel: "E-Mail",
         emailPlaceholder: "ihre.email@beispiel.com",
         phoneLabel: "Telefon",
-        phonePlaceholder: "+41 22 345 67 89",
+        phonePlaceholder: "+41 77 986 32 55",
         serviceLabel: "Interessierter Service",
         servicePlaceholder: "Wählen Sie einen Service",
         services: [
@@ -342,7 +342,7 @@ const content = {
         emailLabel: "Email",
         emailPlaceholder: "tua.email@esempio.com",
         phoneLabel: "Telefono",
-        phonePlaceholder: "+41 22 345 67 89",
+        phonePlaceholder: "+41 77 986 32 55",
         serviceLabel: "Servizio di interesse",
         servicePlaceholder: "Seleziona un servizio",
         services: [
@@ -642,8 +642,8 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-light text-[#1e4029] mb-2 text-xl">{copy.contactInfo.emailLabel}</h3>
-                    <a href="mailto:contact@genevawealth.com" className="text-[#2d5f3f] hover:text-[#5a8f6f] text-lg transition-colors">
-                      contact@genevawealth.com
+                    <a href="mailto:info@genevawealthpartners.ch" className="text-[#2d5f3f] hover:text-[#5a8f6f] text-lg transition-colors">
+                      info@genevawealthpartners.ch
                     </a>
                     <p className="text-gray-600 text-base mt-2 font-light">{copy.contactInfo.emailNote}</p>
                   </div>
@@ -657,7 +657,7 @@ const Contact = () => {
                   <div>
                     <h3 className="font-light text-[#1e4029] mb-2 text-xl">{copy.contactInfo.phoneLabel}</h3>
                     <a href="tel:+41223456789" className="text-[#2d5f3f] hover:text-[#5a8f6f] text-lg transition-colors">
-                      +41 22 345 67 89
+                      +41 77 986 32 55
                     </a>
                     <p className="text-gray-600 text-base mt-2 font-light">{copy.contactInfo.phoneNote}</p>
                   </div>
