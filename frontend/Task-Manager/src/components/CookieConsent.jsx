@@ -152,9 +152,24 @@ const CookieConsent = () => {
   const setCategory = (key, value) => setCategories(prev => ({ ...prev, [key]: value }));
 
   const savePreferences = (asStatus) => {
-    let status = "custom";
-    if (asStatus === "acceptAll") status = "accepted";
-    if (asStatus === "rejectAll") status = "rejected";
+    let status;
+
+    if (asStatus === "acceptAll") {
+      status = "accepted";
+      // ensure categories reflect accept-all
+      const all = { technical: true, analytics: true, personalization: true, advertising: true };
+      setCategories(all);
+    } else if (asStatus === "rejectAll") {
+      status = "rejected";
+      // ensure categories reflect reject-all (technical kept true as strictly necessary)
+      const none = { technical: true, analytics: false, personalization: false, advertising: false };
+      setCategories(none);
+    } else {
+      // derive status from selected categories: if any category (out of 4) is checked -> treat as accepted
+      const anyChecked = Object.values(categories).some(Boolean);
+      status = anyChecked ? "accepted" : "rejected";
+    }
+
     const payload = JSON.stringify({ status, ts: Date.now(), categories });
     localStorage.setItem(STORAGE_KEY, payload);
     setShowManage(false);
@@ -229,8 +244,8 @@ const CookieConsent = () => {
 
                 <div className="mt-6 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <button onClick={() => { setCategories({ technical: true, analytics: true, personalization: true, advertising: true }); }} className="px-4 py-2 bg-gray-100 rounded">{copy.modalAcceptAll ?? 'Tout accepter'}</button>
-                    <button onClick={() => { setCategories({ technical: true, analytics: false, personalization: false, advertising: false }); }} className="px-4 py-2 bg-gray-100 rounded">{copy.modalRejectAll ?? 'Tout refuser'}</button>
+                    <button onClick={() => { const newCats = { technical: true, analytics: true, personalization: true, advertising: true }; setCategories(newCats); savePreferences('acceptAll'); }} className="px-4 py-2 bg-gray-100 rounded">{copy.modalAcceptAll ?? 'Tout accepter'}</button>
+                    <button onClick={() => { const newCats = { technical: true, analytics: false, personalization: false, advertising: false }; setCategories(newCats); savePreferences('rejectAll'); }} className="px-4 py-2 bg-gray-100 rounded">{copy.modalRejectAll ?? 'Tout refuser'}</button>
                   </div>
                   <div className="flex items-center gap-3">
                     <a href="/privacy-policy" className="text-sm text-gray-600 hover:underline">{copy.privacyPolicy ?? 'politique de confidentialité'}</a>
