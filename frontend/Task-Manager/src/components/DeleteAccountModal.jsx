@@ -189,3 +189,4 @@ const DeleteAccountModal = ({ isOpen, onClose }) => {
 };
 
 export default DeleteAccountModal;
+
