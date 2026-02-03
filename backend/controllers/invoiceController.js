@@ -49,8 +49,19 @@ exports.getAllInvoices = async (req, res) => {
       
       filter.project = { $in: userProjectIds };
     } else if (req.user.role === 'client') {
-      // Clients voient seulement leurs factures
-      filter.client = req.user._id;
+      // Clients voient leurs factures ET les factures des projets dont ils sont le client
+      // Les factures peuvent référencer soit un document `Client` soit un `project` dont le champ client est un `User`.
+      const clientProjectIds = (await Project.find({ client: req.user._id }).select('_id')).map(p => p._id);
+
+      // Si le client n'a pas de projet, on continue avec le filtre sur client seulement
+      if (clientProjectIds.length > 0) {
+        filter.$or = [
+          { client: req.user._id },
+          { project: { $in: clientProjectIds } }
+        ];
+      } else {
+        filter.client = req.user._id;
+      }
     } else if (req.user.role === 'partner') {
       // Partenaires n'ont AUCUN accès aux factures
       // Retourner un tableau vide
@@ -112,7 +123,11 @@ exports.getInvoiceById = async (req, res) => {
       // Admin et Collaborateur ont accès à toutes les factures
       hasAccess = true;
     } else if (req.user.role === 'client') {
-      hasAccess = invoice.client && invoice.client.toString() === req.user._id.toString();
+      // Grant access if the invoice.client matches the logged-in user OR
+      // if the invoice is attached to a project whose `client` is the logged-in user
+      const invoiceClientMatch = invoice.client && invoice.client.toString() === req.user._id.toString();
+      const projectClientMatch = invoice.project && invoice.project.client && invoice.project.client.toString() === req.user._id.toString();
+      hasAccess = invoiceClientMatch || projectClientMatch;
     } else if (req.user.role === 'partner') {
       // Partenaires n'ont AUCUN accès aux factures
       return res.status(403).json({ message: 'Accès refusé - Les partenaires n\'ont pas accès aux factures' });
