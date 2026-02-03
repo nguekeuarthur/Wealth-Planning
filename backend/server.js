@@ -39,9 +39,13 @@ const app = express();
 const server = http.createServer(app);
 
 // Configuration Socket.io
+// Build allowed CORS origins from env: supports CLIENT_URLS (comma-separated), CLIENT_URL, FRONTEND_URL
+const rawOrigins = process.env.CLIENT_URLS || process.env.CLIENT_URL || process.env.FRONTEND_URL || "*";
+const allowedOrigins = rawOrigins.includes(',') ? rawOrigins.split(',').map(o => o.trim()) : rawOrigins;
+
 const io = socketIo(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "*",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -53,11 +57,15 @@ global.io = io;
 // Middleware to handle CORS
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "*",
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   })
 );
+
+// Explicitly handle CORS preflight requests
+app.options('*', cors({ origin: allowedOrigins }));
 
 const PORT = process.env.PORT || 8000;
 
