@@ -1,11 +1,36 @@
 import React, { useContext, useEffect, useState } from "react";
-import { SIDE_MENU_DATA, SIDE_MENU_USER_DATA } from "../../utils/data";
+import {
+  SIDE_MENU_DATA,
+  SIDE_MENU_USER_DATA,
+  SIDE_MENU_MEMBER_DATA,
+  SIDE_MENU_CLIENT_DATA,
+  SIDE_MENU_PARTNER_DATA,
+  SIDE_MENU_COLLABORATOR_DATA
+} from "../../utils/data";
 import { UserContext } from "../../context/userContext";
+import { useNotifications } from "../../context/NotificationContext";
+import { useUnreadMessages } from "../../context/UnreadMessagesContext";
 import { useNavigate } from "react-router-dom";
+import { FiEdit2 } from "react-icons/fi";
+import ChangeProfilePhotoModal from "../ChangeProfilePhotoModal";
+import { BASE_URL } from "../../utils/apiPaths";
+
+const fullImageUrl = (url) => {
+  if (!url) return null;
+  // Aggressive cleanup of historical localhost URLs
+  let cleaned = url.replace(/^https?:\/\/localhost:8000/, '');
+  if (cleaned.startsWith('http')) return cleaned;
+  const baseUrlClean = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+  const pathClean = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+  return `${baseUrlClean}${pathClean}`;
+};
 
 const SideMenu = ({ activeMenu }) => {
-    const { user, clearUser } = useContext(UserContext);
+  const { user, logout, updateUser } = useContext(UserContext);
+  const { unreadCount } = useNotifications();
+  const { unreadCount: unreadMessagesCount } = useUnreadMessages();
   const [sideMenuData, setSideMenuData] = useState([]);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -18,56 +43,109 @@ const SideMenu = ({ activeMenu }) => {
     navigate(route);
   };
 
-  const handelLogout = () => {
-    localStorage.clear();
-    clearUser();
+  const handelLogout = async () => {
+    await logout();
     navigate("/login");
   };
 
   useEffect(() => {
-    if(user){
-      setSideMenuData(user?.role === 'admin' ? SIDE_MENU_DATA : SIDE_MENU_USER_DATA)
+    if (user) {
+      switch (user?.role) {
+        case 'admin':
+          setSideMenuData(SIDE_MENU_DATA);
+          break;
+        case 'member':
+          setSideMenuData(SIDE_MENU_MEMBER_DATA);
+          break;
+        case 'client':
+          setSideMenuData(SIDE_MENU_CLIENT_DATA);
+          break;
+        case 'partner':
+          setSideMenuData(SIDE_MENU_PARTNER_DATA);
+          break;
+        case 'collaborator':
+          setSideMenuData(SIDE_MENU_COLLABORATOR_DATA);
+          break;
+        case 'user':
+        default:
+          setSideMenuData(SIDE_MENU_USER_DATA);
+      }
     }
-    return () => {};
+    return () => { };
   }, [user]);
-  return <div className="w-64 h-[calc(100vh-61px)] bg-white border-r border-gray-200/50 sticky top-[61px] z-20">
-      <div className="flex flex-col items-center justify-center mb-7 pt-5">
-        <div className="relative">
-          <img
-            src={user?.profileImageUrl || ""}
-            alt="Profile Image"
-            className="w-20 h-20 bg-slate-400 rounded-full"
-          />
-        </div>
 
-        {user?.role === "admin" && (
-          <div className="text-[10px] font-medium text-white bg-primary px-3 py-0.5 rounded mt-1">
-            Admin
-          </div>
-        )}
+  const handlePhotoUpdateSuccess = (newProfileImageUrl) => {
+    if (updateUser) {
+      updateUser({ profileImageUrl: newProfileImageUrl });
+    }
+  };
 
-        <h5 className="text-gray-950 font-medium leading-6 mt-3">
-          {user?.name || ""}
-        </h5>
-
-        <p className="text-[12px] text-gray-500">{user?.email || ""}</p>
+  return <div className="w-64 h-screen bg-white border-r border-gray-200/50 fixed top-0 left-0 z-20">
+    <div className="flex flex-col items-center justify-center mb-6 pt-12">
+      <div className="relative group">
+        <img
+          src={fullImageUrl(user?.profileImageUrl)}
+          alt="Profile Image"
+          className="w-20 h-20 bg-slate-400 rounded-full cursor-pointer"
+          onClick={() => setIsPhotoModalOpen(true)}
+        />
+        <button
+          onClick={() => setIsPhotoModalOpen(true)}
+          className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-blue-600"
+          title="Changer la photo de profil"
+        >
+          <FiEdit2 className="w-3 h-3" />
+        </button>
       </div>
 
-      {sideMenuData.map((item, index) => (
-        <button
-          key={`menu_${index}`}
-          className={`w-full flex items-center gap-4 text-[15px] ${
-            activeMenu == item.label
-              ? "text-primary bg-linear-to-r from-blue-50/40 to-blue-100/50 border-r-3"
-              : ""
-          } py-3 px-6 mb-3 cursor-pointer`}
-          onClick={() => handleClick(item.path)}
-        >
+      {user?.role === "admin" && (
+        <div className="text-[10px] font-medium text-white bg-primary px-3 py-0.5 rounded mt-1">
+          Admin
+        </div>
+      )}
+
+      <h5 className="text-gray-950 font-medium leading-6 mt-3">
+        {user?.name || ""}
+      </h5>
+
+      <p className="text-[12px] text-gray-500">{user?.email || ""}</p>
+    </div>
+
+    {sideMenuData.map((item, index) => (
+      <button
+        key={`menu_${index}`}
+        className={`w-full flex items-center gap-4 text-[15px] ${activeMenu == item.label
+          ? "text-primary bg-gradient-to-r from-blue-50/40 to-blue-100/50 border-r-[3px] border-primary"
+          : ""
+          } py-3 px-6 mb-3 cursor-pointer relative`}
+        onClick={() => handleClick(item.path)}
+      >
+        <div className="relative">
           <item.icon className="text-xl" />
-          {item.label}
-        </button>
-      ))}
-    </div>;
+          {/* Compteur de notifications pour l'élément "Notifications" - positionné sur l'icône */}
+          {item.label === "Notifications" && unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </div>
+        <span>{item.label}</span>
+        {/* Compteur de messages non lus pour l'élément "Messagerie" - positionné après le texte */}
+        {item.label === "Messagerie" && unreadMessagesCount > 0 && (
+          <span className="bg-green-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none animate-pulse">
+            {unreadMessagesCount > 99 ? "99+" : unreadMessagesCount}
+          </span>
+        )}
+      </button>
+    ))}
+
+    <ChangeProfilePhotoModal
+      isOpen={isPhotoModalOpen}
+      onClose={() => setIsPhotoModalOpen(false)}
+      currentImage={user?.profileImageUrl}
+      onSuccess={handlePhotoUpdateSuccess}
+    />
+  </div>;
 };
 
 export default SideMenu;

@@ -1,18 +1,71 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FaBars, FaTimes, FaGlobe } from "react-icons/fa";
+import { useLanguage } from "../../context/languageContext";
+
+const translations = {
+  FR: {
+    links: {
+      home: "Accueil",
+      about: "À propos",
+      services: "Services",
+      contact: "Contact",
+    },
+    authCta: "Connexion",
+    languageLabel: "Langue",
+  },
+  EN: {
+    links: {
+      home: "Home",
+      about: "About",
+      services: "Services",
+      contact: "Contact",
+    },
+    authCta: "Sign in",
+    languageLabel: "Language",
+  },
+  DE: {
+    links: {
+      home: "Startseite",
+      about: "Über uns",
+      services: "Dienstleistungen",
+      contact: "Kontakt",
+    },
+    authCta: "Anmelden",
+    languageLabel: "Sprache",
+  },
+  IT: {
+    links: {
+      home: "Home",
+      about: "Chi siamo",
+      services: "Servizi",
+      contact: "Contatto",
+    },
+    authCta: "Accedi",
+    languageLabel: "Lingua",
+  },
+};
+
+const languageOptions = [
+  { code: "FR", label: "Français" },
+  { code: "EN", label: "English" },
+  { code: "DE", label: "Deutsch" },
+  { code: "IT", label: "Italiano" },
+];
 
 const PublicNavbar = () => {
+  const { lang: currentLang, setLang } = useLanguage();
   const [isOpen, setIsOpen] = React.useState(false);
   const [isLangOpen, setIsLangOpen] = React.useState(false);
-  const [currentLang, setCurrentLang] = React.useState("FR");
   const location = useLocation();
 
+  const copy = translations[currentLang] ?? translations.FR;
+
   const navLinks = [
-    { name: "Accueil", path: "/" },
-    { name: "À propos", path: "/about" },
-    { name: "Services", path: "/services" },
-    { name: "Contact", path: "/contact" },
+    { name: copy.links.home, path: "/" },
+    { name: copy.links.about, path: "/about" },
+    { name: copy.links.services, path: "/services" },
+    { name: copy.links.contact, path: "/contact" },
   ];
 
   const isActive = (path) => {
@@ -31,12 +84,12 @@ const PublicNavbar = () => {
               <span className="text-[#2d5f3f] text-[13px] font-light tracking-[0.2em] leading-tight">WEALTH</span>
               <span className="text-[#2d5f3f] text-[9px] font-light tracking-[0.3em] leading-tight">PARTNERS</span>
             </div>
-            
+
             {/* Barre verticale + Wealth Planning */}
             <div className="flex items-end h-full relative" style={{ height: '45px' }}>
               <div className="absolute left-0 top-0 bottom-0 w-[1px] bg-[#2d5f3f]"></div>
               <span className="text-[#2d5f3f] text-[9px] font-light tracking-[0.15em] pl-2 leading-tight italic whitespace-nowrap">
-                WEALTH<br/>PLANNING
+                WEALTH<br />PLANNING
               </span>
             </div>
           </Link>
@@ -47,16 +100,15 @@ const PublicNavbar = () => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`text-sm font-light transition-colors tracking-wide ${
-                  isActive(link.path)
+                className={`text-sm font-light transition-colors tracking-wide ${isActive(link.path)
                     ? "text-[#2d5f3f]"
                     : "text-gray-700 hover:text-[#2d5f3f]"
-                }`}
+                  }`}
               >
                 {link.name}
               </Link>
             ))}
-            
+
             {/* Language Selector */}
             <div className="relative">
               <button
@@ -66,32 +118,28 @@ const PublicNavbar = () => {
                 <FaGlobe className="text-base" />
                 <span>{currentLang}</span>
               </button>
-              
+
               {isLangOpen && (
                 <div className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                  {["FR", "EN", "DE", "IT"].map((lang) => (
+                  {languageOptions.map((option) => (
                     <button
-                      key={lang}
+                      key={option.code}
                       onClick={() => {
-                        setCurrentLang(lang);
+                        setLang(option.code);
                         setIsLangOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-2 text-sm font-light transition-colors ${
-                        currentLang === lang
+                      className={`w-full text-left px-4 py-2 text-sm font-light transition-colors ${currentLang === option.code
                           ? "bg-[#2d5f3f] text-white"
                           : "text-gray-700 hover:bg-gray-100"
-                      }`}
+                        }`}
                     >
-                      {lang === "FR" && "Français"}
-                      {lang === "EN" && "English"}
-                      {lang === "DE" && "Deutsch"}
-                      {lang === "IT" && "Italiano"}
+                      {option.label}
                     </button>
                   ))}
                 </div>
               )}
             </div>
-            
+
             <Link
               to="/connexion"
               className="w-8 h-8 rounded-full border border-gray-400 flex items-center justify-center hover:border-[#2d5f3f] hover:text-[#2d5f3f] transition-colors"
@@ -119,37 +167,35 @@ const PublicNavbar = () => {
                 key={link.path}
                 to={link.path}
                 onClick={() => setIsOpen(false)}
-                className={`block text-sm font-light py-2 transition-colors ${
-                  isActive(link.path)
+                className={`block text-sm font-light py-2 transition-colors ${isActive(link.path)
                     ? "text-[#2d5f3f]"
                     : "text-gray-700 hover:text-[#2d5f3f]"
-                }`}
+                  }`}
               >
                 {link.name}
               </Link>
             ))}
             {/* Language Selector Mobile */}
             <div className="border-t border-gray-300 pt-4 mt-4">
-              <p className="text-xs text-gray-500 font-light mb-2">Langue</p>
-              <div className="grid grid-cols-4 gap-2">
-                {["FR", "EN", "DE", "IT"].map((lang) => (
+              <p className="text-xs text-gray-500 font-light mb-2">{copy.languageLabel}</p>
+              <div className="grid grid-cols-2 gap-2">
+                {languageOptions.map((option) => (
                   <button
-                    key={lang}
+                    key={option.code}
                     onClick={() => {
-                      setCurrentLang(lang);
+                      setLang(option.code);
                     }}
-                    className={`px-3 py-2 rounded text-sm font-light transition-colors ${
-                      currentLang === lang
+                    className={`px-3 py-2 rounded text-sm font-light transition-colors ${currentLang === option.code
                         ? "bg-[#2d5f3f] text-white"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
+                      }`}
                   >
-                    {lang}
+                    {option.code}
                   </button>
                 ))}
               </div>
             </div>
-            
+
             <Link
               to="/connexion"
               onClick={() => setIsOpen(false)}
@@ -158,7 +204,7 @@ const PublicNavbar = () => {
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
               </svg>
-              Connexion
+              {copy.authCta}
             </Link>
           </div>
         )}

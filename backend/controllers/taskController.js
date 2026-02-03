@@ -1,72 +1,102 @@
 const Task = require("../models/Task");
 
-// @desc    Get all tasks (Admin: all, User: only assigned tasks)
+// @desc    Get all tasks (Admin: all, User: only assigned tasks, Client: all tasks of their projects in read-only)
 // @route   GET /api/tasks/
 // @access  Private
 const getTasks = async (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, project } = req.query;
     let filter = {};
 
     if (status) {
       filter.status = status;
     }
 
-    let tasks;
-
-    if (req.user.role === "admin") {
-      tasks = await Task.find(filter).populate(
-        "assignedTo",
-        "name email profileImageUrl"
-      );
-    } else {
-      tasks = await Task.find({ ...filter, assignedTo: req.user._id }).populate(
-        "assignedTo",
-        "name email profileImageUrl"
-      );
+    if (project) {
+      filter.project = project;
     }
 
-    // Add completed todoChecklist count to each task
-    tasks = await Promise.all(
-      tasks.map(async (task) => {
-        const completedCount = task.todoChecklist.filter(
-          (item) => item.completed
-        ).length;
-        return { ...task._doc, completedTodoCount: completedCount };
-      })
-    );
+    let countFilter = { ...filter };
 
-    // Status summary counts
-    const allTasks = await Task.countDocuments(
-      req.user.role === "admin" ? {} : { assignedTo: req.user._id }
-    );
+    if (req.user.role === "admin") {
+      // Admin sees everything
+    } else if (req.user.role === "collaborator") {
+      const Project = require("../models/Project");
+      const userProjects = await Project.find({ assignedUsers: req.user._id }).select("_id");
+      const projectIds = userProjects.map(p => p._id);
+      // Pour les collaborateurs, si un projet spécifique est demandé, on le respecte
+      // Sinon on montre tous les projets auxquels ils ont accès
+      if (project) {
+        countFilter.project = project; // Respecte le projet demandé
+      } else {
+      countFilter.project = { $in: projectIds };
+      }
+    } else if (req.user.role === "client") {
+      const Project = require("../models/Project");
+      const userProjects = await Project.find({ client: req.user._id }).select("_id");
+      const projectIds = userProjects.map(p => p._id);
+      // Pour les clients, si un projet spécifique est demandé, on le respecte
+      if (project) {
+        countFilter.project = project; // Respecte le projet demandé
+      } else {
+      countFilter.project = { $in: projectIds };
+      }
+    } else if (req.user.role === "partner") {
+      const Project = require("../models/Project");
+      const userProjects = await Project.find({ assignedUsers: req.user._id }).select("_id");
+      const projectIds = userProjects.map(p => p._id);
+      // Pour les partenaires, si un projet spécifique est demandé, on le respecte
+      if (project) {
+        countFilter.project = project; // Respecte le projet demandé
+      } else {
+      countFilter.project = { $in: projectIds };
+      }
+    } else {
+      // Pour les membres, on combine le filtre projet avec assignedTo
+      countFilter.assignedTo = req.user._id;
+      // Le filtre project est déjà dans countFilter via filter
+    }
 
-    const pendingTasks = await Task.countDocuments({
-      ...filter,
-      status: "Pending",
-      ...(req.user.role !== "admin" && { assignedTo: req.user._id }),
+    // 1. Fetching tasks
+    let tasksQuery = Task.find(countFilter)
+      .populate("assignedTo", "name email profileImageUrl role")
+      .populate("project", "name");
+
+    tasks = await tasksQuery;
+
+    // Filter assignedTo for privacy based on roles
+    tasks = tasks.map(task => {
+      const taskObj = task.toObject();
+      if (taskObj.assignedTo && Array.isArray(taskObj.assignedTo)) {
+        if (req.user.role === 'collaborator' || req.user.role === 'client') {
+          taskObj.assignedTo = taskObj.assignedTo.filter(user => user.role !== 'partner');
+        } else if (req.user.role === 'partner') {
+          taskObj.assignedTo = taskObj.assignedTo.filter(user => user.role !== 'client');
+        }
+      }
+      return taskObj;
     });
 
-    const inProgressTasks = await Task.countDocuments({
-      ...filter,
-      status: "In Progress",
-      ...(req.user.role !== "admin" && { assignedTo: req.user._id }),
+    // Add completed todoChecklist count
+    tasks = tasks.map(task => {
+      const completedCount = (task.todoChecklist || []).filter(item => item.completed).length;
+      return { ...task, completedTodoCount: completedCount };
     });
 
-    const completedTasks = await Task.countDocuments({
-      ...filter,
-      status: "Completed",
-      ...(req.user.role !== "admin" && { assignedTo: req.user._id }),
-    });
+    // 2. Status counts
+    const allTasksCount = await Task.countDocuments(countFilter);
+    const pendingTasks = await Task.countDocuments({ ...countFilter, status: "Pending" });
+    const inProgressTasks = await Task.countDocuments({ ...countFilter, status: "In Progress" });
+    const completedTasks = await Task.countDocuments({ ...countFilter, status: "Completed" });
 
     res.json({
       tasks,
       statusSummary: {
-        all: allTasks,
+        all: allTasksCount,
         pendingTasks,
         inProgressTasks,
-        completedTasks,
-      },
+        completedTasks
+      }
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -78,12 +108,43 @@ const getTasks = async (req, res) => {
 // @access  Private
 const getTaskById = async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id).populate(
-      "assignedTo",
-      "name email profileImageUrl"
-    );
+    let task = await Task.findById(req.params.id)
+      .populate("assignedTo", "name email profileImageUrl role")
+      .populate("project", "name client");
 
     if (!task) return res.status(404).json({ message: "Task not found" });
+
+    // Vérifier les permissions pour les clients
+    if (req.user.role === "client") {
+      const Project = require("../models/Project");
+      const project = await Project.findById(task.project._id);
+
+      if (!project || project.client.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: "Accès refusé" });
+      }
+
+      // Filtrer les assignedTo pour ne pas montrer les partenaires aux clients
+      const taskObj = task.toObject();
+      if (taskObj.assignedTo && Array.isArray(taskObj.assignedTo)) {
+        taskObj.assignedTo = taskObj.assignedTo.filter(user => user.role !== 'partner');
+      }
+      return res.json(taskObj);
+    } else if (req.user.role === "partner") {
+      const Project = require("../models/Project");
+      const project = await Project.findById(task.project._id);
+
+      // Vérifier que le partenaire est assigné au projet
+      if (!project || !project.assignedUsers.some(userId => userId.toString() === req.user._id.toString())) {
+        return res.status(403).json({ message: "Accès refusé" });
+      }
+
+      // Filtrer les assignedTo pour ne pas montrer les clients aux partenaires
+      const taskObj = task.toObject();
+      if (taskObj.assignedTo && Array.isArray(taskObj.assignedTo)) {
+        taskObj.assignedTo = taskObj.assignedTo.filter(user => user.role !== 'client');
+      }
+      return res.json(taskObj);
+    }
 
     res.json(task);
   } catch (error) {
@@ -101,15 +162,41 @@ const createTask = async (req, res) => {
       description,
       priority,
       dueDate,
-      assignedTo,
-      attachments,
       todoChecklist,
+      project,
+      status
     } = req.body;
+
+    // Parser assignedTo si c'est une string JSON
+    let assignedTo = req.body.assignedTo;
+    if (typeof assignedTo === 'string') {
+      try {
+        assignedTo = JSON.parse(assignedTo);
+      } catch (e) {
+        assignedTo = [];
+      }
+    }
+
+    // Parser assignedRoles si c'est une string JSON
+    let assignedRoles = req.body.assignedRoles;
+    if (typeof assignedRoles === 'string') {
+      try {
+        assignedRoles = JSON.parse(assignedRoles);
+      } catch (e) {
+        assignedRoles = [];
+      }
+    }
 
     if (!Array.isArray(assignedTo)) {
       return res
         .status(400)
         .json({ message: "assignedTo must be an array of user IDs" });
+    }
+
+    // Gérer les fichiers uploadés
+    let attachments = [];
+    if (req.files && req.files.length > 0) {
+      attachments = req.files.map(file => `/uploads/${file.filename}`);
     }
 
     const task = await Task.create({
@@ -118,10 +205,29 @@ const createTask = async (req, res) => {
       priority,
       dueDate,
       assignedTo,
+      assignedRoles: assignedRoles || [],
       createdBy: req.user._id,
       todoChecklist,
       attachments,
+      project,
+      status: status || "Pending"
     });
+
+
+
+    // Si la tâche est associée à un projet, l'ajouter au projet
+    if (project) {
+      const Project = require("../models/Project");
+      await Project.findByIdAndUpdate(project, {
+        $addToSet: { tasks: task._id }
+      });
+    }
+
+    const populatedTask = await Task.findById(task._id).populate('assignedTo', 'name email profileImageUrl');
+
+    if (global.io) {
+      global.io.emit('taskCreated', populatedTask);
+    }
 
     res.status(201).json({ message: "Task created successfully", task });
   } catch (error) {
@@ -141,21 +247,63 @@ const updateTask = async (req, res) => {
     task.title = req.body.title || task.title;
     task.description = req.body.description || task.description;
     task.priority = req.body.priority || task.priority;
+    task.status = req.body.status || task.status;
     task.dueDate = req.body.dueDate || task.dueDate;
     task.todoChecklist = req.body.todoChecklist || task.todoChecklist;
-    task.attachments = req.body.attachments || task.attachments;
+
+    // Gérer les nouveaux fichiers uploadés
+    if (req.files && req.files.length > 0) {
+      const newAttachments = req.files.map(file => `/uploads/${file.filename}`);
+      task.attachments = [...task.attachments, ...newAttachments];
+    }
 
     if (req.body.assignedTo) {
-      if (!Array.isArray(req.body.assignedTo)) {
+      let assignedTo = req.body.assignedTo;
+      // Parser si c'est une string JSON
+      if (typeof assignedTo === 'string') {
+        try {
+          assignedTo = JSON.parse(assignedTo);
+        } catch (e) {
+          assignedTo = [];
+        }
+      }
+
+      if (!Array.isArray(assignedTo)) {
         return res
           .status(400)
           .json({ message: "assignedTo must be an array of user IDs" });
       }
-      task.assignedTo = req.body.assignedTo;
+      task.assignedTo = assignedTo;
+    }
+
+    if (req.body.assignedRoles !== undefined) {
+      let assignedRoles = req.body.assignedRoles;
+      // Parser si c'est une string JSON
+      if (typeof assignedRoles === 'string') {
+        try {
+          assignedRoles = JSON.parse(assignedRoles);
+        } catch (e) {
+          assignedRoles = [];
+        }
+      }
+
+      if (!Array.isArray(assignedRoles)) {
+        return res
+          .status(400)
+          .json({ message: "assignedRoles must be an array" });
+      }
+      task.assignedRoles = assignedRoles;
     }
 
     const updatedTask = await task.save();
-    res.json({ message: "Task updated successfully", updatedTask });
+
+    const populatedTask = await Task.findById(updatedTask._id).populate('assignedTo', 'name email profileImageUrl');
+
+    if (global.io) {
+      global.io.emit('taskUpdated', populatedTask);
+    }
+
+    res.json({ message: "Task updated successfully", task: populatedTask });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -171,6 +319,11 @@ const deleteTask = async (req, res) => {
     if (!task) return res.status(404).json({ message: "Task not found" });
 
     await task.deleteOne();
+
+    if (global.io) {
+      global.io.emit('taskDeleted', task._id);
+    }
+
     res.json({ message: "Task deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -182,18 +335,78 @@ const deleteTask = async (req, res) => {
 // @access  Private
 const updateTaskStatus = async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id);
+    const task = await Task.findById(req.params.id).populate('project');
     if (!task) return res.status(404).json({ message: "Task not found" });
 
-    const isAssigned = task.assignedTo.some(
-      (userId) => userId.toString() === req.user._id.toString()
-    );
+    // Vérifier les autorisations
+    let isAuthorized = false;
 
-    if (!isAssigned && req.user.role !== "admin") {
-      return res.status(403).json({ message: "Not authorized" });
+    if (req.user.role === "admin" || req.user.role === "collaborator") {
+      isAuthorized = true;
+    } else if (req.user.role === "client") {
+      // Les clients peuvent mettre à jour les tâches de leurs projets
+      const Project = require('../models/Project');
+      const project = await Project.findById(task.project._id || task.project);
+
+      if (project && (
+        project.client?.toString() === req.user._id.toString() ||
+        project.assignedUsers?.some(userId => userId.toString() === req.user._id.toString())
+      )) {
+        isAuthorized = true;
+      }
+    } else if (req.user.role === "partner") {
+      // Les partenaires peuvent mettre à jour UNIQUEMENT les tâches qui leur sont assignées personnellement
+      const Project = require('../models/Project');
+      const project = await Project.findById(task.project._id || task.project);
+
+      // Le partenaire doit être assigné au projet ET à la tâche spécifique
+      const isAssignedToProject = project && project.assignedUsers?.some(userId => userId.toString() === req.user._id.toString());
+      const isAssignedToTask = task.assignedTo?.some(userId => userId.toString() === req.user._id.toString());
+
+      if (isAssignedToProject && isAssignedToTask) {
+        isAuthorized = true;
+      }
+    } else {
+      // Pour les autres rôles, vérifier s'ils sont assignés à la tâche
+      isAuthorized = task.assignedTo.some(
+        (userId) => userId.toString() === req.user._id.toString()
+      );
     }
 
-    task.status = req.body.status || task.status;
+    if (!isAuthorized) {
+      return res.status(403).json({ message: "Not authorized to update this task" });
+    }
+
+    const oldStatus = task.status;
+    const newStatus = req.body.status;
+
+    if (!newStatus) {
+      return res.status(400).json({ message: "Status is required" });
+    }
+
+    // Normalize status values coming from different frontends
+    const normalizeStatus = (status) => {
+      if (!status) return status;
+      const raw = String(status).trim();
+      const allowed = ["Pending", "In Progress", "Completed"];
+      if (allowed.includes(raw)) return raw;
+
+      const lowered = raw.toLowerCase();
+      const map = {
+        pending: "Pending",
+        "in-progress": "In Progress",
+        "in progress": "In Progress",
+        completed: "Completed",
+      };
+      return map[lowered] || raw;
+    };
+
+    const normalizedStatus = normalizeStatus(newStatus);
+    if (!["Pending", "In Progress", "Completed"].includes(normalizedStatus)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    task.status = normalizedStatus;
 
     if (task.status === "Completed") {
       task.todoChecklist.forEach((item) => (item.completed = true));
@@ -201,8 +414,40 @@ const updateTaskStatus = async (req, res) => {
     }
 
     await task.save();
-    res.json({ message: "Task status updated", task });
+
+    // Mettre à jour automatiquement la progression du projet parent
+    if (task.project && (oldStatus !== task.status)) {
+      try {
+        const Project = require('../models/Project');
+        const project = await Project.findById(task.project);
+
+        if (project) {
+          // Récupérer toutes les tâches du projet
+          const allTasks = await Task.find({ project: task.project });
+          const totalTasks = allTasks.length;
+          const completedTasks = allTasks.filter(t => t.status === 'Completed').length;
+          const calculatedCompletion = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+          if (project.completion !== calculatedCompletion) {
+            project.completion = calculatedCompletion;
+            await project.save();
+          }
+        }
+      } catch (projectError) {
+        console.error("Error updating project progress:", projectError);
+        // Ne pas échouer la mise à jour de la tâche si la mise à jour du projet échoue
+      }
+    }
+
+    const populatedTask = await Task.findById(task._id).populate('assignedTo', 'name email profileImageUrl');
+
+    if (global.io) {
+      global.io.emit('taskUpdated', populatedTask);
+    }
+
+    res.json({ message: "Task status updated", task: populatedTask });
   } catch (error) {
+    console.error("Error in updateTaskStatus:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -243,12 +488,34 @@ const updateTaskChecklist = async (req, res) => {
     }
 
     await task.save();
+
+    // Mettre à jour automatiquement la progression du projet parent
+    if (task.project) {
+      const Project = require('../models/Project');
+      const project = await Project.findById(task.project).populate('tasks');
+
+      if (project && project.tasks.length > 0) {
+        const totalTasks = project.tasks.length;
+        const completedTasks = project.tasks.filter(t => t.status === 'Completed').length;
+        const calculatedCompletion = Math.round((completedTasks / totalTasks) * 100);
+
+        if (project.completion !== calculatedCompletion) {
+          project.completion = calculatedCompletion;
+          await project.save();
+        }
+      }
+    }
+
     const updatedTask = await Task.findById(req.params.id).populate(
       "assignedTo",
       "name email profileImageUrl"
     );
 
-    res.json({ message: "Task checklist updated", task:updatedTask });
+    if (global.io) {
+      global.io.emit('taskUpdated', updatedTask);
+    }
+
+    res.json({ message: "Task checklist updated", task: updatedTask });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -342,7 +609,7 @@ const getUserDashboardData = async (req, res) => {
       status: { $ne: "Completed" },
       dueDate: { $lt: new Date() },
     });
-    
+
 
     // Task distribution by status
     const taskStatuses = ["Pending", "In Progress", "Completed"];

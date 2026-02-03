@@ -2,10 +2,137 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='20' font-size='20' fill='%232d5f3f'%3EWP%3C/text%3E%3C/svg%3E" />
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='20' font-size='20' fill='%232d5f3f'%3EWP%3C/text%3E%3C/svg%3E" />
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Geneva Wealth Partners - Conseil en structuration patrimoniale et fiscale" />
-    <title>Geneva Wealth Partners - Wealth Partners Advisory</title>
+    
+    <!-- SEO Meta Tags Optimisés -->
+    <meta name="description" content="Geneva Wealth Partners - Cabinet de conseil en structuration patrimoniale et fiscale à Genève. Expertise en optimisation fiscale, ingénierie patrimoniale, transmission de patrimoine, création de holding pour dirigeants, entrepreneurs et particuliers fortunés. Accompagnement France-Suisse." />
+    <meta name="keywords" content="conseil en structuration patrimoniale, conseil en structuration fiscale, cabinet de conseil patrimonial, cabinet de conseil fiscal, optimisation patrimoniale, optimisation fiscale, ingénierie patrimoniale, ingénierie fiscale, conseil en gestion de patrimoine, structuration de patrimoine privé, structuration de patrimoine professionnel, audit patrimonial, audit fiscal, stratégie patrimoniale, stratégie fiscale, accompagnement patrimonial, accompagnement fiscal, optimisation de la fiscalité, réduction de l'imposition, fiscalité du patrimoine, fiscalité des revenus, fiscalité des dirigeants, fiscalité société immobilière, fiscalité immobilière, fiscalité des investissements, fiscalité française et suisse, transmission de patrimoine, préparation de la succession, stratégie successorale, protection du patrimoine, protection des dirigeants, protection de la famille, structuration d'investissements, structuration holding, création de holding patrimoniale, organisation juridique et fiscale, montage juridique et fiscal, stratégie d'investissement patrimonial, conseil patrimonial dirigeants, conseil patrimonial chefs d'entreprise, conseil patrimonial professions libérales, conseil patrimonial investisseurs, conseil patrimonial entrepreneurs, conseil patrimonial particuliers fortunés, conseil patrimonial HNWI, cabinet de conseil patrimonial Genève, cabinet de conseil en Suisse, conseil en structuration patrimoniale France Suisse, conseil fiscal patrimonial Paris Genève, comment optimiser son patrimoine, comment structurer son patrimoine, cabinet expert en structuration patrimoniale et fiscale, accompagnement global patrimonial et fiscal, conseil indépendant en structuration patrimoniale, expatriation patrimoniale haut de gamme, protection patrimoine international famille, sécurisation des actifs à l'étranger, structuration patrimoniale France Suisse, résidence fiscale et protection du patrimoine, changement de résidence fiscale conseil, expatriation accompagnement patrimonial, protection patrimoine international, structuration patrimoniale internationale, comparaison fiscale France Suisse" />
+    <meta name="author" content="Geneva Wealth Partners" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    
+    <!-- Geo Meta Tags -->
+    <meta name="geo.region" content="CH-GE" />
+    <meta name="geo.placename" content="Genève, Suisse" />
+    <meta name="geo.position" content="46.2044;6.1432" />
+    <meta name="ICBM" content="46.2044, 6.1432" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Geneva Wealth Partners - Cabinet de Conseil en Structuration Patrimoniale et Fiscale | Genève" />
+    <meta property="og:description" content="Expert en conseil patrimonial et fiscal à Genève. Optimisation fiscale, ingénierie patrimoniale, transmission de patrimoine, création de holding pour dirigeants et particuliers fortunés. France-Suisse." />
+    <meta property="og:site_name" content="Geneva Wealth Partners" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:locale:alternate" content="de_CH" />
+    <meta property="og:locale:alternate" content="it_IT" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Geneva Wealth Partners - Conseil Patrimonial et Fiscal Genève" />
+    <meta name="twitter:description" content="Cabinet expert en structuration patrimoniale et fiscale. Optimisation fiscale, ingénierie patrimoniale, transmission de patrimoine. France-Suisse." />
+
+    <!-- Structured Data - Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FinancialService",
+      "name": "Geneva Wealth Partners",
+      "alternateName": "GWP",
+      "description": "Cabinet de conseil en structuration patrimoniale et fiscale à Genève. Expertise en optimisation fiscale, ingénierie patrimoniale, transmission de patrimoine pour dirigeants, entrepreneurs et particuliers fortunés.",
+      "url": "https://www.genevawealthpartners.com",
+      "telephone": "+41 22 XXX XX XX",
+      "email": "contact@genevawealthpartners.com",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Rue du Rhône",
+        "addressLocality": "Genève",
+        "postalCode": "1204",
+        "addressCountry": "CH"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": "46.2044",
+        "longitude": "6.1432"
+      },
+      "areaServed": [
+        {"@type": "Country", "name": "Suisse"},
+        {"@type": "Country", "name": "France"},
+        {"@type": "City", "name": "Genève"},
+        {"@type": "City", "name": "Paris"}
+      ],
+      "priceRange": "€€€€",
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+        "opens": "09:00",
+        "closes": "18:00"
+      },
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Services de conseil patrimonial et fiscal",
+        "itemListElement": [
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Conseil en structuration patrimoniale",
+              "description": "Optimisation et structuration de votre patrimoine privé et professionnel"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Optimisation fiscale",
+              "description": "Stratégies fiscales avancées pour réduction de l'imposition"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Transmission de patrimoine",
+              "description": "Planification successorale et protection du patrimoine familial"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Création de holding patrimoniale",
+              "description": "Structuration holding et montages juridiques pour entrepreneurs"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Accompagnement expatriation",
+              "description": "Conseil en changement de résidence fiscale et protection patrimoine international"
+            }
+          }
+        ]
+      },
+      "knowsAbout": [
+        "Structuration patrimoniale",
+        "Optimisation fiscale",
+        "Ingénierie patrimoniale",
+        "Transmission de patrimoine",
+        "Holding patrimoniale",
+        "Fiscalité France Suisse",
+        "Protection patrimoine international",
+        "Conseil dirigeants",
+        "Conseil HNWI"
+      ]
+    }
+    </script>
+
+    <title>Geneva Wealth Partners - Cabinet de Conseil en Structuration Patrimoniale et Fiscale | Genève Suisse</title>
   </head>
   <body>
     <div id="root"></div>

@@ -1,22 +1,276 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import bgImage from "../../assets/images/services.jpeg";
+import { useLanguage } from "../../context/languageContext";
+import SEOHelmet from "../../components/SEOHelmet";
+import { getServiceSchema, SEO_KEYWORDS } from "../../utils/seoConfig";
+
+const content = {
+  FR: {
+    hero: {
+      title: "Nos Services",
+      subtitle: "Une offre complète pour la gestion et la protection de votre patrimoine.",
+    },
+    cards: [
+      {
+        title: "Création d'entreprise",
+        description:
+          "Solutions inshore et offshore adaptées à vos besoins pour une implantation optimale de votre structure.",
+        icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4",
+      },
+      {
+        title: "Ouverture de compte bancaire",
+        description:
+          "Accès privilégié à des établissements bancaires fiables, traditionnels et alternatifs à l'international.",
+        icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
+      },
+      {
+        title: "Service de domiciliation",
+        description: "Adresse professionnelle prestigieuse avec service complet de réception et renvoi de courrier sécurisé.",
+        icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
+      },
+      {
+        title: "Conseil en structuration patrimoniale",
+        description: "Architectures sur mesure pour protéger et faire croître votre patrimoine en toute légalité.",
+        icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
+      },
+      {
+        title: "Optimisation fiscale",
+        description:
+          "Stratégies fiscales avancées pour minimiser votre imposition tout en respectant les cadres légaux.",
+        icon: "M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z",
+      },
+      {
+        title: "Planification Successorale",
+        description:
+          "Nous vous aidons à structurer votre héritage pour qu'il bénéficie à vos proches dans les meilleures conditions juridiques et fiscales.",
+        icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
+      },
+    ],
+    cta: {
+      title: "Prêt à optimiser votre patrimoine ?",
+      subtitle: "Contactez-nous dès aujourd'hui pour une consultation personnalisée.",
+      button: "Commencer maintenant",
+    },
+  },
+  EN: {
+    hero: {
+      title: "Our Services",
+      subtitle: "A comprehensive suite designed to manage, protect, and grow your wealth.",
+    },
+    cards: [
+      {
+        title: "Company formation",
+        description:
+          "In-shore and off-shore structures tailored to your goals so you can incorporate quickly and compliantly.",
+        icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4",
+      },
+      {
+        title: "Corporate bank onboarding",
+        description:
+          "Privileged access to reliable, international banking partners—both traditional and alternative.",
+        icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
+      },
+      {
+        title: "Business domiciliation",
+        description: "Prestigious business addresses with secure mail reception, scanning, and forwarding.",
+        icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
+      },
+      {
+        title: "Wealth structuring advisory",
+        description: "Custom architectures that safeguard and grow your assets while staying fully compliant.",
+        icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
+      },
+      {
+        title: "Tax optimisation",
+        description: "Advanced strategies that lower tax exposure while respecting every jurisdiction.",
+        icon: "M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z",
+      },
+      {
+        title: "Estate Planning",
+        description:
+          "We help you structure your inheritance so it benefits your loved ones under the best legal and tax conditions.",
+        icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
+      },
+    ],
+    cta: {
+      title: "Ready to optimise your wealth?",
+      subtitle: "Reach out today for a tailored consultation.",
+      button: "Get started now",
+    },
+  },
+  DE: {
+    hero: {
+      title: "Unsere Dienstleistungen",
+      subtitle: "Ein umfassendes Angebot zur Verwaltung, zum Schutz und zum Wachstum Ihres Vermögens.",
+    },
+    cards: [
+      {
+        title: "Unternehmensgründung",
+        description:
+          "Inshore- und Offshore-Strukturen, die auf Ihre Ziele zugeschnitten sind, damit Sie schnell und konform gründen können.",
+        icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4",
+      },
+      {
+        title: "Firmenkontoeröffnung",
+        description:
+          "Privilegierter Zugang zu zuverlässigen, internationalen Bankpartnern – sowohl traditionell als auch alternativ.",
+        icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
+      },
+      {
+        title: "Geschäftsdomizilierung",
+        description: "Prestigeträchtige Geschäftsadressen mit sicherem Postempfang, Scannen und Weiterleitung.",
+        icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
+      },
+      {
+        title: "Vermögensstrukturierungsberatung",
+        description: "Maßgeschneiderte Architekturen, die Ihre Vermögenswerte schützen und vermehren und dabei vollständig konform bleiben.",
+        icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
+      },
+      {
+        title: "Steueroptimierung",
+        description: "Fortgeschrittene Strategien, die die Steuerbelastung senken und gleichzeitig alle Rechtsordnungen respektieren.",
+        icon: "M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z",
+      },
+      {
+        title: "Nachlassplanung",
+        description:
+          "Wir helfen Ihnen, Ihr Erbe so zu strukturieren, dass es Ihren Angehörigen unter den besten rechtlichen und steuerlichen Bedingungen zugutekommt.",
+        icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
+      },
+    ],
+    cta: {
+      title: "Bereit, Ihr Vermögen zu optimieren?",
+      subtitle: "Kontaktieren Sie uns noch heute für eine maßgeschneiderte Beratung.",
+      button: "Jetzt starten",
+    },
+  },
+  IT: {
+    hero: {
+      title: "I Nostri Servizi",
+      subtitle: "Una suite completa progettata per gestire, proteggere e far crescere il tuo patrimonio.",
+    },
+    cards: [
+      {
+        title: "Costituzione aziendale",
+        description:
+          "Strutture in-shore e off-shore su misura per i tuoi obiettivi in modo da poter costituire rapidamente e in conformità.",
+        icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4",
+      },
+      {
+        title: "Apertura conto aziendale",
+        description:
+          "Accesso privilegiato a partner bancari internazionali affidabili, sia tradizionali che alternativi.",
+        icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
+      },
+      {
+        title: "Domiciliazione aziendale",
+        description: "Indirizzi commerciali prestigiosi con ricezione sicura della posta, scansione e inoltro.",
+        icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
+      },
+      {
+        title: "Consulenza sulla strutturazione patrimoniale",
+        description: "Architetture personalizzate che salvaguardano e fanno crescere i tuoi asset rimanendo pienamente conformi.",
+        icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
+      },
+      {
+        title: "Ottimizzazione fiscale",
+        description: "Strategie avanzate che riducono l'esposizione fiscale rispettando ogni giurisdizione.",
+        icon: "M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z",
+      },
+      {
+        title: "Pianificazione Successoria",
+        description:
+          "Ti aiutiamo a strutturare la tua eredità in modo che i tuoi cari ne beneficino nelle migliori condizioni legali e fiscali.",
+        icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
+      },
+    ],
+    cta: {
+      title: "Pronto a ottimizzare il tuo patrimonio?",
+      subtitle: "Contattaci oggi per una consulenza personalizzata.",
+      button: "Inizia ora",
+    },
+  },
+};
 
 const Services = () => {
+  const { lang } = useLanguage();
+  const copy = content[lang] ?? content.FR;
+
+  // SEO descriptions par langue
+  const seoContent = {
+    FR: {
+      title: "Nos Services - Conseil en Structuration Patrimoniale et Fiscale",
+      description: "Découvrez nos services d'ingénierie patrimoniale et fiscale : création d'entreprise, optimisation fiscale, structuration de holding, planification successorale, transmission de patrimoine. Cabinet expert France-Suisse.",
+      keywords: [
+        ...SEO_KEYWORDS.primary,
+        ...SEO_KEYWORDS.expertise,
+        ...SEO_KEYWORDS.fiscalite,
+        ...SEO_KEYWORDS.investissement,
+        ...SEO_KEYWORDS.transmission,
+      ],
+    },
+    EN: {
+      title: "Our Services - Wealth and Tax Structuring Advisory",
+      description: "Discover our wealth and tax engineering services: company formation, tax optimization, holding structuring, estate planning, wealth transmission. Expert advisory France-Switzerland.",
+      keywords: ["wealth structuring services", "tax optimization", "company formation", "estate planning", "holding company"],
+    },
+    DE: {
+      title: "Unsere Dienstleistungen - Vermögens- und Steuerstrukturierung",
+      description: "Entdecken Sie unsere Dienstleistungen für Vermögens- und Steuertechnik: Unternehmensgründung, Steueroptimierung, Holding-Strukturierung, Nachlassplanung.",
+      keywords: ["Vermögensstrukturierung", "Steueroptimierung", "Unternehmensgründung", "Nachlassplanung"],
+    },
+    IT: {
+      title: "I Nostri Servizi - Strutturazione Patrimoniale e Fiscale",
+      description: "Scopri i nostri servizi di ingegneria patrimoniale e fiscale: costituzione aziendale, ottimizzazione fiscale, strutturazione holding, pianificazione successoria.",
+      keywords: ["strutturazione patrimoniale", "ottimizzazione fiscale", "costituzione aziendale", "pianificazione successoria"],
+    },
+  };
+
+  const currentSEO = seoContent[lang] || seoContent.FR;
+
+  // Structured data pour les services
+  const servicesStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Services de conseil patrimonial et fiscal",
+    description: "Liste complète de nos services d'ingénierie patrimoniale et fiscale",
+    itemListElement: copy.cards.map((service, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      item: {
+        "@type": "Service",
+        name: service.title,
+        description: service.description,
+        provider: {
+          "@type": "FinancialService",
+          name: "Geneva Wealth Partners",
+        },
+      },
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-white">
+      <SEOHelmet
+        title={currentSEO.title}
+        description={currentSEO.description}
+        keywords={currentSEO.keywords}
+        language={lang.toLowerCase()}
+        structuredData={servicesStructuredData}
+      />
       {/* Hero Section */}
       <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
         {/* Background Image */}
         <div className="absolute inset-0">
-          <img 
-            src={bgImage} 
-            alt="Geneva Landscape" 
+          <img
+            src={bgImage}
+            alt="Geneva Landscape"
             className="w-full h-full object-cover"
           />
           {/* <div className="absolute inset-0 bg-gradient-to-br from-[#1e4029]/90 via-[#2d5f3f]/85 to-[#1e4029]/90"></div> */}
         </div>
-        
+
         {/* Radial gradient overlays */}
         <div className="absolute inset-0">
           <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-white/10 rounded-full blur-3xl"></div>
@@ -31,11 +285,11 @@ const Services = () => {
 
         <div className="relative z-10 text-center px-6 max-w-6xl mx-auto">
           <h1 className="text-6xl md:text-7xl font-light text-white mb-8 tracking-tight">
-            Nos Services
+            {copy.hero.title}
           </h1>
           <div className="w-32 h-1 bg-white/40 mx-auto mb-8"></div>
           <p className="text-xl md:text-2xl text-white/90 font-light leading-relaxed max-w-4xl mx-auto">
-            Une offre complète pour la gestion et la protection de votre patrimoine.
+            {copy.hero.subtitle}
           </p>
         </div>
       </section>
@@ -49,33 +303,7 @@ const Services = () => {
 
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-10">
-            {[
-              {
-                title: "Création d'entreprise",
-                description: "Solutions inshore et offshore adaptées à vos besoins pour une implantation optimale de votre structure.",
-                icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-              },
-              {
-                title: "Ouverture de compte Bancaire",
-                description: "Accès privilégié à des établissements bancaires fiables, traditionnels et alternatifs à l'international.",
-                icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-              },
-              {
-                title: "Service de Domiciliation",
-                description: "Adresse professionnelle prestigieuse avec service complet de réception et renvoi de courrier sécurisé.",
-                icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-              },
-              {
-                title: "Conseil en Structuration Patrimoniale",
-                description: "Architectures sur mesure pour protéger et faire croître votre patrimoine en toute légalité.",
-                icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-              },
-              {
-                title: "Optimisation Fiscale",
-                description: "Stratégies fiscales avancées pour minimiser votre imposition tout en respectant les cadres légaux.",
-                icon: "M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-              }
-            ].map((service, index) => (
+            {copy.cards.map((service, index) => (
               <div key={index} className="group relative">
                 <div className="absolute -inset-1 bg-gradient-to-br from-[#2d5f3f] via-[#5a8f6f] to-[#1e4029] rounded-3xl opacity-60 group-hover:opacity-100 blur-xl group-hover:blur-2xl transition-all duration-700 animate-pulse"></div>
                 <div className="relative h-full bg-gradient-to-br from-white via-[#fafdfb] to-white rounded-3xl p-12 shadow-xl hover:shadow-2xl transition-all duration-700 border-2 border-[#2d5f3f]/20 transform group-hover:scale-[1.03] group-hover:-rotate-1">
@@ -106,17 +334,17 @@ const Services = () => {
         </div>
 
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <h2 className="text-5xl md:text-6xl font-light mb-8 tracking-tight">
-            Prêt à Optimiser Votre Patrimoine ?
+          <h2 className="text-5xl md:text-6xl font-light mb-8 tracking-tight text-white">
+            {copy.cta.title}
           </h2>
           <p className="text-xl md:text-2xl mb-12 text-white/90 font-light leading-relaxed">
-            Contactez-nous dès aujourd'hui pour une consultation personnalisée
+            {copy.cta.subtitle}
           </p>
           <Link
             to="/connexion"
-            className="inline-block bg-white text-blue-900 px-10 py-4 rounded-lg font-semibold text-lg hover:bg-blue-50 transition-all transform hover:scale-105 shadow-xl"
+            className="inline-block bg-white text-[#2d5f3f] px-10 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-all transform hover:scale-105 shadow-xl"
           >
-            Commencer maintenant
+            {copy.cta.button}
           </Link>
         </div>
       </section>
