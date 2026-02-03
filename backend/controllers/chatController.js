@@ -181,14 +181,17 @@ exports.createConversation = async (req, res) => {
         const projectCollaborators = new Set();
         for (const project of memberProjects) {
           // Ajouter les utilisateurs assignés directement
-          project.assignedUsers.forEach(userId => projectCollaborators.add(userId.toString()));
+          if (project.assignedUsers && project.assignedUsers.length) {
+            project.assignedUsers.forEach(userId => projectCollaborators.add(String(userId)));
+          }
 
           // Ajouter les membres des équipes assignées
-          for (const teamId of project.assignedTeams) {
+          for (const teamId of (project.assignedTeams || [])) {
             const team = await Team.findById(teamId).populate('members', 'role');
+            if (!team || !team.members) continue;
             team.members.forEach(member => {
               if (member.role === 'collaborator') {
-                projectCollaborators.add(member._id.toString());
+                projectCollaborators.add(String(member._id));
               }
             });
           }
@@ -369,6 +372,8 @@ exports.getUserConversations = async (req, res) => {
         const hasPartner = conv.participants.some(p => 
           p.user && p.user.role === 'partner'
         );
+        // Pour les conversations de projet, permettre malgré la présence d'un partenaire
+        if (conv.type === 'project') return true;
         // Ne garder que les conversations sans partenaire
         return !hasPartner;
       });
@@ -379,6 +384,8 @@ exports.getUserConversations = async (req, res) => {
         const hasPartner = conv.participants.some(p => 
           p.user && p.user.role === 'partner'
         );
+        // Pour les conversations de projet, permettre malgré la présence d'un partenaire
+        if (conv.type === 'project') return true;
         // Ne garder que les conversations sans partenaire
         return !hasPartner;
       });
@@ -389,6 +396,8 @@ exports.getUserConversations = async (req, res) => {
         const hasClient = conv.participants.some(p => 
           p.user && p.user.role === 'client'
         );
+        // Pour les conversations de projet, permettre malgré la présence d'un client
+        if (conv.type === 'project') return true;
         // Ne garder que les conversations sans client
         return !hasClient;
       });
@@ -516,6 +525,126 @@ exports.getConversationMessages = async (req, res) => {
   }
 };
 
+// Get or create a project-level conversation and ensure participants
+exports.getOrCreateProjectConversation = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+
+    if (!projectId) {
+      return res.status(400).json({ message: 'projectId requis' });
+    }
+
+    const project = await Project.findById(projectId).populate('assignedUsers projectLead client teams');
+    if (!project) {
+      return res.status(404).json({ message: 'Projet non trouvé' });
+    }
+
+    // Vérifier que l'utilisateur peut accéder au projet (membre ou admin)
+    const isAdmin = req.user.role === 'admin';
+    const userIdStr = req.user._id.toString();
+
+    const assignedUserIds = (project.assignedUsers || []).map(u => (u && u._id) ? String(u._id) : String(u));
+    const isAssigned = assignedUserIds.includes(userIdStr);
+    const isLead = project.projectLead && ((project.projectLead._id) ? String(project.projectLead._id) : String(project.projectLead)) === userIdStr;
+    const isClient = project.client && ((project.client._id) ? String(project.client._id) : String(project.client)) === userIdStr;
+
+    // Vérifier membres des teams si nécessaire
+    let isInTeam = false;
+    if (!isAdmin && !isAssigned && !isLead && !isClient && project.teams && project.teams.length > 0) {
+      const Team = require('../models/Team');
+      const teamIds = (project.teams || []).map(t => (t && t._id) ? t._id : t);
+      const teams = await Team.find({ _id: { $in: teamIds }, members: req.user._id }).select('_id');
+      if (teams && teams.length > 0) isInTeam = true;
+    }
+
+    if (!isAdmin && !isAssigned && !isLead && !isClient && !isInTeam) {
+      return res.status(403).json({ message: 'Accès au projet refusé' });
+    }
+
+    // Rechercher conversation projet existante
+    let conversation = await Conversation.findOne({ type: 'project', project: projectId, isActive: true })
+      .populate('participants.user', 'name email role profileImageUrl')
+      .populate('project', 'name')
+      .populate('lastMessage');
+
+    // Récupérer tous les admins pour les ajouter comme participants si nécessaire
+    const admins = await User.find({ role: 'admin' }).select('_id');
+    const adminIds = admins.map(a => a._id.toString());
+
+    // Construire la liste désirée de participants: assignedUsers, projectLead, client, admins
+    const desiredParticipantIdsSet = new Set();
+    (project.assignedUsers || []).forEach(u => {
+      const id = (u && u._id) ? String(u._id) : String(u);
+      desiredParticipantIdsSet.add(id);
+    });
+    if (project.projectLead) {
+      const leadId = (project.projectLead._id) ? String(project.projectLead._id) : String(project.projectLead);
+      desiredParticipantIdsSet.add(leadId);
+    }
+    if (project.client) {
+      const clientId = (project.client._id) ? String(project.client._id) : String(project.client);
+      desiredParticipantIdsSet.add(clientId);
+    }
+    adminIds.forEach(id => desiredParticipantIdsSet.add(id));
+
+    // Toujours s'assurer que la requête utilisateur soit présente
+    desiredParticipantIdsSet.add(userIdStr);
+
+    if (conversation) {
+      // Synchroniser les participants manquants
+      for (const pid of Array.from(desiredParticipantIdsSet)) {
+        if (!conversation.isParticipant(pid)) {
+          const roleForParticipant = adminIds.includes(pid) ? 'admin' : 'member';
+          await conversation.addParticipant(pid, roleForParticipant);
+        }
+      }
+
+      // Remove any duplicate participant entries and reload
+      try {
+        await conversation.dedupeParticipants();
+      } catch (dedupeErr) {
+        console.error('Erreur dedupe conversation (existing):', dedupeErr);
+      }
+
+      // Recharger la conversation (après déduplication)
+      conversation = await Conversation.findById(conversation._id)
+        .populate('participants.user', 'name email role profileImageUrl')
+        .populate('project', 'name')
+        .populate('lastMessage');
+
+      return res.json({ conversation, existed: true });
+    }
+
+    // Créer une nouvelle conversation projet
+    const participantsArray = Array.from(desiredParticipantIdsSet).map(pid => ({
+      user: pid,
+      role: adminIds.includes(pid) ? 'admin' : 'member',
+      joinedAt: new Date(),
+      lastSeen: new Date()
+    }));
+
+    const convName = `Projet: ${project.name}`;
+    const newConv = new Conversation({
+      name: convName,
+      type: 'project',
+      project: projectId,
+      participants: participantsArray
+    });
+
+    await newConv.save();
+
+    const populatedConversation = await Conversation.findById(newConv._id)
+      .populate('participants.user', 'name email role profileImageUrl')
+      .populate('project', 'name')
+      .populate('lastMessage');
+
+    return res.status(201).json({ conversation: populatedConversation, existed: false });
+  } catch (error) {
+    console.error('Erreur getOrCreateProjectConversation:', error);
+    return res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
 // Envoyer un message
 exports.sendMessage = async (req, res) => {
   try {
@@ -633,19 +762,20 @@ exports.getConversations = async (req, res) => {
 
       for (const project of memberProjects) {
         // Ajouter les collaborateurs assignés directement
-        for (const userId of project.assignedUsers) {
+        for (const userId of (project.assignedUsers || [])) {
           const user = await User.findById(userId).select('role');
           if (user && user.role === 'collaborator') {
-            authorizedCollaboratorIds.add(userId.toString());
+            authorizedCollaboratorIds.add(String(userId));
           }
         }
 
         // Ajouter les collaborateurs des équipes assignées
-        for (const teamId of project.assignedTeams) {
+        for (const teamId of (project.assignedTeams || [])) {
           const team = await Team.findById(teamId).populate('members', 'role _id');
+          if (!team || !team.members) continue;
           for (const member of team.members) {
             if (member.role === 'collaborator') {
-              authorizedCollaboratorIds.add(member._id.toString());
+              authorizedCollaboratorIds.add(String(member._id));
             }
           }
         }
@@ -655,6 +785,7 @@ exports.getConversations = async (req, res) => {
     // Filtrer les conversations selon les permissions de chaque rôle
     if (req.user.role === 'client') {
       conversations = conversations.filter(conv => {
+        if (conv.type === 'project') return true; // project conversations are allowed for project members
         // Les clients ne voient que les conversations avec l'admin ou les collaborateurs
         return conv.participants.every(p =>
           !p.user || p.user.role === 'admin' || p.user.role === 'collaborator' || p.user._id.toString() === req.user._id.toString()
@@ -662,6 +793,7 @@ exports.getConversations = async (req, res) => {
       });
     } else if (req.user.role === 'partner') {
       conversations = conversations.filter(conv => {
+        if (conv.type === 'project') return true;
         // Les partenaires ne voient que les conversations avec l'admin
         return conv.participants.every(p =>
           !p.user || p.user.role === 'admin' || p.user._id.toString() === req.user._id.toString()
@@ -669,6 +801,7 @@ exports.getConversations = async (req, res) => {
       });
     } else if (req.user.role === 'collaborator') {
       conversations = conversations.filter(conv => {
+        if (conv.type === 'project') return true;
         // Les collaborateurs ne voient que les conversations avec l'admin ou les partenaires
         return conv.participants.every(p =>
           !p.user || p.user.role === 'admin' || p.user.role === 'partner' || p.user._id.toString() === req.user._id.toString()
@@ -677,6 +810,7 @@ exports.getConversations = async (req, res) => {
     } else if (req.user.role === 'member') {
       // Pour les membres, vérifier que tous les autres participants sont autorisés
       conversations = conversations.filter(conv => {
+        if (conv.type === 'project') return true;
         return conv.participants.every(p => {
           if (!p.user || p.user._id.toString() === req.user._id.toString()) return true;
 
@@ -907,6 +1041,7 @@ const _removeParticipant = exports.removeParticipant;
 const _cleanupInvalidConversations = exports.cleanupInvalidConversations;
 const _canCreateConversation = exports.canCreateConversation;
 const _canAccessConversation = exports.canAccessConversation;
+const _getOrCreateProjectConversation = exports.getOrCreateProjectConversation;
 
 module.exports = {
   initializeDefaultConversations: _initializeDefaultConversations,
@@ -914,6 +1049,7 @@ module.exports = {
   getConversationMessages: _getConversationMessages,
   sendMessage: _sendMessage,
   createConversation: _createConversation,
+  getOrCreateProjectConversation: _getOrCreateProjectConversation,
   addParticipant: _addParticipant,
   removeParticipant: _removeParticipant,
   cleanupInvalidConversations: _cleanupInvalidConversations,

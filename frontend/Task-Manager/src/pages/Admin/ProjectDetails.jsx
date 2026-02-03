@@ -705,6 +705,24 @@ const ProjectDetails = () => {
         </div>
 
         <div className="flex flex-wrap gap-3">
+          {/* Project-level Chat button */}
+          <button
+            onClick={async () => {
+              if (!project || !project._id) return;
+              try {
+                const resp = await axiosInstance.get(API_PATHS.CHAT.GET_PROJECT_CONVERSATION(project._id));
+                const conv = resp.data.conversation || resp.data;
+                navigate('/admin/chat', { state: { openConversation: conv } });
+              } catch (err) {
+                console.error('Erreur ouverture chat projet:', err);
+                toast.error(err.response?.data?.message || 'Impossible d\'ouvrir le chat du projet');
+              }
+            }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all bg-white border border-[#dfe8e1] text-[#7a8b7f] hover:text-[#1e4029]`}
+          >
+            <FiMessageSquare size={16} />
+            Chat projet
+          </button>
           {allTabs.filter(tab => tab.roles.includes(user?.role || "client")).map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;

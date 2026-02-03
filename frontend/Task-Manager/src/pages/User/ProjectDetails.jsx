@@ -22,6 +22,7 @@ import {
     FiCheckCircle as FiCheck,
     FiPlus
 } from "react-icons/fi";
+import { FiMessageSquare } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { UserContext } from "../../context/userContext";
 import { getSession } from "../../utils/authStorage";
@@ -97,6 +98,19 @@ const UserProjectDetails = () => {
     useEffect(() => {
         fetchProjectData();
     }, [id]);
+
+    // Chat project button handler
+    const openProjectChat = async () => {
+        if (!project || !project._id) return;
+        try {
+            const resp = await axiosInstance.get(API_PATHS.CHAT.GET_PROJECT_CONVERSATION(project._id));
+            const conv = resp.data.conversation || resp.data;
+            navigate('/user/chat', { state: { openConversation: conv } });
+        } catch (err) {
+            console.error('Erreur ouverture chat projet:', err);
+            toast.error(err.response?.data?.message || "Impossible d\'ouvrir le chat du projet");
+        }
+    };
 
     // Socket.io for real-time updates
     useEffect(() => {
@@ -929,6 +943,13 @@ const UserProjectDetails = () => {
                             </button>
                         );
                     })}
+                    <button
+                        onClick={openProjectChat}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all bg-white border border-[#dfe8e1] text-[#7a8b7f] hover:text-[#1e4029]`}
+                    >
+                        <FiMessageSquare size={16} />
+                        Chat projet
+                    </button>
                 </div>
 
                 {/* Content */}

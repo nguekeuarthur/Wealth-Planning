@@ -124,9 +124,11 @@ const CreateTeamModal = ({ isOpen, onClose, onTeamCreated, editTeam }) => {
 
   const getAvailableUsers = async () => {
     try {
-      const response = await axiosInstance.get("/api/users?role=member");
+      // Load all users so roles like 'collaborator' are available for selection
+      const response = await axiosInstance.get("/api/users");
       const users = response.data?.users || [];
-      setAvailableUsers(users.filter(u => u.role === 'member'));
+      // Keep full list but UI filters out admins where needed
+      setAvailableUsers(users);
     } catch (error) {
       console.error("Erreur lors du chargement des utilisateurs:", error);
       toast.error("Échec du chargement des utilisateurs");

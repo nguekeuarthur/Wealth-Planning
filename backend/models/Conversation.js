@@ -56,15 +56,33 @@ conversationSchema.index({ project: 1 });
 conversationSchema.index({ updatedAt: -1 });
 
 // Méthode pour vérifier si un utilisateur est participant
+conversationSchema.methods._getUserIdString = function(userRef) {
+  if (!userRef) return null;
+  // If populated document
+  if (typeof userRef === 'object' && userRef._id) return String(userRef._id);
+  // If it's already an ObjectId or string
+  try {
+    return String(userRef);
+  } catch (e) {
+    return null;
+  }
+};
+
+// Méthode pour vérifier si un utilisateur est participant
 conversationSchema.methods.isParticipant = function(userId) {
-  return this.participants.some(p => p.user.toString() === userId.toString());
+  const uid = String(userId);
+  return this.participants.some(p => {
+    const pid = this._getUserIdString(p.user);
+    return pid === uid;
+  });
 };
 
 // Méthode pour ajouter un participant
 conversationSchema.methods.addParticipant = function(userId, role = 'member') {
-  if (!this.isParticipant(userId)) {
+  const uid = String(userId);
+  if (!this.isParticipant(uid)) {
     this.participants.push({
-      user: userId,
+      user: uid,
       role: role,
       joinedAt: new Date(),
       lastSeen: new Date()
@@ -75,7 +93,32 @@ conversationSchema.methods.addParticipant = function(userId, role = 'member') {
 
 // Méthode pour retirer un participant
 conversationSchema.methods.removeParticipant = function(userId) {
-  this.participants = this.participants.filter(p => p.user.toString() !== userId.toString());
+  const uid = String(userId);
+  this.participants = this.participants.filter(p => {
+    const pid = this._getUserIdString(p.user);
+    return pid !== uid;
+  });
+  return this.save();
+};
+
+// Supprimer les doublons de participants (garder la première occurrence)
+conversationSchema.methods.dedupeParticipants = function() {
+  const seen = new Set();
+  const uniq = [];
+  for (const p of this.participants) {
+    const pid = this._getUserIdString(p.user);
+    if (!pid) continue;
+    if (!seen.has(pid)) {
+      seen.add(pid);
+      uniq.push({
+        user: pid,
+        role: p.role || 'member',
+        joinedAt: p.joinedAt || new Date(),
+        lastSeen: p.lastSeen || new Date()
+      });
+    }
+  }
+  this.participants = uniq;
   return this.save();
 };
 

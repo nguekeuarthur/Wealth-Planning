@@ -100,6 +100,19 @@ const PartnerProjectDetails = () => {
         fetchProjectData();
     }, [id]);
 
+    // Chat project button handler
+    const openProjectChat = async () => {
+        if (!project || !project._id) return;
+        try {
+            const resp = await axiosInstance.get(API_PATHS.CHAT.GET_PROJECT_CONVERSATION(project._id));
+            const conv = resp.data.conversation || resp.data;
+            navigate('/partner/chat', { state: { openConversation: conv } });
+        } catch (err) {
+            console.error('Erreur ouverture chat projet:', err);
+            toast.error(err.response?.data?.message || "Impossible d\'ouvrir le chat du projet");
+        }
+    };
+
     const handleTaskDragStart = (task) => {
         setDraggedTaskId(task._id);
     };
@@ -876,6 +889,13 @@ const PartnerProjectDetails = () => {
                             </button>
                         );
                     })}
+                    <button
+                        onClick={openProjectChat}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all bg-white border border-[#dfe8e1] text-[#7a8b7f] hover:text-[#1e4029]`}
+                    >
+                        <FiMessageSquare size={16} />
+                        Chat projet
+                    </button>
                 </div>
 
                 {/* Content */}

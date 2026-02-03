@@ -1,6 +1,7 @@
 const Project = require('../models/Project');
 const Task = require('../models/Task');
 const User = require('../models/User');
+const Conversation = require('../models/Conversation');
 
 // Get all projects
 exports.getAllProjects = async (req, res) => {
@@ -371,6 +372,22 @@ exports.addUsersToProject = async (req, res) => {
       $addToSet: { assignedUsers: { $each: assignedUserIds } }
     });
 
+    // If project has no `client` set and one of the assigned users is a client,
+    // set the first discovered client as the project's client. This handles
+    // the case where an admin added a client via the "assign users" flow but
+    // did not explicitly set the `client` field when creating/updating the project.
+    const projectAfterAssign = await Project.findById(projectId);
+    if (!projectAfterAssign.client) {
+      for (const uid of assignedUserIds) {
+        const u = await User.findById(uid).select('role');
+        if (u && u.role === 'client') {
+          projectAfterAssign.client = u._id;
+          await projectAfterAssign.save();
+          break;
+        }
+      }
+    }
+
     const updated = await Project.findById(projectId)
       .populate('assignedUsers', 'name email role profileImageUrl')
       .populate({
@@ -381,6 +398,59 @@ exports.addUsersToProject = async (req, res) => {
         ]
       })
       .populate('projectLead', 'name email role profileImageUrl');
+
+    // Synchroniser la conversation de type 'project' :
+    try {
+      let conv = await Conversation.findOne({ type: 'project', project: projectId, isActive: true });
+
+      // Si la conversation existe, ajouter les nouveaux participants manquants
+      if (conv) {
+        for (const uid of assignedUserIds) {
+          const sid = String(uid);
+          if (!conv.isParticipant(sid)) {
+            await conv.addParticipant(sid, 'member');
+          }
+        }
+
+        // Ensure no duplicate participants remain
+        try {
+          await conv.dedupeParticipants();
+        } catch (dedupeErr) {
+          console.error('Erreur dedupe conversation (assignUsers):', dedupeErr);
+        }
+      } else {
+        // Sinon, créer la conversation projet et y ajouter les participants
+        const projectObj = await Project.findById(projectId).populate('assignedUsers projectLead client');
+
+        const adminDocs = await User.find({ role: 'admin' }).select('_id');
+        const adminIds = adminDocs.map(a => String(a._id));
+
+        const desired = new Set();
+        (projectObj.assignedUsers || []).forEach(u => {
+          const id = (u && u._id) ? String(u._id) : String(u);
+          desired.add(id);
+        });
+        if (projectObj.projectLead) desired.add((projectObj.projectLead._id) ? String(projectObj.projectLead._id) : String(projectObj.projectLead));
+        if (projectObj.client) desired.add((projectObj.client._id) ? String(projectObj.client._id) : String(projectObj.client));
+        adminIds.forEach(id => desired.add(id));
+
+        // Ensure assigned users are present
+        assignedUserIds.forEach(id => desired.add(String(id)));
+
+        const participantsArray = Array.from(desired).map(pid => ({
+          user: pid,
+          role: adminIds.includes(pid) ? 'admin' : 'member',
+          joinedAt: new Date(),
+          lastSeen: new Date()
+        }));
+
+        const convName = `Projet: ${projectObj.name || projectId}`;
+        conv = new Conversation({ name: convName, type: 'project', project: projectId, participants: participantsArray });
+        await conv.save();
+      }
+    } catch (syncErr) {
+      console.error('Erreur lors de la synchronisation/création de la conversation projet:', syncErr);
+    }
 
     res.json({ message: 'Utilisateurs assignés au projet', project: updated });
   } catch (error) {
@@ -414,12 +484,24 @@ exports.removeUserFromProject = async (req, res) => {
       })
       .populate('projectLead', 'name email role profileImageUrl');
 
+    // Remove user from project conversation if present
+    try {
+      const conv = await Conversation.findOne({ type: 'project', project: projectId, isActive: true });
+      if (conv) {
+        const uidStr = String(userId);
+        if (conv.isParticipant(uidStr)) {
+          await conv.removeParticipant(uidStr);
+        }
+      }
+    } catch (err) {
+      console.error('Erreur lors du retrait du participant de la conversation projet:', err);
+    }
+
     res.json({ message: 'Utilisateur retiré du projet', project: updated });
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
 };
-
 // Get project statistics
 exports.getProjectStats = async (req, res) => {
   try {

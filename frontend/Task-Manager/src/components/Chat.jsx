@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { FaPaperPlane, FaUsers, FaPlus, FaSearch } from 'react-icons/fa';
 import { io } from 'socket.io-client';
 import axios from '../utils/axiosInstance';
@@ -368,6 +369,24 @@ const Chat = () => {
   useEffect(() => {
     loadConversations();
   }, []);
+
+  // If a conversation object was passed via navigation state (e.g. open project chat), open it
+  const location = useLocation();
+  useEffect(() => {
+    const openConv = location?.state?.openConversation;
+    if (openConv) {
+      setConversations((prev) => {
+        const exists = (prev || []).some(c => String(c._id) === String(openConv._id));
+        if (exists) return prev;
+        return [openConv, ...prev];
+      });
+
+      setActiveConversation(openConv);
+      // load messages for it
+      loadMessages(openConv._id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location?.state?.openConversation]);
 
   useEffect(() => {
     const socket = socketRef.current;

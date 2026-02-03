@@ -55,6 +55,17 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // If the failed request is the login endpoint, don't attempt refresh
+    // This prevents redirecting to /login and reloading the page when credentials are invalid
+    try {
+      const requestUrl = originalRequest && originalRequest.url ? originalRequest.url : '';
+      if (requestUrl.includes(API_PATHS.AUTH.LOGIN)) {
+        return Promise.reject(error);
+      }
+    } catch (e) {
+      // ignore and continue with existing logic
+    }
+
     if (
       error.response &&
       error.response.status === 401 &&

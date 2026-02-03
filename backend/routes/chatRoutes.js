@@ -9,6 +9,8 @@ router.use(protect);
 // Routes pour les conversations
 router.post('/conversations', chatController.createConversation);
 router.get('/conversations', chatController.getConversations);
+// Get or create a project-level conversation
+router.get('/conversations/project/:projectId', chatController.getOrCreateProjectConversation);
 
 // Routes pour les messages
 router.get('/conversations/:conversationId/messages', chatController.getConversationMessages);

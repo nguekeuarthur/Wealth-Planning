@@ -340,7 +340,7 @@ const CreateProjectModal = ({
                         <>
                           <div className="absolute left-0 right-0 z-40 mt-2 bg-white border border-[#dfe8e1] rounded-xl shadow-xl max-h-56 overflow-y-auto">
                             {users
-                              .filter(u => u.role === 'member')
+                              .filter(u => ['member', 'collaborator', 'partner'].includes(u.role))
                               .filter(u =>
                                 u.name?.toLowerCase().includes(leadSearch.toLowerCase()) ||
                                 u.email?.toLowerCase().includes(leadSearch.toLowerCase())
