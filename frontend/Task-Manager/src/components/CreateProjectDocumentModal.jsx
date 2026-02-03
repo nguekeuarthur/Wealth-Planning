@@ -451,59 +451,11 @@ const CreateProjectDocumentModal = ({ isOpen, onClose, project, onDocumentCreate
               </div>
             </div>
 
-            {/* Roles list */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="text-xs text-[#7a8b7f]">Partager avec des rôles</div>
-                <div className="text-xs text-[#99aca2]">{allowedRoles.length} sélectionné(s)</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { value: 'client', label: 'Clients' },
-                  { value: 'partner', label: 'Partenaires' },
-                  { value: 'collaborator', label: 'Collaborateurs' },
-                  { value: 'member', label: 'Membres' }
-                ].map((role) => {
-                  const isSelected = allowedRoles.includes(role.value);
-                  return (
-                    <label
-                      key={role.value}
-                      className={`flex items-center gap-2 p-2 rounded-xl border cursor-pointer transition-colors ${isSelected ? "border-[#5a8f6f] bg-[#f4f7f4]" : "border-[#dfe8e1] bg-white hover:bg-[#f4f7f4]"}`}
-                    >
-                      <div className="relative">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => {
-                            setAllowedRoles((prev) =>
-                              prev.includes(role.value) ? prev.filter((x) => x !== role.value) : [...prev, role.value]
-                            );
-                          }}
-                          className="h-4 w-4 rounded border-[#dfe8e1] text-[#2d5f3f] focus:ring-[#5a8f6f] focus:ring-offset-0 sr-only peer"
-                        />
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${isSelected
-                          ? "bg-[#2d5f3f] border-[#2d5f3f]"
-                          : "border-[#dfe8e1] bg-white peer-hover:border-[#5a8f6f]"
-                          }`}>
-                          {isSelected && (
-                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                        </div>
-                      </div>
-                      <span className="text-xs font-medium text-[#1e4029] truncate">{role.label}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-
             {/* Teams list */}
             {project.teams && project.teams.length > 0 && (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="text-xs text-[#7a8b7f]">Partager avec des équipes</div>
+                  <div className="text-xs text-[#7a8b7f]">Équipes</div>
                   <div className="text-xs text-[#99aca2]">{assignedTeamIds.length} sélectionnée(s)</div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">

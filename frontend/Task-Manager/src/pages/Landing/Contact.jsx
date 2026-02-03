@@ -3,6 +3,8 @@ import { FaEnvelope, FaPhone, FaLinkedin, FaCalendarAlt, FaClock } from "react-i
 import toast from "react-hot-toast";
 import bgImage from "../../assets/images/contact.jpg";
 import { useLanguage } from "../../context/languageContext";
+import SEOHelmet from "../../components/SEOHelmet";
+import { getFAQSchema, SEO_KEYWORDS } from "../../utils/seoConfig";
 
 const content = {
   FR: {
@@ -447,6 +449,42 @@ const Contact = () => {
     message: ""
   });
 
+  // SEO descriptions par langue
+  const seoContent = {
+    FR: {
+      title: "Contact - Prenez Rendez-vous avec nos Experts",
+      description: "Contactez Geneva Wealth Partners pour une consultation gratuite. Experts en structuration patrimoniale et fiscale à Genève. Conseil patrimonial dirigeants, entrepreneurs, particuliers fortunés. Cabinet indépendant France-Suisse.",
+      keywords: [
+        ...SEO_KEYWORDS.primary,
+        ...SEO_KEYWORDS.clients,
+        ...SEO_KEYWORDS.geolocalises,
+        "consultation gratuite conseil patrimonial",
+        "rendez-vous expert patrimoine",
+        "contact cabinet conseil fiscal",
+      ],
+    },
+    EN: {
+      title: "Contact - Schedule an Appointment with Our Experts",
+      description: "Contact Geneva Wealth Partners for a complimentary consultation. Wealth and tax structuring experts in Geneva. Advisory for executives, entrepreneurs, and high net worth individuals.",
+      keywords: ["contact Geneva Wealth Partners", "free consultation", "wealth advisory appointment"],
+    },
+    DE: {
+      title: "Kontakt - Vereinbaren Sie einen Termin mit unseren Experten",
+      description: "Kontaktieren Sie Geneva Wealth Partners für eine kostenlose Beratung. Experten für Vermögens- und Steuerstrukturierung in Genf.",
+      keywords: ["Kontakt", "kostenlose Beratung", "Vermögensberatung Termin"],
+    },
+    IT: {
+      title: "Contatti - Prenota un Appuntamento con i Nostri Esperti",
+      description: "Contatta Geneva Wealth Partners per una consulenza gratuita. Esperti in strutturazione patrimoniale e fiscale a Ginevra.",
+      keywords: ["contatti", "consulenza gratuita", "appuntamento consulenza patrimoniale"],
+    },
+  };
+
+  const currentSEO = seoContent[lang] || seoContent.FR;
+
+  // Extraire toutes les FAQ pour le schema
+  const allFaqs = copy.faq.categories.flatMap(cat => cat.questions);
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -462,6 +500,13 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEOHelmet
+        title={currentSEO.title}
+        description={currentSEO.description}
+        keywords={currentSEO.keywords}
+        language={lang.toLowerCase()}
+        structuredData={getFAQSchema(allFaqs)}
+      />
       {/* Hero Section */}
       <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
         {/* Background Image */}

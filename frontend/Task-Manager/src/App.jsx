@@ -164,7 +164,7 @@ const App = () => {
                 </Route>
 
                 {/* Member Routes (Anciennement User) - Accès complet au dashboard standard si nécessaire */}
-                <Route element={<PrivateRoute allowedRoles={["member"]} />}>
+                <Route element={<PrivateRoute allowedRoles={["member", "user"]} />}>
                   <Route path="/user/dashboard" element={<UserDashboard />} />
                   <Route path="/user/projects" element={<UserProjects />} />
                   <Route path="/user/tasks" element={<MyTasks />} />

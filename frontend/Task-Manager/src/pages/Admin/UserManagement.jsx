@@ -2,17 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
-import { API_PATHS, BASE_URL } from "../../utils/apiPaths";
-
-const fullImageUrl = (url) => {
-  if (!url) return null;
-  // Aggressive cleanup of historical localhost URLs
-  let cleaned = url.replace(/^https?:\/\/localhost:8000/, '');
-  if (cleaned.startsWith('http')) return cleaned;
-  const baseUrlClean = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
-  const pathClean = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
-  return `${baseUrlClean}${pathClean}`;
-};
+import { API_PATHS } from "../../utils/apiPaths";
 import {
   FiSearch, FiMail, FiPhone, FiUser, FiPlus,
   FiEdit3, FiTrash2, FiExternalLink, FiFlag, FiCalendar, FiUsers, FiX, FiBriefcase, FiMapPin, FiGlobe, FiStar
@@ -136,6 +126,7 @@ const UserManagement = () => {
       email: user.email || '',
       phoneNumber: user.phoneNumber || '',
       nationality: user.nationality || '',
+      nationality2: user.nationality2 || '',
       birthDate: user.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : '',
       role: user.role || 'member',
       company: user.company || '',
@@ -217,6 +208,30 @@ const UserManagement = () => {
       setDeletingUser(null);
       setIsDeleteModalOpen(false);
       setUserToDelete(null);
+    }
+  };
+
+  const handleSaveUserEdit = async () => {
+    try {
+      await axiosInstance.put(API_PATHS.USERS.UPDATE_USER(selectedUser._id), editFormData);
+      toast.success("Utilisateur mis à jour avec succès");
+      setIsEditMode(false);
+      await getAllUsers();
+    } catch (error) {
+      console.error("Error updating user:", error);
+      toast.error(error.response?.data?.message || "Erreur lors de la mise à jour");
+    }
+  };
+
+  const handleReactivateUser = async (userId) => {
+    try {
+      await axiosInstance.put(API_PATHS.USERS.UPDATE_USER(userId), {
+        status: "active"
+      });
+      await getAllUsers();
+      toast.success("Utilisateur réactivé avec succès");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Erreur lors de la réactivation");
     }
   };
 
@@ -407,9 +422,10 @@ const UserManagement = () => {
                 >
                   {/* Header with role color */}
                   <div
-                    className={`h-6 ${user.role === 'admin' ? 'bg-gradient-to-r from-red-500 to-red-600' :
+                    className={`h-6 ${
+                      user.role === 'admin' ? 'bg-gradient-to-r from-red-500 to-red-600' :
                       'bg-gradient-to-r from-[#5a8f6f] to-[#4a7f5f]'
-                      }`}
+                    }`}
                   ></div>
 
                   {/* Avatar */}
@@ -417,7 +433,7 @@ const UserManagement = () => {
                     <div className="w-12 h-12 rounded-full bg-white border-4 border-white shadow-md flex items-center justify-center">
                       {user.profileImageUrl ? (
                         <img
-                          src={fullImageUrl(user.profileImageUrl)}
+                          src={user.profileImageUrl}
                           alt={user.name}
                           className="w-full h-full rounded-full object-cover"
                           onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
@@ -478,30 +494,30 @@ const UserManagement = () => {
 
                     {/* Action Buttons */}
                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditUser(user);
-                        }}
-                        className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium flex items-center justify-center gap-1"
-                      >
-                        <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" height="14" width="14" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M12 20h9"></path>
-                          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                        </svg>
-                        Modifier
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteUser(user);
-                        }}
-                        disabled={deletingUser === user._id}
-                        className="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs font-medium disabled:opacity-50 flex items-center justify-center gap-1"
-                      >
-                        <FiTrash2 size={12} />
-                        Supprimer
-                      </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditUser(user);
+                          }}
+                          className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium flex items-center justify-center gap-1"
+                        >
+                          <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" height="14" width="14" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                          </svg>
+                          Modifier
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteUser(user);
+                          }}
+                          disabled={deletingUser === user._id}
+                          className="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs font-medium disabled:opacity-50 flex items-center justify-center gap-1"
+                        >
+                          <FiTrash2 size={12} />
+                          Supprimer
+                        </button>
                     </div>
 
                   </div>
@@ -537,7 +553,7 @@ const UserManagement = () => {
 
       {/* User Details Modal */}
       {isDetailsModalOpen && selectedUser && (
-        <div
+        <div 
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={(e) => e.target === e.currentTarget && setIsDetailsModalOpen(false)}
         >
@@ -546,12 +562,14 @@ const UserManagement = () => {
             <div className="flex items-center justify-between p-6 border-b border-[#dfe8e1]">
               <div className="flex items-center gap-3">
                 <div
-                  className={`p-2 rounded-lg ${selectedUser.role === 'admin' ? 'bg-red-100' : 'bg-[#f4f7f4]'
-                    }`}
+                  className={`p-2 rounded-lg ${
+                    selectedUser.role === 'admin' ? 'bg-red-100' : 'bg-[#f4f7f4]'
+                  }`}
                 >
                   <FiUser
-                    className={`text-xl ${selectedUser.role === 'admin' ? 'text-red-600' : 'text-[#5a8f6f]'
-                      }`}
+                    className={`text-xl ${
+                      selectedUser.role === 'admin' ? 'text-red-600' : 'text-[#5a8f6f]'
+                    }`}
                   />
                 </div>
                 <div>
@@ -671,6 +689,26 @@ const UserManagement = () => {
 
                   <div className="bg-[#f4f7f4] rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-2">
+                      <FiFlag className="text-[#5a8f6f]" />
+                      <span className="text-sm font-semibold text-[#1e4029]">Nationalité (2ème)</span>
+                    </div>
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        value={editFormData.nationality2}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, nationality2: e.target.value }))}
+                        placeholder="Ex: Suisse"
+                        className="w-full px-3 py-2 bg-white border border-[#dfe8e1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] focus:border-[#5a8f6f] transition-colors text-[#1e4029]"
+                      />
+                    ) : (
+                      <p className="text-[#7a8b7f]">
+                        {selectedUser.nationality2 || 'Non renseignée'}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="bg-[#f4f7f4] rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
                       <FiCalendar className="text-[#5a8f6f]" />
                       <span className="text-sm font-semibold text-[#1e4029]">Date d'anniversaire</span>
                     </div>
@@ -685,10 +723,10 @@ const UserManagement = () => {
                       <p className="text-[#7a8b7f]">
                         {selectedUser.birthDate
                           ? new Date(selectedUser.birthDate).toLocaleDateString('fr-FR', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric'
-                          })
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric'
+                            })
                           : 'Non renseignée'
                         }
                       </p>
@@ -774,7 +812,7 @@ const UserManagement = () => {
 
                   {/* Adresses professionnelles */}
                   {((selectedUser.role === 'client' || selectedUser.role === 'collaborator') && selectedUser.address) ||
-                    (selectedUser.role === 'partner' && selectedUser.professionalAddress) ? (
+                   (selectedUser.role === 'partner' && selectedUser.professionalAddress) ? (
                     <div className="bg-[#f4f7f4] rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <FiMapPin className="text-[#5a8f6f]" />
@@ -800,7 +838,7 @@ const UserManagement = () => {
 
                   {/* Emails professionnels */}
                   {((selectedUser.role === 'client' || selectedUser.role === 'collaborator') && selectedUser.companyEmail) ||
-                    (selectedUser.role === 'partner' && selectedUser.professionalEmail) ? (
+                   (selectedUser.role === 'partner' && selectedUser.professionalEmail) ? (
                     <div className="bg-[#f4f7f4] rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <FiMail className="text-[#5a8f6f]" />
@@ -826,7 +864,7 @@ const UserManagement = () => {
 
                   {/* Téléphones professionnels */}
                   {((selectedUser.role === 'client' || selectedUser.role === 'collaborator') && selectedUser.companyPhone) ||
-                    (selectedUser.role === 'partner' && selectedUser.professionalPhone) ? (
+                   (selectedUser.role === 'partner' && selectedUser.professionalPhone) ? (
                     <div className="bg-[#f4f7f4] rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <FiPhone className="text-[#5a8f6f]" />
@@ -895,10 +933,10 @@ const UserManagement = () => {
                     <p className="text-[#7a8b7f]">
                       {selectedUser.lastLoginAt
                         ? new Date(selectedUser.lastLoginAt).toLocaleDateString('fr-FR', {
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric'
-                        })
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          })
                         : 'Jamais connecté'
                       }
                     </p>
@@ -938,14 +976,16 @@ const UserManagement = () => {
                   {/* Status */}
                   <div className="bg-white border border-[#dfe8e1] rounded-xl p-4 h-full flex flex-col justify-between">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className={`w-3 h-3 rounded-full ${selectedUser.lastLoginAt && new Date(selectedUser.lastLoginAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-                        ? 'bg-green-500' : 'bg-gray-400'
-                        }`}></div>
+                      <div className={`w-3 h-3 rounded-full ${
+                        selectedUser.lastLoginAt && new Date(selectedUser.lastLoginAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                          ? 'bg-green-500' : 'bg-gray-400'
+                      }`}></div>
                       <span className="text-sm font-semibold text-[#1e4029]">Statut du compte</span>
                     </div>
-                    <p className={`text-sm ${selectedUser.lastLoginAt && new Date(selectedUser.lastLoginAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-                      ? 'text-green-700' : 'text-gray-600'
-                      }`}>
+                    <p className={`text-sm ${
+                      selectedUser.lastLoginAt && new Date(selectedUser.lastLoginAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                        ? 'text-green-700' : 'text-gray-600'
+                    }`}>
                       {selectedUser.lastLoginAt && new Date(selectedUser.lastLoginAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
                         ? 'Actif (connecté récemment)' : 'Inactif (pas de connexion récente)'}
                     </p>

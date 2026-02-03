@@ -58,9 +58,7 @@ export const NotificationProvider = ({ children }) => {
         let changed = false;
 
         // 1. Notification pour compléter le profil
-        const profileCompletedKey = `profile-completed-${user._id}`;
-        const hasCompletedProfile = localStorage.getItem(profileCompletedKey) === 'true';
-        const needsProfileCompletion = user.role !== 'admin' && !hasCompletedProfile;
+        const needsProfileCompletion = user.role !== 'admin' && !user.profileCompleted;
         const profileNotificationExists = updated.some(n => n.id === "profile_completion");
 
         if (needsProfileCompletion && !profileNotificationExists) {

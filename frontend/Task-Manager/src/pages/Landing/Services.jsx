@@ -2,6 +2,8 @@ import React from "react";
 import { Link } from "react-router-dom";
 import bgImage from "../../assets/images/services.jpeg";
 import { useLanguage } from "../../context/languageContext";
+import SEOHelmet from "../../components/SEOHelmet";
+import { getServiceSchema, SEO_KEYWORDS } from "../../utils/seoConfig";
 
 const content = {
   FR: {
@@ -195,8 +197,68 @@ const Services = () => {
   const { lang } = useLanguage();
   const copy = content[lang] ?? content.FR;
 
+  // SEO descriptions par langue
+  const seoContent = {
+    FR: {
+      title: "Nos Services - Conseil en Structuration Patrimoniale et Fiscale",
+      description: "Découvrez nos services d'ingénierie patrimoniale et fiscale : création d'entreprise, optimisation fiscale, structuration de holding, planification successorale, transmission de patrimoine. Cabinet expert France-Suisse.",
+      keywords: [
+        ...SEO_KEYWORDS.primary,
+        ...SEO_KEYWORDS.expertise,
+        ...SEO_KEYWORDS.fiscalite,
+        ...SEO_KEYWORDS.investissement,
+        ...SEO_KEYWORDS.transmission,
+      ],
+    },
+    EN: {
+      title: "Our Services - Wealth and Tax Structuring Advisory",
+      description: "Discover our wealth and tax engineering services: company formation, tax optimization, holding structuring, estate planning, wealth transmission. Expert advisory France-Switzerland.",
+      keywords: ["wealth structuring services", "tax optimization", "company formation", "estate planning", "holding company"],
+    },
+    DE: {
+      title: "Unsere Dienstleistungen - Vermögens- und Steuerstrukturierung",
+      description: "Entdecken Sie unsere Dienstleistungen für Vermögens- und Steuertechnik: Unternehmensgründung, Steueroptimierung, Holding-Strukturierung, Nachlassplanung.",
+      keywords: ["Vermögensstrukturierung", "Steueroptimierung", "Unternehmensgründung", "Nachlassplanung"],
+    },
+    IT: {
+      title: "I Nostri Servizi - Strutturazione Patrimoniale e Fiscale",
+      description: "Scopri i nostri servizi di ingegneria patrimoniale e fiscale: costituzione aziendale, ottimizzazione fiscale, strutturazione holding, pianificazione successoria.",
+      keywords: ["strutturazione patrimoniale", "ottimizzazione fiscale", "costituzione aziendale", "pianificazione successoria"],
+    },
+  };
+
+  const currentSEO = seoContent[lang] || seoContent.FR;
+
+  // Structured data pour les services
+  const servicesStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Services de conseil patrimonial et fiscal",
+    description: "Liste complète de nos services d'ingénierie patrimoniale et fiscale",
+    itemListElement: copy.cards.map((service, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      item: {
+        "@type": "Service",
+        name: service.title,
+        description: service.description,
+        provider: {
+          "@type": "FinancialService",
+          name: "Geneva Wealth Partners",
+        },
+      },
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-white">
+      <SEOHelmet
+        title={currentSEO.title}
+        description={currentSEO.description}
+        keywords={currentSEO.keywords}
+        language={lang.toLowerCase()}
+        structuredData={servicesStructuredData}
+      />
       {/* Hero Section */}
       <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
         {/* Background Image */}

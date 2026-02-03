@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import lacLemanImage from "../../assets/images/lac-leman-alpes.jpg";
 import { useLanguage } from "../../context/languageContext";
 import CookieConsent from "../../components/CookieConsent";
+import SEOHelmet from "../../components/SEOHelmet";
+import { getOrganizationSchema, SEO_KEYWORDS } from "../../utils/seoConfig";
 
 const content = {
   FR: {
@@ -351,8 +353,41 @@ const Home = () => {
   const { lang } = useLanguage();
   const copy = content[lang] ?? content.FR;
 
+  // SEO descriptions par langue
+  const seoContent = {
+    FR: {
+      title: "Accueil - Conseil en Structuration Patrimoniale et Fiscale",
+      description: "Geneva Wealth Partners - Cabinet expert en structuration patrimoniale et fiscale à Genève. Optimisation fiscale, ingénierie patrimoniale, transmission de patrimoine, création de holding pour dirigeants, entrepreneurs et particuliers fortunés. Accompagnement France-Suisse.",
+      keywords: [...SEO_KEYWORDS.primary, ...SEO_KEYWORDS.expertise, ...SEO_KEYWORDS.clients, ...SEO_KEYWORDS.geolocalises],
+    },
+    EN: {
+      title: "Home - Wealth and Tax Structuring Advisory",
+      description: "Geneva Wealth Partners - Expert wealth and tax structuring advisory in Geneva. Tax optimization, wealth engineering, estate planning, holding company creation for executives, entrepreneurs and high net worth individuals.",
+      keywords: ["wealth structuring", "tax optimization", "estate planning", "Geneva", "Switzerland", "HNWI advisory"],
+    },
+    DE: {
+      title: "Startseite - Vermögens- und Steuerstrukturierungsberatung",
+      description: "Geneva Wealth Partners - Expertenberatung für Vermögens- und Steuerstrukturierung in Genf. Steueroptimierung, Vermögenstechnik, Nachlassplanung für Führungskräfte und vermögende Privatpersonen.",
+      keywords: ["Vermögensstrukturierung", "Steueroptimierung", "Genf", "Schweiz"],
+    },
+    IT: {
+      title: "Home - Consulenza sulla Strutturazione Patrimoniale e Fiscale",
+      description: "Geneva Wealth Partners - Consulenza esperta sulla strutturazione patrimoniale e fiscale a Ginevra. Ottimizzazione fiscale, ingegneria patrimoniale, pianificazione successoria.",
+      keywords: ["strutturazione patrimoniale", "ottimizzazione fiscale", "Ginevra", "Svizzera"],
+    },
+  };
+
+  const currentSEO = seoContent[lang] || seoContent.FR;
+
   return (
     <div className="min-h-screen bg-white">
+      <SEOHelmet
+        title={currentSEO.title}
+        description={currentSEO.description}
+        keywords={currentSEO.keywords}
+        language={lang.toLowerCase()}
+        structuredData={getOrganizationSchema()}
+      />
       {/* Hero Section */}
       <section className="relative text-white py-32 md:py-48 px-6 overflow-hidden">
         <div className="absolute inset-0">

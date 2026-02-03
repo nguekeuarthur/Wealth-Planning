@@ -8,7 +8,7 @@ const reset = async () => {
         await mongoose.connect(process.env.MONGO_URI);
         console.log('Connected to DB');
 
-        const email = 'edimaevina@icloud.com';
+        const email = 'a__maryam@hotmail.com';
         const user = await User.findOne({ email });
 
         if (!user) {
@@ -17,7 +17,7 @@ const reset = async () => {
         }
 
         const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash('ed', salt);
+        const hashedPassword = await bcrypt.hash('Maryam123!', salt);
 
         user.password = hashedPassword;
         user.isEmailVerified = true; // Ensure verified

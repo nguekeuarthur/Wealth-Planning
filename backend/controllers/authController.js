@@ -106,6 +106,23 @@ const buildUserPayload = (user) => ({
   profileImageUrl: user.profileImageUrl,
   isEmailVerified: user.isEmailVerified,
   lastLoginAt: user.lastLoginAt,
+  phoneNumber: user.phoneNumber,
+  birthDate: user.birthDate,
+  nationality: user.nationality,
+  nationality2: user.nationality2,
+  company: user.company,
+  address: user.address,
+  website: user.website,
+  companyEmail: user.companyEmail,
+  companyPhone: user.companyPhone,
+  organizationName: user.organizationName,
+  position: user.position,
+  professionalPhone: user.professionalPhone,
+  professionalEmail: user.professionalEmail,
+  professionalAddress: user.professionalAddress,
+  specialization: user.specialization,
+  experience: user.experience,
+  profileCompleted: user.profileCompleted,
 });
 
 const getClientIp = (req) =>

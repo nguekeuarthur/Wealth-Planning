@@ -1,6 +1,8 @@
 ﻿import React from "react";
 import bgImage from "../../assets/images/about.jpg";
 import { useLanguage } from "../../context/languageContext";
+import SEOHelmet from "../../components/SEOHelmet";
+import { SEO_KEYWORDS } from "../../utils/seoConfig";
 
 const content = {
   FR: {
@@ -298,8 +300,48 @@ const About = () => {
   const copy = content[lang] ?? content.FR;
   const brandName = "Geneva Wealth Partners";
 
+  // SEO descriptions par langue
+  const seoContent = {
+    FR: {
+      title: "À Propos - Cabinet Expert en Structuration Patrimoniale",
+      description: "Découvrez Geneva Wealth Partners : cabinet indépendant de conseil en structuration patrimoniale et fiscale à Genève. Expertise en optimisation fiscale, ingénierie patrimoniale et accompagnement des dirigeants et particuliers fortunés. Transparence, discrétion et excellence suisse.",
+      keywords: [
+        ...SEO_KEYWORDS.primary,
+        ...SEO_KEYWORDS.expertise,
+        ...SEO_KEYWORDS.clients,
+        "cabinet indépendant en structuration patrimoniale",
+        "accompagnement global patrimonial et fiscal",
+        "excellence suisse",
+        "conseil patrimonial indépendant",
+      ],
+    },
+    EN: {
+      title: "About Us - Expert Wealth Structuring Advisory",
+      description: "Discover Geneva Wealth Partners: independent wealth and tax structuring advisory firm in Geneva. Expertise in tax optimization, wealth engineering and support for executives and high net worth individuals.",
+      keywords: ["about Geneva Wealth Partners", "independent wealth advisory", "Swiss excellence", "HNWI advisory"],
+    },
+    DE: {
+      title: "Über Uns - Experten für Vermögensstrukturierung",
+      description: "Entdecken Sie Geneva Wealth Partners: unabhängige Beratung für Vermögens- und Steuerstrukturierung in Genf. Expertise in Steueroptimierung und Vermögenstechnik.",
+      keywords: ["Über uns", "unabhängige Vermögensberatung", "Schweizer Exzellenz"],
+    },
+    IT: {
+      title: "Chi Siamo - Esperti in Strutturazione Patrimoniale",
+      description: "Scopri Geneva Wealth Partners: consulenza indipendente in strutturazione patrimoniale e fiscale a Ginevra. Expertise in ottimizzazione fiscale e ingegneria patrimoniale.",
+      keywords: ["Chi siamo", "consulenza patrimoniale indipendente", "eccellenza svizzera"],
+    },
+  };
+
+  const currentSEO = seoContent[lang] || seoContent.FR;
+
   return (
     <div className="min-h-screen bg-white">
+      <SEOHelmet
+        title={currentSEO.title}
+        description={currentSEO.description}
+        keywords={currentSEO.keywords}
+        language={lang.toLowerCase()}
+      />
       {/* Hero Section */}
       <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
         {/* Background Image */}

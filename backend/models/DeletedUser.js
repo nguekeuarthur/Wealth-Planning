@@ -12,7 +12,7 @@ const DeletedUserSchema = new mongoose.Schema(
     nationality: { type: String, default: null },
     nationality2: { type: String, default: null },
     gender: { type: String, enum: ["male", "female", "other", null], default: null },
-    role: { type: String, enum: ["admin", "member", "client", "partner", "collaborator"], default: "member" },
+    role: { type: String, enum: ["admin", "member", "client", "partner", "collaborator", "user"], default: "member" },
     company: { type: String, default: null },
     address: { type: String, default: null },
     website: { type: String, default: null },

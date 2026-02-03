@@ -1,0 +1,35 @@
+# Robots.txt pour Geneva Wealth Partners
+# https://www.genevawealthpartners.com
+
+User-agent: *
+Allow: /
+
+# Pages principales autorisées
+Allow: /
+Allow: /services
+Allow: /about
+Allow: /contact
+
+# Pages d'authentification (indexables pour les prospects)
+Allow: /connexion
+Allow: /inscription
+
+# Pages légales
+Allow: /politique-de-confidentialite
+Allow: /conditions-utilisation
+Allow: /mentions-legales
+
+# Bloquer les pages d'administration et de dashboard
+Disallow: /admin/*
+Disallow: /dashboard/*
+Disallow: /user/*
+Disallow: /client/*
+Disallow: /partner/*
+Disallow: /collaborator/*
+Disallow: /api/*
+
+# Sitemap
+Sitemap: https://www.genevawealthpartners.com/sitemap.xml
+
+# Crawl-delay pour ne pas surcharger le serveur
+Crawl-delay: 1

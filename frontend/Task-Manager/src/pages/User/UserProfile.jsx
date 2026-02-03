@@ -3,8 +3,11 @@ import { useUser } from '../../context/userContext';
 import { useLanguage } from '../../context/languageContext';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import DeleteAccountModal from '../../components/DeleteAccountModal';
-import { FaUser, FaEnvelope, FaPhone, FaBuilding, FaMapMarkerAlt, FaGlobe, FaTrashAlt } from 'react-icons/fa';
+import axiosInstance from '../../utils/axiosInstance';
+import { API_PATHS } from '../../utils/apiPaths';
+import { FaUser, FaEnvelope, FaPhone, FaBuilding, FaMapMarkerAlt, FaGlobe, FaTrashAlt, FaCalendar, FaEdit, FaSave, FaTimes } from 'react-icons/fa';
 import { BASE_URL } from '../../utils/apiPaths';
+import toast from 'react-hot-toast';
 
 const fullImageUrl = (url) => {
   if (!url) return null;
@@ -16,9 +19,31 @@ const fullImageUrl = (url) => {
 };
 
 const UserProfile = () => {
-  const { user } = useUser();
+  const { user, updateUser } = useUser();
   const { lang } = useLanguage();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    phoneNumber: user?.phoneNumber || '',
+    company: user?.company || '',
+    address: user?.address || '',
+    website: user?.website || '',
+    companyEmail: user?.companyEmail || '',
+    companyPhone: user?.companyPhone || '',
+    birthDate: user?.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : '',
+    nationality: user?.nationality || '',
+    nationality2: user?.nationality2 || '',
+    organizationName: user?.organizationName || '',
+    position: user?.position || '',
+    professionalPhone: user?.professionalPhone || '',
+    professionalEmail: user?.professionalEmail || '',
+    professionalAddress: user?.professionalAddress || '',
+    specialization: user?.specialization || '',
+    experience: user?.experience || '',
+  });
 
   const content = {
     FR: {
@@ -97,6 +122,74 @@ const UserProfile = () => {
 
   const copy = content[lang] || content.FR;
 
+  // Déterminer les champs affichables selon le rôle
+  const getEditableFieldsByRole = () => {
+    const commonFields = ['name', 'email', 'phoneNumber', 'birthDate', 'nationality', 'nationality2'];
+
+    if (user?.role === 'partner') {
+      return [...commonFields, 'organizationName', 'position', 'professionalPhone', 'professionalEmail', 'professionalAddress', 'specialization', 'experience', 'website'];
+    }
+
+    if (user?.role === 'client' || user?.role === 'collaborator') {
+      return [...commonFields, 'company', 'address', 'website', 'companyEmail', 'companyPhone'];
+    }
+
+    if (user?.role === 'admin' || user?.role === 'member') {
+      return [...commonFields, 'company', 'address', 'website'];
+    }
+
+    return commonFields;
+  };
+
+  const editableFields = getEditableFieldsByRole();
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      setIsSaving(true);
+      const response = await axiosInstance.put(API_PATHS.AUTH.UPDATE_PROFILE, formData);
+
+      if (response.data?.user) {
+        updateUser(response.data.user);
+        setIsEditMode(false);
+        toast.success('Profil mis à jour avec succès');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Erreur lors de la mise à jour du profil');
+      console.error('Error updating profile:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setFormData({
+      name: user?.name || '',
+      email: user?.email || '',
+      phoneNumber: user?.phoneNumber || '',
+      company: user?.company || '',
+      address: user?.address || '',
+      website: user?.website || '',
+      companyEmail: user?.companyEmail || '',
+      companyPhone: user?.companyPhone || '',
+      birthDate: user?.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : '',
+      nationality: user?.nationality || '',
+      nationality2: user?.nationality2 || '',
+      organizationName: user?.organizationName || '',
+      position: user?.position || '',
+      professionalPhone: user?.professionalPhone || '',
+      professionalEmail: user?.professionalEmail || '',
+      professionalAddress: user?.professionalAddress || '',
+      specialization: user?.specialization || '',
+      experience: user?.experience || '',
+    });
+    setIsEditMode(false);
+  };
+
   const getRoleLabel = (role) => {
     switch (role) {
       case 'admin': return 'Administrateur';
@@ -122,27 +215,38 @@ const UserProfile = () => {
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="bg-gradient-to-br from-[#1e4029] via-[#2d5f3f] to-[#1e4029] rounded-2xl shadow-xl p-8 text-white">
-          <div className="flex items-center gap-6">
-            <div className="relative">
-              <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center overflow-hidden backdrop-blur-sm">
-                {user?.profileImageUrl ? (
-                  <img
-                    src={fullImageUrl(user.profileImageUrl)}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-2xl font-bold text-white">
-                    {getInitials(user?.name)}
-                  </span>
-                )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div className="relative">
+                <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center overflow-hidden backdrop-blur-sm">
+                  {user?.profileImageUrl ? (
+                    <img
+                      src={fullImageUrl(user.profileImageUrl)}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-2xl font-bold text-white">
+                      {getInitials(user?.name)}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold mb-2">{copy.title}</h1>
+                <p className="text-white/80">{user?.name}</p>
+                <p className="text-white/60 text-sm">{user?.email}</p>
               </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold mb-2">{copy.title}</h1>
-              <p className="text-white/80">{user?.name}</p>
-              <p className="text-white/60 text-sm">{user?.email}</p>
-            </div>
+            {!isEditMode && (
+              <button
+                onClick={() => setIsEditMode(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors font-medium"
+              >
+                <FaEdit size={16} />
+                Modifier
+              </button>
+            )}
           </div>
         </div>
 
@@ -157,18 +261,38 @@ const UserProfile = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-[#7a8b7f] mb-2">{copy.name}</label>
-                <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
-                  <FaUser className="text-[#2d5f3f] text-lg" />
-                  <span className="text-[#1e4029] font-medium">{user?.name || copy.noInfo}</span>
-                </div>
+                {isEditMode ? (
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] transition-colors text-[#1e4029]"
+                  />
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
+                    <FaUser className="text-[#2d5f3f] text-lg" />
+                    <span className="text-[#1e4029] font-medium">{user?.name || copy.noInfo}</span>
+                  </div>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-[#7a8b7f] mb-2">{copy.email}</label>
-                <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
-                  <FaEnvelope className="text-[#2d5f3f] text-lg" />
-                  <span className="text-[#1e4029] font-medium">{user?.email || copy.noInfo}</span>
-                </div>
+                {isEditMode ? (
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] transition-colors text-[#1e4029]"
+                  />
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
+                    <FaEnvelope className="text-[#2d5f3f] text-lg" />
+                    <span className="text-[#1e4029] font-medium">{user?.email || copy.noInfo}</span>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -183,59 +307,400 @@ const UserProfile = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-[#7a8b7f] mb-2">{copy.phone}</label>
-                <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
-                  <FaPhone className="text-[#2d5f3f] text-lg" />
-                  <span className="text-[#1e4029] font-medium">{user?.phoneNumber || copy.noInfo}</span>
-                </div>
+                {isEditMode && editableFields.includes('phoneNumber') ? (
+                  <input
+                    type="tel"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] transition-colors text-[#1e4029]"
+                  />
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
+                    <FaPhone className="text-[#2d5f3f] text-lg" />
+                    <span className="text-[#1e4029] font-medium">{user?.phoneNumber || copy.noInfo}</span>
+                  </div>
+                )}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-[#7a8b7f] mb-2">{copy.company}</label>
-                <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
-                  <FaBuilding className="text-[#2d5f3f] text-lg" />
-                  <span className="text-[#1e4029] font-medium">{user?.company || copy.noInfo}</span>
+              {/* Company - pour clients/collaborators/admins/members */}
+              {(user?.role === 'client' || user?.role === 'collaborator' || user?.role === 'admin' || user?.role === 'member') && editableFields.includes('company') && (
+                <div>
+                  <label className="block text-sm font-medium text-[#7a8b7f] mb-2">{copy.company}</label>
+                  {isEditMode ? (
+                    <input
+                      type="text"
+                      name="company"
+                      value={formData.company}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] transition-colors text-[#1e4029]"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
+                      <FaBuilding className="text-[#2d5f3f] text-lg" />
+                      <span className="text-[#1e4029] font-medium">{user?.company || copy.noInfo}</span>
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Contact Information */}
-        {(user?.address || user?.website) && (
-          <div className="bg-white border border-[#dfe8e1] rounded-2xl shadow-sm p-8">
-            <h2 className="text-2xl font-bold text-[#1e4029] mb-6 flex items-center gap-3">
-              <FaMapMarkerAlt className="text-[#2d5f3f]" />
-              {copy.contactInfo}
-            </h2>
+        {/* Additional Profile Information */}
+        <div className="bg-white border border-[#dfe8e1] rounded-2xl shadow-sm p-8">
+          <h2 className="text-2xl font-bold text-[#1e4029] mb-6 flex items-center gap-3">
+            <FaMapMarkerAlt className="text-[#2d5f3f]" />
+            {copy.contactInfo}
+          </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {user?.address && (
-                <div>
-                  <label className="block text-sm font-medium text-[#7a8b7f] mb-2">{copy.address}</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Adresse - pour clients/collaborators/admins/members */}
+            {(user?.role === 'client' || user?.role === 'collaborator' || user?.role === 'admin' || user?.role === 'member') && (
+              <div>
+                <label className="block text-sm font-medium text-[#7a8b7f] mb-2">{copy.address}</label>
+                {isEditMode && editableFields.includes('address') ? (
+                  <input
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] transition-colors text-[#1e4029]"
+                  />
+                ) : (
                   <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
                     <FaMapMarkerAlt className="text-[#2d5f3f] text-lg" />
-                    <span className="text-[#1e4029] font-medium">{user.address}</span>
+                    <span className="text-[#1e4029] font-medium">{user?.address || copy.noInfo}</span>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+            )}
 
-              {user?.website && (
-                <div>
-                  <label className="block text-sm font-medium text-[#7a8b7f] mb-2">{copy.website}</label>
+            {/* Site web - pour tous les rôles */}
+            {editableFields.includes('website') && (
+              <div>
+                <label className="block text-sm font-medium text-[#7a8b7f] mb-2">{copy.website}</label>
+                {isEditMode ? (
+                  <input
+                    type="url"
+                    name="website"
+                    value={formData.website}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] transition-colors text-[#1e4029]"
+                  />
+                ) : (
                   <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
                     <FaGlobe className="text-[#2d5f3f] text-lg" />
-                    <a
-                      href={user.website.startsWith('http') ? user.website : `https://${user.website}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#2d5f3f] font-medium hover:underline"
-                    >
-                      {user.website}
+                    {user?.website ? (
+                      <a
+                        href={user.website.startsWith('http') ? user.website : `https://${user.website}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#2d5f3f] font-medium hover:underline truncate"
+                      >
+                        {user.website}
+                      </a>
+                    ) : (
+                      <span className="text-[#1e4029] font-medium">{copy.noInfo}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Email professionnel - pour clients/collaborators */}
+            {(user?.role === 'client' || user?.role === 'collaborator') && editableFields.includes('companyEmail') && (
+              <div>
+                <label className="block text-sm font-medium text-[#7a8b7f] mb-2">Email Professionnel</label>
+                {isEditMode ? (
+                  <input
+                    type="email"
+                    name="companyEmail"
+                    value={formData.companyEmail}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] transition-colors text-[#1e4029]"
+                  />
+                ) : (
+                  user?.companyEmail && (
+                    <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
+                      <FaEnvelope className="text-[#2d5f3f] text-lg" />
+                      <a href={`mailto:${user.companyEmail}`} className="text-[#2d5f3f] font-medium hover:underline truncate">
+                        {user.companyEmail}
+                      </a>
+                    </div>
+                  )
+                )}
+              </div>
+            )}
+
+            {/* Téléphone professionnel - pour clients/collaborators */}
+            {(user?.role === 'client' || user?.role === 'collaborator') && editableFields.includes('companyPhone') && (
+              <div>
+                <label className="block text-sm font-medium text-[#7a8b7f] mb-2">Téléphone Professionnel</label>
+                {isEditMode ? (
+                  <input
+                    type="tel"
+                    name="companyPhone"
+                    value={formData.companyPhone}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] transition-colors text-[#1e4029]"
+                  />
+                ) : (
+                  user?.companyPhone && (
+                    <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
+                      <FaPhone className="text-[#2d5f3f] text-lg" />
+                      <a href={`tel:${user.companyPhone}`} className="text-[#2d5f3f] font-medium hover:underline">
+                        {user.companyPhone}
+                      </a>
+                    </div>
+                  )
+                )}
+              </div>
+            )}
+
+            {/* Date de naissance - pour tous les rôles */}
+            {editableFields.includes('birthDate') && (
+              <div>
+                <label className="block text-sm font-medium text-[#7a8b7f] mb-2">Date de Naissance</label>
+                {isEditMode ? (
+                  <input
+                    type="date"
+                    name="birthDate"
+                    value={formData.birthDate}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] transition-colors text-[#1e4029]"
+                  />
+                ) : (
+                  user?.birthDate && (
+                    <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
+                      <FaCalendar className="text-[#2d5f3f] text-lg" />
+                      <span className="text-[#1e4029] font-medium">
+                        {new Date(user.birthDate).toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                  )
+                )}
+              </div>
+            )}
+
+            {/* Nationalité - pour tous les rôles */}
+            {editableFields.includes('nationality') && (
+              <div>
+                <label className="block text-sm font-medium text-[#7a8b7f] mb-2">Nationalité</label>
+                {isEditMode ? (
+                  <input
+                    type="text"
+                    name="nationality"
+                    value={formData.nationality}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] transition-colors text-[#1e4029]"
+                  />
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
+                    <FaUser className="text-[#2d5f3f] text-lg" />
+                    <span className="text-[#1e4029] font-medium">{user?.nationality || copy.noInfo}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Nationalité 2 - pour tous les rôles */}
+            {editableFields.includes('nationality2') && (
+              <div>
+                <label className="block text-sm font-medium text-[#7a8b7f] mb-2">Nationalité (2ème)</label>
+                {isEditMode ? (
+                  <input
+                    type="text"
+                    name="nationality2"
+                    value={formData.nationality2}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] transition-colors text-[#1e4029]"
+                  />
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
+                    <FaUser className="text-[#2d5f3f] text-lg" />
+                    <span className="text-[#1e4029] font-medium">{user?.nationality2 || copy.noInfo}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Organisation - pour partenaires SEULEMENT */}
+            {user?.role === 'partner' && editableFields.includes('organizationName') && (
+              <div>
+                <label className="block text-sm font-medium text-[#7a8b7f] mb-2">Organisation</label>
+                {isEditMode ? (
+                  <input
+                    type="text"
+                    name="organizationName"
+                    value={formData.organizationName}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] transition-colors text-[#1e4029]"
+                  />
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
+                    <FaBuilding className="text-[#2d5f3f] text-lg" />
+                    <span className="text-[#1e4029] font-medium">{user.organizationName}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Poste - pour partenaires SEULEMENT */}
+            {user?.role === 'partner' && editableFields.includes('position') && (
+              <div>
+                <label className="block text-sm font-medium text-[#7a8b7f] mb-2">Poste</label>
+                {isEditMode ? (
+                  <input
+                    type="text"
+                    name="position"
+                    value={formData.position}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] transition-colors text-[#1e4029]"
+                  />
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
+                    <FaUser className="text-[#2d5f3f] text-lg" />
+                    <span className="text-[#1e4029] font-medium">{user.position}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Domaine d'expertise - pour partenaires SEULEMENT */}
+            {user?.role === 'partner' && editableFields.includes('specialization') && (
+              <div>
+                <label className="block text-sm font-medium text-[#7a8b7f] mb-2">Domaine d'Expertise</label>
+                {isEditMode ? (
+                  <input
+                    type="text"
+                    name="specialization"
+                    value={formData.specialization}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] transition-colors text-[#1e4029]"
+                  />
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
+                    <FaBuilding className="text-[#2d5f3f] text-lg" />
+                    <span className="text-[#1e4029] font-medium">{user.specialization}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Expérience - pour partenaires SEULEMENT */}
+            {user?.role === 'partner' && editableFields.includes('experience') && (
+              <div>
+                <label className="block text-sm font-medium text-[#7a8b7f] mb-2">Expérience</label>
+                {isEditMode ? (
+                  <input
+                    type="text"
+                    name="experience"
+                    value={formData.experience}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] transition-colors text-[#1e4029]"
+                  />
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
+                    <FaUser className="text-[#2d5f3f] text-lg" />
+                    <span className="text-[#1e4029] font-medium">{user.experience}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Adresse professionnelle - pour partenaires SEULEMENT */}
+            {user?.role === 'partner' && editableFields.includes('professionalAddress') && (
+              <div>
+                <label className="block text-sm font-medium text-[#7a8b7f] mb-2">Adresse Professionnelle</label>
+                {isEditMode ? (
+                  <input
+                    type="text"
+                    name="professionalAddress"
+                    value={formData.professionalAddress}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] transition-colors text-[#1e4029]"
+                  />
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
+                    <FaMapMarkerAlt className="text-[#2d5f3f] text-lg" />
+                    <span className="text-[#1e4029] font-medium">{user.professionalAddress}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Email professionnel alternatif - pour partenaires SEULEMENT */}
+            {user?.role === 'partner' && editableFields.includes('professionalEmail') && (
+              <div>
+                <label className="block text-sm font-medium text-[#7a8b7f] mb-2">Email Professionnel</label>
+                {isEditMode ? (
+                  <input
+                    type="email"
+                    name="professionalEmail"
+                    value={formData.professionalEmail}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] transition-colors text-[#1e4029]"
+                  />
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
+                    <FaEnvelope className="text-[#2d5f3f] text-lg" />
+                    <a href={`mailto:${user.professionalEmail}`} className="text-[#2d5f3f] font-medium hover:underline truncate">
+                      {user.professionalEmail}
                     </a>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
+
+            {/* Téléphone professionnel alternatif - pour partenaires SEULEMENT */}
+            {user?.role === 'partner' && editableFields.includes('professionalPhone') && (
+              <div>
+                <label className="block text-sm font-medium text-[#7a8b7f] mb-2">Téléphone Professionnel</label>
+                {isEditMode ? (
+                  <input
+                    type="tel"
+                    name="professionalPhone"
+                    value={formData.professionalPhone}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 bg-white border border-[#dfe8e1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5a8f6f] transition-colors text-[#1e4029]"
+                  />
+                ) : (
+                  <div className="flex items-center gap-3 p-4 bg-[#f8f9f8] rounded-xl">
+                    <FaPhone className="text-[#2d5f3f] text-lg" />
+                    <a href={`tel:${user.professionalPhone}`} className="text-[#2d5f3f] font-medium hover:underline">
+                      {user.professionalPhone}
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Edit Actions */}
+        {isEditMode && (
+          <div className="bg-white border border-[#dfe8e1] rounded-2xl shadow-sm p-8 flex gap-4 justify-end">
+            <button
+              onClick={handleCancel}
+              disabled={isSaving}
+              className="flex items-center gap-2 px-6 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors font-medium disabled:opacity-50"
+            >
+              <FaTimes size={16} />
+              Annuler
+            </button>
+            <button
+              onClick={handleSaveProfile}
+              disabled={isSaving}
+              className="flex items-center gap-2 px-6 py-2 bg-[#5a8f6f] text-white rounded-lg hover:bg-[#4a7f5f] transition-colors font-medium disabled:opacity-50"
+            >
+              <FaSave size={16} />
+              {isSaving ? 'Sauvegarde...' : 'Sauvegarder'}
+            </button>
           </div>
         )}
 
@@ -273,3 +738,4 @@ const UserProfile = () => {
 };
 
 export default UserProfile;
+

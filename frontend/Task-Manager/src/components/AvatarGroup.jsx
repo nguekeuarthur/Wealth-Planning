@@ -1,15 +1,4 @@
 import React from 'react'
-import { BASE_URL } from '../utils/apiPaths'
-
-const fullImageUrl = (url) => {
-  if (!url) return null;
-  // Aggressive cleanup of historical localhost URLs
-  let cleaned = url.replace(/^https?:\/\/localhost:8000/, '');
-  if (cleaned.startsWith('http')) return cleaned;
-  const baseUrlClean = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
-  const pathClean = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
-  return `${baseUrlClean}${pathClean}`;
-};
 
 const AvatarGroup = ({ avatars, maxVisible = 3 }) => {
   const renderAvatar = (avatar, index) => {
@@ -18,7 +7,7 @@ const AvatarGroup = ({ avatars, maxVisible = 3 }) => {
       return (
         <img
           key={index}
-          src={fullImageUrl(avatar)}
+          src={avatar}
           alt={`Avatar ${index}`}
           className="w-9 h-9 rounded-full border-2 border-white -ml-3 first:ml-0"
         />
@@ -32,7 +21,7 @@ const AvatarGroup = ({ avatars, maxVisible = 3 }) => {
       return (
         <img
           key={index}
-          src={fullImageUrl(url)}
+          src={url}
           alt={name || `Avatar ${index}`}
           className="w-9 h-9 rounded-full border-2 border-white -ml-3 first:ml-0"
         />
