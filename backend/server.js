@@ -69,15 +69,28 @@ app.options('*', cors({ origin: allowedOrigins }));
 
 const PORT = process.env.PORT || 8000;
 
+// Global DB status
+let dbConnected = false;
+
 async function start() {
   // Connect Database
-  await connectDB();
+  try {
+    await connectDB();
+    dbConnected = true;
 
-  // Initialiser les conversations par défaut
-  await initializeDefaultConversations();
-  console.log("Conversations par défaut initialisées");
+    // Initialiser les conversations par défaut
+    await initializeDefaultConversations();
+    console.log("Conversations par défaut initialisées");
+  } catch (err) {
+    console.error("________________________________________________________________");
+    console.error("CRITICAL: Database connection failed. Server will start anyway.");
+    console.error("Error details:", err.message);
+    console.error("Hint: Check your MongoDB Atlas whitelist (Network Access).");
+    console.error("________________________________________________________________");
+    dbConnected = false;
+  }
 
-  // Start Server (only after DB is ready)
+  // Start Server (even if DB failed, so we can see the error page)
   server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`WebSocket server ready for chat connections`);
@@ -90,12 +103,15 @@ async function start() {
 app.use(express.json());
 
 // Health check and root route
+// Health check and root route
 app.get("/", (req, res) => {
   res.json({
     message: "Wealth Planning API is running",
-    status: "active",
+    status: dbConnected ? "active" : "db_connection_error",
+    dbStatus: dbConnected ? "Connected" : "Disconnected",
     environment: process.env.NODE_ENV || "production",
-    documentation: "Please use /api endpoints"
+    documentation: "Please use /api endpoints",
+    tip: !dbConnected ? "Check server logs for MongoDB connection error. Only whitelisted IPs can connect." : undefined
   });
 });
 

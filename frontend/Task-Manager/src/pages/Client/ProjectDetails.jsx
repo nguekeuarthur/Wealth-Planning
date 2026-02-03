@@ -239,7 +239,7 @@ const ClientProjectDetails = () => {
         if (!over) return;
 
         const taskId = active.id;
-        
+
         let newStatus;
         if (over.data?.current?.type === undefined && ["Pending", "In Progress", "Completed"].includes(over.id)) {
             newStatus = over.id;
@@ -625,71 +625,101 @@ const ClientProjectDetails = () => {
     );
 
     const renderInvoices = () => (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {project.invoices && project.invoices.length > 0 ? (
                 project.invoices.map((invoice) => (
-                    <div key={invoice._id} className="bg-white rounded-2xl border border-[#dfe8e1] p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h3 className="text-lg font-semibold text-[#1e4029]">{invoice.title}</h3>
-                                <p className="text-sm text-[#7a8b7f]">
-                                    Émis le {new Date(invoice.issueDate).toLocaleDateString('fr-FR')}
-                                    {invoice.dueDate && ` • Échéance: ${new Date(invoice.dueDate).toLocaleDateString('fr-FR')}`}
+                    <div key={invoice._id} className="p-4 border border-[#dfe8e1] rounded-2xl hover:border-[#5a8f6f]/40 transition-colors bg-white flex flex-col h-full">
+                        <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                                <h4 className="font-semibold text-[#1e4029] mb-1">
+                                    {invoice.invoiceNumber || invoice.title || "Facture"}
+                                </h4>
+                                <p className="text-sm text-[#7a8b7f] mb-2">
+                                    {project.name}
                                 </p>
                             </div>
-                            <div className="text-right">
-                                <p className="text-2xl font-bold text-[#1e4029]">{invoice.amount}€</p>
-                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${invoice.status === "payée" || invoice.status === "paiement reçu"
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${invoice.status === "payée" || invoice.status === "paiement reçu"
                                     ? "bg-[#dff5e7] text-[#1e4029]"
                                     : invoice.status === "non payée"
                                         ? "bg-[#fee2e2] text-[#dc2626]"
                                         : invoice.status === "partiellement payée"
                                             ? "bg-[#fff6ea] text-[#b76a28]"
-                                            : "bg-[#f4f7f4] text-[#7a8b7f]"
-                                    }`}>
-                                    {invoice.status === "payée" || invoice.status === "paiement reçu" ? "Payée" :
-                                        invoice.status === "non payée" ? "En retard" :
-                                            invoice.status === "partiellement payée" ? "Partiellement payée" : "En attente"}
-                                </span>
-                                {invoice.attachment?.path && (
-                                    <button
-                                        onClick={async (e) => {
-                                            e.preventDefault();
-                                            try {
-                                                const response = await axiosInstance.get(
-                                                    `${BASE_URL}${invoice.attachment.path}`,
-                                                    { responseType: 'blob' }
-                                                );
-                                                const contentType = response.headers['content-type'] || invoice.attachment.mimeType || 'application/pdf';
-                                                const blob = new Blob([response.data], { type: contentType });
-                                                const url = window.URL.createObjectURL(blob);
-                                                const link = document.createElement('a');
-                                                link.href = url;
-                                                link.setAttribute('download', invoice.attachment.originalName || `facture-${invoice.invoiceNumber}.pdf`);
-                                                document.body.appendChild(link);
-                                                link.click();
-                                                link.remove();
-                                                window.URL.revokeObjectURL(url);
-                                            } catch (err) {
-                                                console.error("Erreur téléchargement facture:", err);
-                                                toast.error("Impossible de télécharger la facture");
-                                            }
-                                        }}
-                                        className="mt-2 text-[#2d5f3f] hover:text-[#1e4029] text-xs font-medium block"
-                                    >
-                                        Télécharger
-                                    </button>
-                                )}
-                            </div>
+                                            : "bg-[#e8f0ff] text-[#2a4fa2]"
+                                }`}>
+                                {invoice.status === "payée" || invoice.status === "paiement reçu" ? "Payée" :
+                                    invoice.status === "non payée" ? "Non payée" :
+                                        invoice.status === "partiellement payée" ? "Partiellement" : "En attente"}
+                            </span>
                         </div>
+
+                        {invoice.description && (
+                            <p className="text-sm text-[#7a8b7f] mb-3 line-clamp-2 flex-grow">
+                                {invoice.description}
+                            </p>
+                        )}
+
+                        <div className="space-y-2 mb-4 mt-auto pt-3 border-t border-[#f0f5f1]">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-[#7a8b7f]">Montant:</span>
+                                <span className="font-semibold text-[#1e4029]">{invoice.amount}€</span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-[#7a8b7f]">Émission:</span>
+                                <span className="text-[#1e4029]">
+                                    {new Date(invoice.issueDate).toLocaleDateString('fr-FR')}
+                                </span>
+                            </div>
+                            {invoice.dueDate && (
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-[#7a8b7f]">Échéance:</span>
+                                    <span className={`text-[#1e4029] ${new Date(invoice.dueDate) < new Date() && invoice.status !== 'payée' ? 'text-red-600 font-medium' : ''}`}>
+                                        {new Date(invoice.dueDate).toLocaleDateString('fr-FR')}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+
+                        {invoice.attachment?.path && (
+                            <div className="flex items-center gap-2 pt-3 border-t border-[#dfe8e1]">
+                                <button
+                                    onClick={async (e) => {
+                                        e.preventDefault();
+                                        try {
+                                            const response = await axiosInstance.get(
+                                                `${BASE_URL}${invoice.attachment.path}`,
+                                                { responseType: 'blob' }
+                                            );
+                                            const contentType = response.headers['content-type'] || invoice.attachment.mimeType || 'application/pdf';
+                                            const blob = new Blob([response.data], { type: contentType });
+                                            const url = window.URL.createObjectURL(blob);
+                                            const link = document.createElement('a');
+                                            link.href = url;
+                                            link.setAttribute('download', invoice.attachment.originalName || `facture-${invoice.invoiceNumber}.pdf`);
+                                            document.body.appendChild(link);
+                                            link.click();
+                                            link.remove();
+                                            window.URL.revokeObjectURL(url);
+                                        } catch (err) {
+                                            console.error("Erreur téléchargement facture:", err);
+                                            toast.error("Impossible de télécharger la facture");
+                                        }
+                                    }}
+                                    className="flex-1 px-3 py-1.5 text-xs bg-[#f4f7f4] text-[#2d5f3f] rounded-lg hover:bg-[#e6f0ea] transition-colors font-medium text-center"
+                                >
+                                    Télécharger PDF
+                                </button>
+                            </div>
+                        )}
                     </div>
                 ))
             ) : (
-                <EmptyState
-                    icon={<FiDollarSign />}
-                    title="Aucune facture"
-                    subtitle="Ce projet n'a pas encore de factures émises."
-                />
+                <div className="col-span-1 md:col-span-2">
+                    <EmptyState
+                        icon={<FiDollarSign />}
+                        title="Aucune facture"
+                        subtitle="Ce projet n'a pas encore de factures émises."
+                    />
+                </div>
             )}
         </div>
     );

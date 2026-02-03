@@ -35,8 +35,8 @@ const connectDB = async () => {
     ) {
       console.error(
         "[DB] Your MongoDB URI looks like an Atlas host, but the scheme is `mongodb://`. " +
-          "For Atlas clusters you typically need `mongodb+srv://...`. " +
-          "Update MONGODB_URI and try again."
+        "For Atlas clusters you typically need `mongodb+srv://...`. " +
+        "Update MONGODB_URI and try again."
       );
       process.exit(1);
     }
@@ -59,7 +59,7 @@ const connectDB = async () => {
     if (code === "ETIMEDOUT") {
       console.error(
         "[DB] Connection timed out. If this is MongoDB Atlas, check: (1) Atlas Network Access IP allowlist, " +
-          "(2) your local firewall/VPN/proxy allows outbound to MongoDB ports, and (3) your URI uses `mongodb+srv://`."
+        "(2) your local firewall/VPN/proxy allows outbound to MongoDB ports, and (3) your URI uses `mongodb+srv://`."
       );
     }
 
@@ -67,7 +67,8 @@ const connectDB = async () => {
       console.error("[DB] Reason:", err.reason);
     }
 
-    process.exit(1);
+    // Do not exit the process here. Throw the error so server.js can handle it and keep the server alive.
+    throw err;
   }
 };
 

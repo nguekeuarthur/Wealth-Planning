@@ -99,7 +99,11 @@ exports.getInvoiceById = async (req, res) => {
   try {
     let invoice = await Invoice.findById(req.params.id)
       .populate('client', 'companyName contactName email industry')
-      .populate('project', 'name category');
+      .populate({
+        path: 'project',
+        select: 'name category client',
+        populate: { path: 'client', select: '_id name email' }
+      });
 
     if (!invoice) {
       return res.status(404).json({ message: 'Facture non trouvée' });
@@ -114,7 +118,11 @@ exports.getInvoiceById = async (req, res) => {
       // Recharger pour avoir les données à jour
       invoice = await Invoice.findById(req.params.id)
         .populate('client', 'companyName contactName email industry')
-        .populate('project', 'name category');
+        .populate({
+          path: 'project',
+          select: 'name category client',
+          populate: { path: 'client', select: '_id name email' }
+        });
     }
 
     // Check permissions selon le rôle

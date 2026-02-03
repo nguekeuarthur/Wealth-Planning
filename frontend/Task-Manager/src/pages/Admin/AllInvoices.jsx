@@ -4,10 +4,10 @@ import DashboardLayout from "../../components/layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
 import { UserContext } from "../../context/userContext";
-import { 
-  FiSearch, 
-  FiEdit2, 
-  FiTrash2, 
+import {
+  FiSearch,
+  FiEdit2,
+  FiTrash2,
   FiCalendar,
   FiDollarSign,
   FiFileText,
@@ -59,9 +59,9 @@ const AllInvoices = () => {
       setLoading(true);
       const response = await axiosInstance.get(API_PATHS.INVOICES.GET_ALL_INVOICES);
       console.log("API Response:", response.data);
-      
+
       const invoices = response.data?.invoices || [];
-      
+
       console.log(`Loaded ${invoices.length} invoices`);
       setAllInvoices(invoices);
       setFilteredInvoices(invoices);
@@ -95,7 +95,7 @@ const AllInvoices = () => {
       filtered = filtered.filter((invoice) => {
         const normalizedStatus = invoice.status?.toLowerCase();
         const overdue = isOverdue(invoice.dueDate, invoice.status);
-        
+
         // Map backend status to display status
         let displayStatus;
         if (overdue) {
@@ -109,7 +109,7 @@ const AllInvoices = () => {
         } else {
           displayStatus = "NON PAYÉ";
         }
-        
+
         return displayStatus === selectedStatus;
       });
     }
@@ -241,153 +241,257 @@ const AllInvoices = () => {
           </div>
         </div>
 
-        {/* Invoices Table */}
-        {filteredInvoices.length > 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-[#dfe8e1]">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-[#f4f7f4] border-b border-[#dfe8e1]">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#7a8b7f] uppercase tracking-wider">
-                      ID
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#7a8b7f] uppercase tracking-wider">
-                      Projet
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#7a8b7f] uppercase tracking-wider">
-                      Montant
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#7a8b7f] uppercase tracking-wider">
-                      Date de facturation
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#7a8b7f] uppercase tracking-wider">
-                      Échéance
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-[#7a8b7f] uppercase tracking-wider">
-                      Statut
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-[#7a8b7f] uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#dfe8e1]">
-                  {filteredInvoices.map((invoice) => {
-                    const overdue = isOverdue(invoice.dueDate, invoice.status);
-                    const normalizedStatus = invoice.status?.toLowerCase();
-                    let displayStatus;
-                    if (overdue) {
-                      displayStatus = "EN RETARD";
-                    } else if (normalizedStatus === "paiement reçu" || normalizedStatus === "payée") {
-                      displayStatus = "PAIEMENT REÇU";
-                    } else if (normalizedStatus === "paiement envoyé") {
-                      displayStatus = "PAIEMENT ENVOYÉ";
-                    } else if (normalizedStatus === "en attente") {
-                      displayStatus = "EN ATTENTE";
-                    } else {
-                      displayStatus = "NON PAYÉ";
-                    }
-                    
-                    return (
-                      <tr 
-                        key={invoice._id}
-                        className="hover:bg-[#f4f7f4] transition-colors cursor-pointer"
-                        onClick={() => handleViewInvoice(invoice)}
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-[#1e4029]">
-                            {invoice.invoiceNumber || invoice._id.slice(-6)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-[#2d5f3f]">
-                            {invoice.project?.name || "N/A"}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-semibold text-[#1e4029]">
-                            {formatAmount(invoice.amount)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2 text-sm text-[#7a8b7f]">
-                            <FiCalendar className="w-4 h-4" />
-                            {formatDate(invoice.issueDate)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2 text-sm text-[#7a8b7f]">
-                            <FiCalendar className="w-4 h-4" />
-                            {formatDate(invoice.dueDate)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${statusColors[displayStatus] || statusColors["NON PAYÉ"]}`}>
-                            {displayStatus}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleViewInvoice(invoice);
-                              }}
-                              className="p-2 text-[#2d5f3f] hover:bg-[#e6f0ea] rounded-lg transition-colors"
-                              title="Voir"
-                            >
-                              <FiEye className="w-4 h-4" />
-                            </button>
-                            {user?.role === 'admin' && (
-                              <>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEditInvoice(invoice);
-                                  }}
-                                  className="p-2 text-[#7a8b7f] hover:bg-[#f4f7f4] rounded-lg transition-colors"
-                                  title="Modifier"
-                                >
-                                  <FiEdit2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteInvoice(invoice._id);
-                                  }}
-                                  disabled={deletingInvoice === invoice._id}
-                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                                  title="Supprimer"
-                                >
-                                  <FiTrash2 className="w-4 h-4" />
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+        {/* Invoices Table or Grid depending on role */}
+        {user?.role === 'client' ? (
+          // Client View: Grid of Cards
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredInvoices.map((invoice) => {
+              const overdue = isOverdue(invoice.dueDate, invoice.status);
+              const normalizedStatus = invoice.status?.toLowerCase();
+              let displayStatus;
+              let statusStyle;
+
+              if (overdue) {
+                displayStatus = "EN RETARD";
+                statusStyle = "bg-[#fff7d6] text-[#7b6a25]";
+              } else if (normalizedStatus === "paiement reçu" || normalizedStatus === "payée") {
+                displayStatus = "PAYÉE";
+                statusStyle = "bg-[#dff5e7] text-[#1e4029]";
+              } else if (normalizedStatus === "paiement envoyé") {
+                displayStatus = "PAIEMENT ENVOYÉ";
+                statusStyle = "bg-[#e6f0ea] text-[#2d5f3f]";
+              } else if (normalizedStatus === "en attente") {
+                displayStatus = "EN ATTENTE";
+                statusStyle = "bg-[#e8f0ff] text-[#2a4fa2]";
+              } else {
+                displayStatus = "NON PAYÉ";
+                statusStyle = "bg-red-50 text-red-600";
+              }
+
+              return (
+                <div
+                  key={invoice._id}
+                  className="bg-white border border-[#dfe8e1] rounded-2xl p-5 hover:border-[#5a8f6f]/40 transition-colors shadow-sm hover:shadow-md cursor-pointer flex flex-col h-full"
+                  onClick={() => handleViewInvoice(invoice)}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h4 className="font-bold text-[#1e4029] text-lg mb-1">
+                        {invoice.invoiceNumber || invoice._id.slice(-6).toUpperCase()}
+                      </h4>
+                      <p className="text-sm text-[#7a8b7f] font-medium">
+                        {invoice.project?.name || "Projet non défini"}
+                      </p>
+                    </div>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide whitespace-nowrap ${statusStyle}`}>
+                      {displayStatus}
+                    </span>
+                  </div>
+
+                  {invoice.description && (
+                    <p className="text-sm text-[#7a8b7f] mb-4 line-clamp-2 flex-grow">
+                      {invoice.description}
+                    </p>
+                  )}
+
+                  <div className="space-y-3 mt-auto pt-4 border-t border-[#f0f5f1]">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-[#7a8b7f]">Montant</span>
+                      <span className="font-bold text-[#1e4029] text-base">
+                        {formatAmount(invoice.amount)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-[#7a8b7f]">Émission</span>
+                      <span className="text-[#1e4029] font-medium">
+                        {formatDate(invoice.issueDate)}
+                      </span>
+                    </div>
+                    {invoice.dueDate && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-[#7a8b7f]">Échéance</span>
+                        <span className={`font-medium ${overdue ? "text-red-600" : "text-[#1e4029]"}`}>
+                          {formatDate(invoice.dueDate)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-[#f0f5f1] flex gap-3">
+                    <button
+                      className="flex-1 py-2 px-4 bg-[#f4f7f4] text-[#2d5f3f] rounded-lg text-sm font-semibold hover:bg-[#e6f0ea] transition-colors flex items-center justify-center gap-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewInvoice(invoice);
+                      }}
+                    >
+                      <FiEye /> Détails
+                    </button>
+                    {/* Placeholder for Download Button if file exists */}
+                    <button
+                      className="flex-1 py-2 px-4 bg-[#1e4029] text-white rounded-lg text-sm font-semibold hover:bg-[#2d5f3f] transition-colors flex items-center justify-center gap-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Add download logic here or in View Modal
+                        toast("Téléchargement...");
+                      }}
+                    >
+                      <FiFileText /> PDF
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : (
-          // Empty State
-          <div className="text-center py-16 bg-white border border-[#dfe8e1] rounded-2xl">
-            <div className="p-6 bg-[#f4f7f4] rounded-2xl mb-6 w-fit mx-auto">
-              <FiFileText className="text-[#5a8f6f] text-6xl" />
+          // Admin View: Table or Empty State
+          filteredInvoices.length > 0 ? (
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-[#dfe8e1]">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-[#f4f7f4] border-b border-[#dfe8e1]">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-[#7a8b7f] uppercase tracking-wider">
+                        ID
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-[#7a8b7f] uppercase tracking-wider">
+                        Projet
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-[#7a8b7f] uppercase tracking-wider">
+                        Montant
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-[#7a8b7f] uppercase tracking-wider">
+                        Date de facturation
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-[#7a8b7f] uppercase tracking-wider">
+                        Échéance
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-[#7a8b7f] uppercase tracking-wider">
+                        Statut
+                      </th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-[#7a8b7f] uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#dfe8e1]">
+                    {filteredInvoices.map((invoice) => {
+                      const overdue = isOverdue(invoice.dueDate, invoice.status);
+                      const normalizedStatus = invoice.status?.toLowerCase();
+                      let displayStatus;
+                      if (overdue) {
+                        displayStatus = "EN RETARD";
+                      } else if (normalizedStatus === "paiement reçu" || normalizedStatus === "payée") {
+                        displayStatus = "PAIEMENT REÇU";
+                      } else if (normalizedStatus === "paiement envoyé") {
+                        displayStatus = "PAIEMENT ENVOYÉ";
+                      } else if (normalizedStatus === "en attente") {
+                        displayStatus = "EN ATTENTE";
+                      } else {
+                        displayStatus = "NON PAYÉ";
+                      }
+
+                      return (
+                        <tr
+                          key={invoice._id}
+                          className="hover:bg-[#f4f7f4] transition-colors cursor-pointer"
+                          onClick={() => handleViewInvoice(invoice)}
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-[#1e4029]">
+                              {invoice.invoiceNumber || invoice._id.slice(-6)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm text-[#2d5f3f]">
+                              {invoice.project?.name || "N/A"}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-semibold text-[#1e4029]">
+                              {formatAmount(invoice.amount)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2 text-sm text-[#7a8b7f]">
+                              <FiCalendar className="w-4 h-4" />
+                              {formatDate(invoice.issueDate)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2 text-sm text-[#7a8b7f]">
+                              <FiCalendar className="w-4 h-4" />
+                              {formatDate(invoice.dueDate)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${statusColors[displayStatus] || statusColors["NON PAYÉ"]}`}>
+                              {displayStatus}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewInvoice(invoice);
+                                }}
+                                className="p-2 text-[#2d5f3f] hover:bg-[#e6f0ea] rounded-lg transition-colors"
+                                title="Voir"
+                              >
+                                <FiEye className="w-4 h-4" />
+                              </button>
+                              {user?.role === 'admin' && (
+                                <>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditInvoice(invoice);
+                                    }}
+                                    className="p-2 text-[#7a8b7f] hover:bg-[#f4f7f4] rounded-lg transition-colors"
+                                    title="Modifier"
+                                  >
+                                    <FiEdit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteInvoice(invoice._id);
+                                    }}
+                                    disabled={deletingInvoice === invoice._id}
+                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                    title="Supprimer"
+                                  >
+                                    <FiTrash2 className="w-4 h-4" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <h3 className="text-xl font-medium text-[#1e4029] mb-2">
-              {searchQuery || selectedStatus !== "all" ? "Aucune facture trouvée" : "Aucune facture pour le moment"}
-            </h3>
-            <p className="text-[#7a8b7f] mb-6">
-              {searchQuery || selectedStatus !== "all"
-                ? "Essayez d'ajuster votre recherche ou votre filtre"
-                : "Aucune facture disponible"}
-            </p>
-          </div>
-        )}
+          ) : (
+            // Empty State
+            <div className="text-center py-16 bg-white border border-[#dfe8e1] rounded-2xl">
+              <div className="p-6 bg-[#f4f7f4] rounded-2xl mb-6 w-fit mx-auto">
+                <FiFileText className="text-[#5a8f6f] text-6xl" />
+              </div>
+              <h3 className="text-xl font-medium text-[#1e4029] mb-2">
+                {searchQuery || selectedStatus !== "all" ? "Aucune facture trouvée" : "Aucune facture pour le moment"}
+              </h3>
+              <p className="text-[#7a8b7f] mb-6">
+                {searchQuery || selectedStatus !== "all"
+                  ? "Essayez d'ajuster votre recherche ou votre filtre"
+                  : "Aucune facture disponible"}
+              </p>
+            </div>
+          ))
+        }
       </div>
 
       {/* Create/Edit Invoice Modal */}
@@ -403,7 +507,7 @@ const AllInvoices = () => {
 
       {/* View Invoice Modal */}
       {viewingInvoice && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={(e) => e.target === e.currentTarget && setViewingInvoice(null)}
         >
