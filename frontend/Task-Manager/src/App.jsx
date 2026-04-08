@@ -46,15 +46,7 @@ import CollaboratorDashboard from "./pages/Collaborator/CollaboratorDashboard";
 import DashboardLayout from "./components/layouts/DashboardLayout";
 import ChatLayout from "./components/layouts/ChatLayout";
 
-// Landing Pages
-import Home from "./pages/Landing/Home";
-import About from "./pages/Landing/About";
-import Services from "./pages/Landing/Services";
-import Contact from "./pages/Landing/Contact";
-import PublicLayout from "./components/layouts/PublicLayout";
-import PrivacyPolicy from "./pages/Legal/PrivacyPolicy";
-import TermsOfUse from "./pages/Legal/TermsOfUse";
-import LegalNotice from "./pages/Legal/LegalNotice";
+
 
 import PrivateRoute from "./routes/PrivateRoute";
 import UserProvider, { UserContext } from "./context/userContext";
@@ -106,16 +98,8 @@ const App = () => {
             <Router>
               <ScrollToTop />
               <Routes>
-                {/* Public Routes avec Layout */}
-                <Route element={<PublicLayout />}>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/services" element={<Services />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                  <Route path="/terms-of-use" element={<TermsOfUse />} />
-                  <Route path="/legal-notice" element={<LegalNotice />} />
-                </Route>
+                {/* Redirection vers la page de connexion */}
+                <Route path="/" element={<Navigate to="/connexion" replace />} />
 
                 {/* Auth Routes (Connexion) */}
                 <Route path="/connexion" element={<Login />} />
